@@ -1,6 +1,8 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "./Header";
+import { Icon } from "./Icon";
 import { signIn } from "@/lib/oidc";
 import { errorText, isAuthError, money, shop, type ProductDetail } from "@/lib/shop";
 
@@ -38,12 +40,21 @@ export function AddToCart({ product }: { product: ProductDetail }) {
     }
   }
 
-  if (product.productStructure === "BUNDLE") return <p className="notice">Bundles can’t be added from this site yet.</p>;
+  if (product.productStructure === "BUNDLE")
+    return (
+      <p className="notice">
+        <Icon name="alert" />
+        <span>Bundles can’t be added from this site yet.</span>
+      </p>
+    );
   return (
     <div className="options">
       {product.options.map((o) => (
-        <div key={o.optionId}>
-          <p className="tag" style={{ margin: "0 0 6px" }}>{o.optionName}{picked[o.optionId] ? `: ${o.values.find((v) => v.optionValueId === picked[o.optionId])?.valueName}` : ""}</p>
+        <div key={o.optionId} className="option-group" role="group" aria-labelledby={`option-${o.optionId}`}>
+          <p id={`option-${o.optionId}`} className="option-label">
+            {o.optionName}
+            {picked[o.optionId] ? <>: <strong>{o.values.find((v) => v.optionValueId === picked[o.optionId])?.valueName}</strong></> : null}
+          </p>
           <div className="chips">
             {o.values.map((v) => (
               <button
@@ -60,32 +71,59 @@ export function AddToCart({ product }: { product: ProductDetail }) {
           </div>
         </div>
       ))}
-      {sku ? (
-        <p style={{ margin: 0 }}>
-          <span className="price">{money(sku.effectivePrice, product.currency)}</span>
-          {sku.originalPrice && sku.originalPrice > sku.effectivePrice ? <s className="muted" style={{ marginLeft: 8 }}>{money(sku.originalPrice, product.currency)}</s> : null}
-          {!sku.sellable ? <span className="tag" style={{ marginLeft: 8 }}>{sku.availabilityStatus.replaceAll("_", " ").toLowerCase()}</span> : null}
-        </p>
-      ) : (
-        <p className="tag" style={{ margin: 0 }}>Choose your options</p>
-      )}
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <div className="qty">
-          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Fewer">−</button>
-          <span>{qty}</span>
-          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} aria-label="More">+</button>
+      <p className="price-row" aria-live="polite">
+        {sku ? (
+          <>
+            <span className="price">{money(sku.effectivePrice, product.currency)}</span>
+            {sku.originalPrice && sku.originalPrice > sku.effectivePrice ? <s className="meta">{money(sku.originalPrice, product.currency)}</s> : null}
+            {!sku.sellable ? <span className="status-chip">{sku.availabilityStatus.replaceAll("_", " ").toLowerCase()}</span> : null}
+          </>
+        ) : (
+          <span className="meta">Choose your options</span>
+        )}
+      </p>
+      <div className="buy-row">
+        <div className="qty" role="group" aria-label="Quantity">
+          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="Decrease quantity">
+            <Icon name="minus" />
+          </button>
+          <span aria-live="polite">{qty}</span>
+          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} disabled={qty >= max} aria-label="Increase quantity">
+            <Icon name="plus" />
+          </button>
         </div>
-        <button className="btn btn-primary" type="button" disabled={!sku || !sku.sellable || state.busy} onClick={() => void add()}>
-          {session === null ? "Continue with Ztor to buy" : state.busy ? "Adding…" : "Add to cart"}
+        <button className="btn btn-primary btn-lg" type="button" disabled={!sku || !sku.sellable || state.busy} onClick={() => void add()}>
+          {session === null ? (
+            "Continue with Ztor to buy"
+          ) : state.busy ? (
+            <>
+              <span className="spinner" aria-hidden="true" />
+              Adding…
+            </>
+          ) : (
+            "Add to cart"
+          )}
         </button>
       </div>
-      {state.ok ? <p className="notice ok" style={{ margin: 0 }}>Added. <a href="/cart" style={{ textDecoration: "underline" }}>View cart</a></p> : null}
-      {state.error ? (
-        <p className="notice error" style={{ margin: 0 }}>
-          {state.error}
-          {state.error.includes("Sign in again") ? <button className="btn btn-sm" style={{ marginLeft: 8 }} onClick={() => void signIn()}>Sign in</button> : null}
-        </p>
-      ) : null}
+      <div aria-live="polite">
+        {state.ok ? (
+          <p className="notice" data-tone="success">
+            <Icon name="check-circle" />
+            <span>
+              Added to your cart. <Link href="/cart" className="link">View cart</Link>
+            </span>
+          </p>
+        ) : null}
+        {state.error ? (
+          <div className="notice" data-tone="error">
+            <Icon name="alert" />
+            <div className="notice-body">
+              <span>{state.error}</span>
+              {state.error.includes("Sign in again") ? <button className="btn" onClick={() => void signIn()}>Sign in</button> : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
