@@ -1,6 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { StateMessage } from "@/components/StateMessage";
 import { completeSignIn, signIn } from "@/lib/oidc";
 
 /** The registered sign-in return URL: exchanges the code, then goes back to where the fan was. */
@@ -14,10 +17,23 @@ export default function Callback() {
   }, [router]);
   if (error)
     return (
-      <div className="notice error" style={{ display: "grid", gap: 12, justifyItems: "start" }}>
-        <span>Sign-in didn’t finish: {error}</span>
-        <button className="btn" onClick={() => void signIn("/")}>Try again</button>
-      </div>
+      <StateMessage
+        tone="error"
+        heading="h1"
+        title="Sign-in didn’t finish"
+        actions={
+          <>
+            <button className="btn btn-primary" onClick={() => void signIn("/")}>
+              <Icon name="refresh" />
+              Try again
+            </button>
+            <Link href="/" className="btn">Back to the shop</Link>
+          </>
+        }
+      >
+        <p>Your Ztor account is fine — this site just didn’t get the sign-in back.</p>
+        <p className="state-detail">{error}</p>
+      </StateMessage>
     );
-  return <p className="muted">Signing you in…</p>;
+  return <StateMessage live heading="h1" tone="info" icon="spinner" title="Signing you in…" />;
 }
