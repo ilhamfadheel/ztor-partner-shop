@@ -283,12 +283,14 @@ h2 { font-size: var(--text-xl); margin: 0; }
 /* Sized like the signed-out "Continue with Ztor" button, the common first paint, so the swap doesn't shift the nav. */
 .nav-skeleton { width: 11rem; height: var(--tap); border-radius: var(--radius-pill); }
 @media (min-width: 640px) {
-  .nav { gap: var(--space-xs); }
   .nav-link { padding-inline: var(--space-ms); }
   .nav-shop, .account-chevron { display: inline-flex; }
   .nav-label { position: static; width: auto; height: auto; margin: 0; clip: auto; }
   .account-name { max-width: 12rem; text-overflow: ellipsis; }
 }
+/* One primary CTA per screen: when the page itself asks the fan to sign in, the header's copy steps back. */
+body:has(main [data-ztor-signin]) .header [data-ztor-signin] { background: transparent; border-color: var(--color-border-control); color: var(--color-accent); }
+body:has(main [data-ztor-signin]) .header [data-ztor-signin]:hover { background: var(--color-muted); }
 .account { position: relative; }
 .account > summary { list-style: none; }
 .account > summary::-webkit-details-marker { display: none; }
