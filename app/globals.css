@@ -452,3 +452,11 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Payment result ---------- */
 .result-orders { display: grid; gap: var(--space-xs); list-style: none; padding: 0; font-size: var(--text-sm); }
+
+/* Login page: the hosted buttons sit inside the state panel; the page's own button only shows until they render. */
+.login { max-width: 480px; margin: 0 auto; }
+.login .ztor-signin { margin: var(--space-4, 16px) 0 0; text-align: left; }
+.login .ztor-signin[aria-busy="true"]:empty { min-height: 48px; }
+.login .ztor-signin__btn { font-family: inherit; }
+.login .login-fallback { margin: var(--space-4, 16px) 0 0; }
+.login .ztor-signin:not(:empty) + .login-fallback { display: none; }

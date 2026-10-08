@@ -18,6 +18,8 @@ export type Session = {
 type Discovery = { authorization_endpoint: string; token_endpoint: string; revocation_endpoint?: string };
 
 const SIGNIN_KEY = "ztor_signin";
+/** Where to go after a sign-in the hosted buttons started: they keep only verifier + state under SIGNIN_KEY. */
+const RETURN_KEY = "ztor_return_to";
 const SESSION_KEY = "ztor_session";
 const SCOPE = "openid email profile";
 
@@ -45,6 +47,14 @@ export const redirectUri = () => `${location.origin}/auth/callback`;
 /** Only same-origin paths may be used as a return target. */
 export const safePath = (value: string | null | undefined): string =>
   value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : "/";
+
+/** The login page remembers where the fan was; the callback reads it back once. */
+export const rememberReturnTo = (value: string | null | undefined) => sessionStorage.setItem(RETURN_KEY, safePath(value));
+const takeReturnTo = (): string => {
+  const value = sessionStorage.getItem(RETURN_KEY);
+  sessionStorage.removeItem(RETURN_KEY);
+  return safePath(value);
+};
 
 /** Starts the sign-in: stores verifier + state, then sends the browser to Ztor. `idp` skips the chooser. */
 export async function signIn(returnTo = location.pathname + location.search, idp?: string): Promise<void> {
@@ -75,7 +85,7 @@ export function claims(jwt: string): Record<string, unknown> {
 
 /** The callback page: checks state, exchanges the code, stores the session. Returns where to go next. */
 export async function completeSignIn(params: URLSearchParams): Promise<string> {
-  const pending = JSON.parse(sessionStorage.getItem(SIGNIN_KEY) ?? "null") as { verifier: string; state: string; returnTo: string } | null;
+  const pending = JSON.parse(sessionStorage.getItem(SIGNIN_KEY) ?? "null") as { verifier: string; state: string; returnTo?: string } | null;
   sessionStorage.removeItem(SIGNIN_KEY);
   if (params.get("error")) throw new Error(params.get("error_description") || params.get("error")!);
   const code = params.get("code");
@@ -106,7 +116,9 @@ export async function completeSignIn(params: URLSearchParams): Promise<string> {
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   window.dispatchEvent(new Event("ztor-session"));
-  return pending.returnTo;
+  // Our own signIn() keeps returnTo in the record; the hosted buttons keep only verifier + state,
+  // so the login page's stash is the fallback — then "/".
+  return pending.returnTo ?? takeReturnTo();
 }
 
 export function getSession(): Session | null {

@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getSession, signIn, signOut, type Session } from "@/lib/oidc";
+import { getSession, signOut, type Session } from "@/lib/oidc";
+import { loginHref } from "@/lib/login-href";
 import { shop, type Artist } from "@/lib/shop";
 import { Icon } from "./Icon";
 
@@ -120,7 +121,7 @@ export function Header() {
               </details>
             </>
           ) : session === null ? (
-            <button className="btn btn-primary" data-ztor-signin onClick={() => void signIn()}>Continue with Ztor</button>
+            <Link href={loginHref(pathname)} className="btn btn-primary" data-ztor-signin>Continue with Ztor</Link>
           ) : (
             <span className="nav-skeleton skeleton" aria-hidden="true" />
           )}

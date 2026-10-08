@@ -1,6 +1,9 @@
 "use client";
 import type { ReactNode } from "react";
-import { signIn, type Session } from "@/lib/oidc";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { Session } from "@/lib/oidc";
+import { loginHref } from "@/lib/login-href";
 import { useSession } from "./Header";
 import { Loading, LinesSkeleton } from "./Skeletons";
 import { StateMessage } from "./StateMessage";
@@ -17,12 +20,13 @@ export function Gate({ children, title, fallback }: { children: (session: Sessio
 }
 
 export function SignInPrompt({ title = "Sign in to continue", text = "Use your Ztor account — the same one works on every artist site." }: { title?: string; text?: string }) {
+  const pathname = usePathname();
   return (
     <StateMessage
       tone="accent"
       icon="user"
       title={title}
-      actions={<button className="btn btn-primary btn-lg" data-ztor-signin onClick={() => void signIn()}>Continue with Ztor</button>}
+      actions={<Link href={loginHref(pathname)} className="btn btn-primary btn-lg" data-ztor-signin>Continue with Ztor</Link>}
     >
       <p>{text}</p>
     </StateMessage>
