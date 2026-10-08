@@ -121,7 +121,8 @@ export function Header() {
               </details>
             </>
           ) : session === null ? (
-            <Link href={loginHref(pathname)} className="btn btn-primary" data-ztor-signin>Continue with Ztor</Link>
+            // The login page is the CTA; a second gold button in the header would compete with it.
+            pathname === "/login" ? null : <Link href={loginHref(pathname)} className="btn btn-primary" data-ztor-signin>Continue with Ztor</Link>
           ) : (
             <span className="nav-skeleton skeleton" aria-hidden="true" />
           )}
