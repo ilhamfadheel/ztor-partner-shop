@@ -54,7 +54,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 1. **Sign in** — `signIn()` makes a PKCE verifier + state, keeps them in `sessionStorage`, and sends the fan to the authorize endpoint with `resource=<Creator API>`. The callback checks `state` (and `iss`), posts the code + verifier to the token endpoint (same `resource`), accepts the ID token on `iss`/`aud`/`exp` (received directly over TLS), and stores `{ accessToken, idToken, expiresAt, user }`.
 2. **Shop** — every call sends `X-Channel-Key`; fan calls add `Authorization: Bearer <access token>`. The facade only returns this platform's creator's products, cart lines, groups and orders; anything foreign is a 404.
 3. **Pay** — `POST /checkout` with `callback_url = https://shop.ilhamfadhil.com/checkout/done` (must be on the Payment return URLs list). The group id is saved before leaving; the return page polls `GET /checkout/{groupId}` until `SUCCEEDED` / `CANCELED` / `EXPIRED`.
-4. **Sign out** — clears the session and ends the Ztor session (`end_session_endpoint` + `id_token_hint`), returning to `/`.
+4. **Sign out** — revokes this site's access token (RFC 7009) and clears the local session only. The fan stays signed in to Ztor and to other partner sites — signing out of one shop must not end the shared SSO session (it was signing people out of the partners console).
 
 ## Deploy
 

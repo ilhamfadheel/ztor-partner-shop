@@ -15,7 +15,7 @@ export type Session = {
   user: { sub: string; name?: string; email?: string };
 };
 
-type Discovery = { authorization_endpoint: string; token_endpoint: string; end_session_endpoint?: string };
+type Discovery = { authorization_endpoint: string; token_endpoint: string; revocation_endpoint?: string };
 
 const SIGNIN_KEY = "ztor_signin";
 const SESSION_KEY = "ztor_session";
@@ -124,13 +124,28 @@ export function clearSession(): void {
   window.dispatchEvent(new Event("ztor-session"));
 }
 
-/** Ends the Ztor session too, then comes back to the home page (a registered sign-out return URL). */
+/**
+ * Signs out of THIS site only: revokes our access token at Ztor and clears the local session.
+ * The fan's Ztor session — and every other site they signed in to with it — stays signed in,
+ * the way signing out of one app does not sign you out of Google. (RP-initiated logout via the
+ * end-session endpoint would end the shared SSO session, which took partners' consoles down too.)
+ */
 export async function signOut(): Promise<void> {
   const session = getSession();
   clearSession();
-  const end = (await discover()).end_session_endpoint;
-  if (!session || !end) return location.assign("/");
-  const url = new URL(end);
-  url.search = new URLSearchParams({ id_token_hint: session.idToken, post_logout_redirect_uri: `${location.origin}/` }).toString();
-  location.assign(url);
+  if (session) {
+    try {
+      const { revocation_endpoint } = await discover();
+      if (revocation_endpoint) {
+        await fetch(revocation_endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ token: session.accessToken, token_type_hint: "access_token", client_id: config.clientId }),
+        });
+      }
+    } catch {
+      // Best effort: the token dies at expiry anyway; the local session is already gone.
+    }
+  }
+  location.assign("/");
 }
