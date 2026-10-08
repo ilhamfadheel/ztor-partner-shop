@@ -7,7 +7,7 @@ import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
 import { mediaUrl } from "@/lib/media";
-import { errorText, money, shop, type Order } from "@/lib/shop";
+import { errorText, money, orderStatusLabel, shop, type Order } from "@/lib/shop";
 
 const skeleton = <Loading label="Loading this order…"><LinesSkeleton rows={1} summary /></Loading>;
 
@@ -54,7 +54,7 @@ function OrderView({ session, id }: { session: Session; id: string }) {
     <div className="stack">
       <p className="meta order-meta">
         <span>#{order.orderNo}</span>
-        <span className="status-chip">{order.displayStatus.toLowerCase()}</span>
+        <span className="status-chip">{orderStatusLabel(order.displayStatus)}</span>
         {order.paidAt ? <span>Paid {new Date(order.paidAt).toLocaleString()}</span> : null}
       </p>
       <div className="with-summary">
