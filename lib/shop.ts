@@ -115,7 +115,17 @@ export type PaymentResult = {
 };
 export type CheckoutSubmission = { group: PaymentResult; paymentAction: "ACTION_REQUIRED" | "ATTEMPT_FAILED" | "UNKNOWN" | "ALREADY_PAID" | "NOT_STARTED"; paymentUrl: string | null; paymentMessage: string | null };
 export type OrderItem = { orderItemId: string; title: string | null; coverUrl: string | null; specification: string | null; quantity: number; currency: string; unitAmount: string; totalAmount: string; qrCodes?: { seq: number; status: string; qrContent: string | null }[] };
-export type Order = { orderId: string; orderNo: string; shopName?: string | null; displayStatus: "PAID" | "COMPLETED"; fulfilmentStatus: string | null; currency: string; payableAmount: string; paidAt: number | null; items: OrderItem[]; pickupContact?: { name: string | null; phoneCode: string | null; phoneNumber: string | null } | null };
+export type Order = { orderId: string; orderNo: string; shopName?: string | null; displayStatus: OrderStatus; fulfilmentStatus: string | null; currency: string; payableAmount: string; paidAt: number | null; items: OrderItem[]; pickupContact?: { name: string | null; phoneCode: string | null; phoneNumber: string | null } | null };
+/** Shopping's buyer display status (接口说明 §8.2): voided orders stay in the history. */
+export type OrderStatus = "PAID" | "COMPLETED" | "CANCEL_PENDING" | "CANCELLED";
+const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  PAID: "paid",
+  COMPLETED: "completed",
+  CANCEL_PENDING: "cancellation pending",
+  CANCELLED: "cancelled",
+};
+/** The chip text for an order; an unknown future status still renders, lower-cased. */
+export const orderStatusLabel = (status: string) => ORDER_STATUS_LABEL[status as OrderStatus] ?? status.toLowerCase();
 export type OrderGroup = { checkoutGroupId: string; createdAt: number; paymentReference: string; paymentCurrency: string; paymentPayableAmount: string; orders: Order[] };
 
 export const isFinal = (status: PaymentStatus) => status === "SUCCEEDED" || status === "CANCELED" || status === "EXPIRED";

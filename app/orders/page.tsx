@@ -7,7 +7,7 @@ import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
 import { mediaUrl } from "@/lib/media";
-import { errorText, isAuthError, money, shop, type OrderGroup } from "@/lib/shop";
+import { errorText, isAuthError, money, orderStatusLabel, shop, type OrderGroup } from "@/lib/shop";
 
 const skeleton = <Loading label="Loading your orders…"><LinesSkeleton rows={3} /></Loading>;
 
@@ -60,7 +60,7 @@ function Orders({ session }: { session: Session }) {
               <span className="line-meta">
                 <span className="line-title">{o.items.map((i) => i.title).filter(Boolean).join(", ") || `Order ${o.orderNo}`}</span>
                 <span className="meta">#{o.orderNo} · {new Date(g.createdAt).toLocaleDateString()}</span>
-                <span className="status-chip">{o.displayStatus.toLowerCase()}</span>
+                <span className="status-chip">{orderStatusLabel(o.displayStatus)}</span>
               </span>
               <span className="line-end">
                 <span className="price">{money(o.payableAmount, o.currency)}</span>
