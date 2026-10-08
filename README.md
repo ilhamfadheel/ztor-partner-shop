@@ -26,6 +26,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 | `NEXT_PUBLIC_ZTOR_API` | Ztor gateway origin + `/api`; the Creator API is `{API}/creator/v1/*` |
 | `NEXT_PUBLIC_ZTOR_CLIENT_ID` | Your platform's client id, also the `X-Channel-Key` |
 | `NEXT_PUBLIC_ZTOR_SHOP_RESOURCE` | RFC 8707 resource indicator of the Creator API (the SSO's `SSO_CREATOR_API_RESOURCE`, same literal). Empty = sign-in works, fan shop calls answer 401 |
+| `NEXT_PUBLIC_ZTOR_MEDIA` | Optional. Shopping's media CDN; product images arrive as paths relative to it. Default `https://d1k50uq0sig7az.cloudfront.net` |
 
 ## Register the site in the SSO Platforms console → Site & URLs
 

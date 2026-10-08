@@ -5,6 +5,7 @@ import { Icon } from "@/components/Icon";
 import { GridSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import { missingConfig } from "@/lib/config";
+import { mediaUrl } from "@/lib/media";
 import { errorText, money, shop, type ProductCard } from "@/lib/shop";
 
 export default function Home() {
@@ -63,7 +64,7 @@ async function Catalogue() {
       {page.items.map((p, i) => (
         <li key={p.productId}>
           <Link href={`/products/${p.productId}`} className="card">
-            <img className="card-media" src={p.coverUrl} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" />
+            {mediaUrl(p.coverUrl) ? <img className="card-media" src={mediaUrl(p.coverUrl)} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" /> : <span className="card-media" aria-hidden="true" />}
             <div className="card-body">
               <span className="card-title">{p.title}</span>
               <span className="price">{p.minPrice === p.maxPrice ? money(p.minPrice, p.currency) : `${money(p.minPrice, p.currency)} – ${money(p.maxPrice, p.currency)}`}</span>

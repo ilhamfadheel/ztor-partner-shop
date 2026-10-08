@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/AddToCart";
 import { Icon } from "@/components/Icon";
 import { StateMessage } from "@/components/StateMessage";
+import { mediaUrl } from "@/lib/media";
 import { ShopError, errorText, money, shop } from "@/lib/shop";
 
 type Props = { params: Promise<{ id: string }> };
@@ -54,7 +55,11 @@ export default async function ProductPage({ params }: Props) {
       </StateMessage>
     );
   }
-  const images = product.media.filter((m) => m.type === "IMAGE").sort((a, b) => a.sortOrder - b.sortOrder);
+  const images = product.media
+    .filter((m) => m.type === "IMAGE")
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((m) => mediaUrl(m.url))
+    .filter((url) => url !== undefined);
   const fulfilment =
     product.fulfillmentType === "QR_PICKUP" && product.pickup ? { icon: "pin" as const, text: `Pickup · ${product.pickup.name}, ${product.pickup.location}` } : product.fulfillmentType === "SHIPPING" ? { icon: "truck" as const, text: "Ships to you" } : null;
   return (
@@ -65,12 +70,12 @@ export default async function ProductPage({ params }: Props) {
       </Link>
       <div className="product">
         <div className="gallery">
-          {images[0] ? <img className="gallery-main" src={images[0].url} alt={product.title} width={800} height={800} fetchPriority="high" decoding="async" /> : <span className="gallery-main" aria-hidden="true" />}
+          {images[0] ? <img className="gallery-main" src={images[0]} alt={product.title} width={800} height={800} fetchPriority="high" decoding="async" /> : <span className="gallery-main" aria-hidden="true" />}
           {images.length > 1 ? (
             <ul className="thumbs" role="list">
-              {images.slice(1, 6).map((m, i) => (
-                <li key={m.url}>
-                  <img src={m.url} alt={`${product.title}, image ${i + 2}`} width={160} height={160} loading="lazy" decoding="async" />
+              {images.slice(1, 6).map((url, i) => (
+                <li key={url}>
+                  <img src={url} alt={`${product.title}, image ${i + 2}`} width={160} height={160} loading="lazy" decoding="async" />
                 </li>
               ))}
             </ul>

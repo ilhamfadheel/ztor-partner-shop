@@ -7,6 +7,8 @@ export const config = {
   shopResource: process.env.NEXT_PUBLIC_ZTOR_SHOP_RESOURCE || undefined,
   /** The optional sign-in buttons this platform turned on in the console (Sign-in buttons page), e.g. "apple,google,facebook,line". */
   providers: (process.env.NEXT_PUBLIC_ZTOR_PROVIDERS ?? "").split(",").map((p) => p.trim()).filter(Boolean),
+  /** Shopping's media CDN: product images arrive as paths relative to it (e.g. "image/…/….png"). */
+  media: (process.env.NEXT_PUBLIC_ZTOR_MEDIA || "https://d1k50uq0sig7az.cloudfront.net").replace(/\/+$/, ""),
 };
 
 /** The console serves the hosted sign-in buttons from its own origin (the issuer's host): {origin}/embed/v1/signin.{js,css}. */
