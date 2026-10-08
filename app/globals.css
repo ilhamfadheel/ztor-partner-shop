@@ -248,7 +248,7 @@ h2 { font-size: var(--text-xl); margin: 0; }
 .footer { border-top: 1px solid var(--color-border); color: var(--color-muted-foreground); font-size: var(--text-sm); }
 .footer-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-md); padding-block: var(--space-sm); }
 .footer-bar p { padding-block: var(--space-ms); }
-.footer-link { display: inline-flex; align-items: center; min-height: var(--tap); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--radius-sm); }
+.footer-link { display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); min-height: var(--tap); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--radius-sm); }
 .footer-link:hover { color: var(--color-foreground); }
 .ztor-mark { color: var(--color-accent); font-weight: 700; }
 
@@ -280,14 +280,14 @@ h2 { font-size: var(--text-xl); margin: 0; }
 }
 .nav-shop, .account-chevron { display: none; }
 .nav-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.nav-skeleton { width: var(--tap); height: var(--tap); border-radius: var(--radius-pill); }
+/* Sized like the signed-out "Continue with Ztor" button, the common first paint, so the swap doesn't shift the nav. */
+.nav-skeleton { width: 11rem; height: var(--tap); border-radius: var(--radius-pill); }
 @media (min-width: 640px) {
   .nav { gap: var(--space-xs); }
   .nav-link { padding-inline: var(--space-ms); }
   .nav-shop, .account-chevron { display: inline-flex; }
   .nav-label { position: static; width: auto; height: auto; margin: 0; clip: auto; }
   .account-name { max-width: 12rem; text-overflow: ellipsis; }
-  .nav-skeleton { width: 10rem; }
 }
 .account { position: relative; }
 .account > summary { list-style: none; }

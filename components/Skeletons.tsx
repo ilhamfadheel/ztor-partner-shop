@@ -15,7 +15,8 @@ export function Loading({ label, children }: { label: string; children: ReactNod
 
 const times = (n: number) => Array.from({ length: n }, (_, i) => i);
 
-export function GridSkeleton({ count = 8 }: { count?: number }) {
+/** About one screen of cards: taller would push the footer below the fold and pull it back up if the load fails. */
+export function GridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid">
       {times(count).map((i) => (
