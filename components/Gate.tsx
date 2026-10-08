@@ -2,20 +2,29 @@
 import type { ReactNode } from "react";
 import { signIn, type Session } from "@/lib/oidc";
 import { useSession } from "./Header";
+import { Loading, LinesSkeleton } from "./Skeletons";
+import { StateMessage } from "./StateMessage";
 
-/** Renders `children` with the fan's session, or the "Continue with Ztor" prompt. */
-export function Gate({ children }: { children: (session: Session) => ReactNode }) {
+/**
+ * Renders `children` with the fan's session, or the "Continue with Ztor" prompt.
+ * `fallback` should be the page's own skeleton so the session check and the data load share one placeholder.
+ */
+export function Gate({ children, title, fallback }: { children: (session: Session) => ReactNode; title?: string; fallback?: ReactNode }) {
   const session = useSession();
-  if (session === undefined) return <p className="muted">Loading…</p>;
-  if (!session) return <SignInPrompt />;
+  if (session === undefined) return fallback ?? <Loading label="Loading…"><LinesSkeleton rows={2} /></Loading>;
+  if (!session) return <SignInPrompt title={title} />;
   return <>{children(session)}</>;
 }
 
-export function SignInPrompt({ text = "Sign in with your Ztor account to continue." }: { text?: string }) {
+export function SignInPrompt({ title = "Sign in to continue", text = "Use your Ztor account — the same one works on every artist site." }: { title?: string; text?: string }) {
   return (
-    <div className="notice" style={{ display: "grid", gap: 12, justifyItems: "start" }}>
-      <span>{text}</span>
-      <button className="btn btn-primary" data-ztor-signin onClick={() => void signIn()}>Continue with Ztor</button>
-    </div>
+    <StateMessage
+      tone="accent"
+      icon="user"
+      title={title}
+      actions={<button className="btn btn-primary btn-lg" data-ztor-signin onClick={() => void signIn()}>Continue with Ztor</button>}
+    >
+      <p>{text}</p>
+    </StateMessage>
   );
 }
