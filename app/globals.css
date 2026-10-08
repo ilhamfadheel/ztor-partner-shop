@@ -251,3 +251,52 @@ h2 { font-size: var(--text-xl); margin: 0; }
 .footer-link { display: inline-flex; align-items: center; min-height: var(--tap); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--radius-sm); }
 .footer-link:hover { color: var(--color-foreground); }
 .ztor-mark { color: var(--color-accent); font-weight: 700; }
+
+/* ---------- Header (mobile: brand + icon nav; 640px+: labelled nav) ---------- */
+.header { position: sticky; top: 0; z-index: var(--z-header); background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.header-bar { display: flex; align-items: center; gap: var(--space-sm); height: var(--header-h); }
+.brand {
+  display: flex; align-items: center; gap: var(--space-ms); min-width: 0; min-height: var(--tap); margin-right: auto;
+  font-family: var(--font-display); font-size: var(--text-lg); font-weight: var(--weight-semibold); border-radius: var(--radius-sm);
+}
+.brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brand-skeleton { width: 7rem; height: 1.25rem; }
+.avatar { width: var(--avatar); height: var(--avatar); flex: none; border-radius: 50%; object-fit: cover; background: var(--color-muted); }
+.nav { display: flex; align-items: center; gap: var(--space-sm); flex: none; }
+.nav-link {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  min-width: var(--tap); min-height: var(--tap); border-radius: var(--radius-pill);
+  color: var(--color-muted-foreground); font-weight: var(--weight-semibold);
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.nav-link:hover, .nav-link[aria-current="page"], .account[open] > .nav-link { color: var(--color-foreground); background: var(--color-muted); }
+.nav-icon { position: relative; display: inline-flex; }
+/* Count sits on the icon, so it appearing never pushes the nav around. */
+.badge {
+  position: absolute; top: -7px; right: -10px; min-width: 20px; height: 20px; padding-inline: 5px;
+  border: 2px solid var(--color-background); border-radius: var(--radius-pill);
+  background: var(--color-accent); color: var(--color-on-accent);
+  font-size: var(--text-2xs); font-weight: 700; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.nav-shop, .account-chevron { display: none; }
+.nav-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nav-skeleton { width: var(--tap); height: var(--tap); border-radius: var(--radius-pill); }
+@media (min-width: 640px) {
+  .nav { gap: var(--space-xs); }
+  .nav-link { padding-inline: var(--space-ms); }
+  .nav-shop, .account-chevron { display: inline-flex; }
+  .nav-label { position: static; width: auto; height: auto; margin: 0; clip: auto; }
+  .account-name { max-width: 12rem; text-overflow: ellipsis; }
+  .nav-skeleton { width: 10rem; }
+}
+.account { position: relative; }
+.account > summary { list-style: none; }
+.account > summary::-webkit-details-marker { display: none; }
+.account-chevron { transition: transform var(--dur) var(--ease-out); }
+.account[open] .account-chevron { transform: rotate(180deg); }
+.account-menu {
+  position: absolute; right: 0; top: calc(100% + var(--space-sm)); z-index: var(--z-menu);
+  width: min(18rem, calc(100vw - 2 * var(--gutter))); display: grid; gap: var(--space-ms); padding: var(--space-md);
+  background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+}
+.account-who { display: grid; overflow-wrap: anywhere; }
