@@ -1,27 +1,27 @@
 import type { Metadata } from "next";
-import { Nunito_Sans, Rubik } from "next/font/google";
+import localFont from "next/font/local";
 import { Header } from "@/components/Header";
 import "./globals.css";
 
-// Self-hosted by next/font (no request to Google at runtime), swap + size-adjusted fallback = no invisible text, no reflow.
-const body = Nunito_Sans({ subsets: ["latin"], display: "swap", variable: "--font-body" });
-const heading = Rubik({ subsets: ["latin"], display: "swap", variable: "--font-heading" });
+// Satoshi (Fontshare, free for commercial use), the lloud.club typeface: one variable file, 300–900,
+// self-hosted by next/font, swap + size-adjusted fallback = no invisible text, no reflow.
+const satoshi = localFont({ src: "./fonts/Satoshi-Variable.woff2", weight: "300 900", display: "swap", variable: "--font-body" });
 
 export const metadata: Metadata = {
-  title: { default: "Shop", template: "%s · Shop" },
+  title: { default: "Fan Club", template: "%s · Fan Club" },
   description: "Official merch — sign in with Ztor to buy.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${heading.variable}`}>
+    <html lang="en" className={satoshi.variable}>
       <body>
         <a href="#main" className="skip-link">Skip to content</a>
         <Header />
         <main id="main" className="container">{children}</main>
         <footer className="footer">
-          <div className="container footer-bar">
-            <p>Powered by <span className="ztor-mark">Ztor</span> — one account, every artist site.</p>
+          <div className="footer-bar">
+            <p>Fan Club · Powered by <span className="ztor-mark">Ztor</span>, one account for every artist site.</p>
             <a href="https://github.com/ilhamfadheel/ztor-partner-shop" className="footer-link">Source</a>
           </div>
         </footer>

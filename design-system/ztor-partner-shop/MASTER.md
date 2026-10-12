@@ -15,40 +15,35 @@
 
 ## Global Rules
 
+### Style source (2026-10-12)
+
+The fan-club look of **lloud.club** (`/fan-club`, `/edit-profile`), measured from its live CSS: warm paper, ink,
+hairlines, square corners, light display type with tight tracking, small tracked capitals. The header is
+lloud's: the shop mark + FAN CLUB on the left, sections centred (their own row on phones), account and bag
+on the right. `app/globals.css` `:root` is the source of truth; this table mirrors it.
+
 ### Color Palette
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#059669` | `--color-primary` |
-| On Primary | `#000000` | `--color-on-primary` |
-| Secondary | `#10B981` | `--color-secondary` |
-| On Secondary | `#0F172A` | `--color-on-secondary` |
-| Accent/CTA | `#EA580C` | `--color-accent` |
-| On Accent/CTA | `#000000` | `--color-on-accent` |
-| Background | `#0F172A` | `--color-background` |
-| Foreground | `#F8FAFC` | `--color-foreground` |
-| Card | `#111827` | `--color-card` |
-| Card Foreground | `#F8FAFC` | `--color-card-foreground` |
-| Muted | `#1E293B` | `--color-muted` |
-| Muted Foreground | `#CBD5E1` | `--color-muted-foreground` |
-| Border | `#334155` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#059669` | `--color-ring` |
+| Role | Hex | CSS Variable | lloud source |
+|------|-----|--------------|--------------|
+| Background (paper) | `#F4F2EE` | `--color-background`, `--color-card` | `--l-bg` |
+| Surface | `#FFFFFF` | `--color-surface` | `--l-surface` |
+| Muted / selected | `#E9E6E0` | `--color-muted` | `--l-bg-2` |
+| Hairline | `#D8D5CE` | `--color-border` | header/list borders |
+| Control boundary | `#8A8681` | `--color-border-control` | `--l-ink-3` (lloud's `#C8C5BD` is 1.5:1, under WCAG 1.4.11; we keep 3.2:1) |
+| Foreground | `#181818` | `--color-foreground` | body text |
+| Muted foreground | `#696761` | `--color-muted-foreground` | nav links, meta |
+| Accent / CTA (ink) | `#111111` on `#FFFFFF` | `--color-accent`, `--color-on-accent` | `--l-signal` |
+| Destructive | `#B6001C` | `--color-destructive` | error red |
+| Success | `#277044` | `--color-success` | `--mission-complete-ink` |
 
-**Color Notes:** Success green + urgency orange [Accent adjusted from #F97316]
+Radii are 0 everywhere (`--l-r-*: 0`); only avatars and the spinner are round.
 
 ### Typography
 
-- **Heading Font:** Rubik
-- **Body Font:** Nunito Sans
-- **Mood:** ecommerce, clean, shopping, product, retail, conversion
-- **Google Fonts:** [Rubik + Nunito Sans](https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap)
-
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap');
-```
+- **Font:** Satoshi (Fontshare, free for commercial use), self-hosted variable 300–900 via `next/font/local` (`app/fonts/`).
+- Body 360, nav 440; h1 `clamp(40px…64px)` at -0.06em, h2 24–28px at -0.045em (lloud 64px/-4.16px, 28px/-1.26px).
+- Eyebrows: 13px capitals, +0.14em tracking (`--track-caps`, lloud `--l-track`); FAN CLUB +0.2em.
 
 ### Spacing Variables
 

@@ -49,6 +49,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 | `/checkout` | fan | Quote → pickup contact → payment method → submit (Idempotency-Key) → payment page |
 | `/checkout/done` | fan | Payment return URL: polls the group result, pay again |
 | `/orders`, `/orders/[id]` | fan | Paid orders through this site |
+| `/account` | fan | Your account (lloud.club/edit-profile): display name, connected sites, signed-in devices, consents, in-site; email, password, 2FA, sign-ins and deletion link to Ztor's settings |
 
 ## Flow
 
@@ -56,6 +57,14 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 2. **Shop** — every call sends `X-Channel-Key`; fan calls add `Authorization: Bearer <access token>`. The facade only returns this platform's creator's products, cart lines, groups and orders; anything foreign is a 404.
 3. **Pay** — `POST /checkout` with `callback_url = https://shop.ilhamfadhil.com/checkout/done` (must be on the Payment return URLs list). The group id is saved before leaving; the return page polls `GET /checkout/{groupId}` until `SUCCEEDED` / `CANCELED` / `EXPIRED`.
 4. **Sign out** — revokes this site's access token (RFC 7009) and clears the local session only. The fan stays signed in to Ztor and to other partner sites — signing out of one shop must not end the shared SSO session (it was signing people out of the partners console).
+
+## Fan account
+
+`lib/account.ts` calls the fan Account API (docs → *Fan account*) with the same fan token as the shop. Partner sites may read the account, rename, and manage connected platforms, sessions and consents (Ztor_backend #751/#752, `PartnerMay`); the rest is Ztor's own, so `/account` links to `<issuer origin>/settings/account/security` for it. Until those PRs deploy, the page shows "Your account didn't open here" with the same link.
+
+## Design
+
+lloud.club's fan-club style: warm paper, ink, hairlines, square corners, Satoshi. Tokens in `app/globals.css`, rationale in `design-system/ztor-partner-shop/MASTER.md`.
 
 ## Deploy
 

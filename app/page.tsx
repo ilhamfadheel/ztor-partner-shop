@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Suspense } from "react";
+import { Cover } from "@/components/Cover";
 import { Icon } from "@/components/Icon";
 import { GridSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
@@ -18,12 +19,22 @@ export default function Home() {
     );
   return (
     <>
+      <Suspense fallback={<span className="eyebrow sk-inline skeleton" aria-hidden="true" />}>
+        <ArtistLine />
+      </Suspense>
       <h1>Shop</h1>
       <Suspense fallback={<Loading label="Loading products…"><GridSkeleton /></Loading>}>
         <Catalogue />
       </Suspense>
     </>
   );
+}
+
+/** "ILHAMFADHEEL · OFFICIAL MERCH": whose fan club this is, now that the header carries the club's name. */
+async function ArtistLine() {
+  const lang = (await headers()).get("accept-language") ?? undefined;
+  const artist = await shop.artist(lang).then((a) => a[0]).catch(() => undefined);
+  return <p className="eyebrow">{artist?.name ? `${artist.name} · Official merch` : "Official merch"}</p>;
 }
 
 /** Streams in after the heading; the grid skeleton holds the same boxes meanwhile. */
@@ -64,7 +75,7 @@ async function Catalogue() {
       {page.items.map((p, i) => (
         <li key={p.productId}>
           <Link href={`/products/${p.productId}`} className="card">
-            {mediaUrl(p.coverUrl) ? <img className="card-media" src={mediaUrl(p.coverUrl)} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" /> : <span className="card-media" aria-hidden="true" />}
+            <Cover className="card-media" src={mediaUrl(p.coverUrl)} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" />
             <div className="card-body">
               <span className="card-title">{p.title}</span>
               <span className="price">{p.minPrice === p.maxPrice ? money(p.minPrice, p.currency) : `${money(p.minPrice, p.currency)} – ${money(p.maxPrice, p.currency)}`}</span>
