@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Header } from "@/components/Header";
+import { Icon } from "@/components/Icon";
 import "./globals.css";
 
 // Satoshi (Fontshare, free for commercial use), the lloud.club typeface: one variable file, 300–900,
@@ -22,7 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="footer">
           <div className="footer-bar">
             <p>Fan Club · Powered by <span className="ztor-mark">Ztor</span>, one account for every artist site.</p>
-            <a href="https://github.com/ilhamfadheel/ztor-partner-shop" className="footer-link">Source</a>
+            <a href="https://github.com/ilhamfadheel/ztor-partner-shop" className="footer-link">
+              <Icon name="github" />
+              Source
+            </a>
           </div>
         </footer>
       </body>

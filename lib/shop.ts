@@ -19,7 +19,7 @@ export class ShopError extends Error {
 
 type Envelope<T> = { traceId: string; success: boolean; code: string; msg: string; data: T };
 
-type Init = { method?: "GET" | "POST" | "PATCH" | "DELETE"; token?: string; body?: unknown; idempotencyKey?: string; lang?: string };
+type Init = { method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; token?: string; body?: unknown; idempotencyKey?: string; lang?: string };
 
 async function api<T>(path: string, init: Init = {}): Promise<T> {
   const headers: Record<string, string> = { "x-channel-key": config.clientId };
@@ -153,6 +153,9 @@ export const shop = {
   removeLine: (token: string, id: string) => api<unknown>(`/cart/items/${encodeURIComponent(id)}`, { method: "DELETE", token }),
 
   pickupContacts: (token: string) => api<{ items: PickupContact[] }>("/pickup-contacts", { token }).then((d) => d.items ?? []),
+  addPickupContact: (token: string, body: { name: string; phone: string }) => api<PickupContact>("/pickup-contacts", { method: "POST", token, body }),
+  updatePickupContact: (token: string, id: string, body: { name: string; phone: string }) => api<PickupContact>(`/pickup-contacts/${encodeURIComponent(id)}`, { method: "PUT", token, body }),
+  deletePickupContact: (token: string, id: string) => api<unknown>(`/pickup-contacts/${encodeURIComponent(id)}`, { method: "DELETE", token }),
   paymentMethods: (token: string) => api<{ methods: PaymentMethod[] }>("/checkout/payment-methods", { token }).then((d) => d.methods ?? []),
   quote: (token: string, cart_item_ids: string[]) => api<Quote>("/checkout/quote", { method: "POST", token, body: { cart_item_ids } }),
   checkout: (

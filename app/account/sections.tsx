@@ -3,19 +3,12 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import { Icon } from "@/components/Icon";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
-import { account, AccountError, deviceName, hostedSettings, type AccountView, type ConnectedPlatform, type ConsentRecord, type SessionView } from "@/lib/account";
-import { config } from "@/lib/config";
-import { clearSession } from "@/lib/oidc";
+import { account, AccountError, hostedSettings, type AccountView } from "@/lib/account";
+import { preferredPayment, setPreferredPayment } from "@/lib/preferences";
+import { errorText, shop, type PaymentMethod, type PickupContact } from "@/lib/shop";
 
 const day = (iso: string | null | undefined) => (iso ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(iso)) : "—");
-const moment = (iso: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
-const problem = (e: unknown) => (e instanceof Error ? e.message : String(e));
-
-/** Leaves this site signed out after an action that ended its own grant (disconnecting it, signing out everywhere). */
-function leave() {
-  clearSession();
-  location.assign("/");
-}
+const problem = (e: unknown) => errorText(e);
 
 /** "Manage on Ztor ↗": the account settings partner sites don't change (email, password, 2FA, sign-ins, deletion). */
 function OnZtor({ page = "security", children = "Manage on Ztor" }: { page?: "security" | "connected"; children?: ReactNode }) {
@@ -29,7 +22,7 @@ function OnZtor({ page = "security", children = "Manage on Ztor" }: { page?: "se
 }
 
 /** Loads one list for a panel; `reload` after a change. */
-function useList<T>(load: () => Promise<T[]>) {
+export function useList<T>(load: () => Promise<T[]>) {
   const [items, setItems] = useState<T[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reload = useCallback(() => {
@@ -135,21 +128,21 @@ export function Personal({ token, me, onChange }: { token: string; me: AccountVi
   );
 }
 
-// ---- Connected sites (GET / DELETE platforms)
+// ---- Addresses: the fan's saved pickup contacts (Shopping's address book; this shop fulfils by QR pickup)
 
-export function Platforms({ token }: { token: string }) {
-  const load = useCallback(() => account.platforms(token), [token]);
-  const { items, error, reload } = useList<ConnectedPlatform>(load);
+export function Addresses({ token }: { token: string }) {
+  const load = useCallback(() => shop.pickupContacts(token), [token]);
+  const { items, error, reload } = useList<PickupContact>(load);
+  const [editing, setEditing] = useState<string | "new" | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
-  const disconnect = async (p: ConnectedPlatform) => {
-    setBusy(p.clientId);
+  const remove = async (c: PickupContact) => {
+    setBusy(c.contactId);
     setFailed(null);
     try {
-      await account.disconnect(token, p.clientId);
-      if (p.clientId === config.clientId) return leave();
+      await shop.deletePickupContact(token, c.contactId);
       setConfirming(null);
       reload();
     } catch (e) {
@@ -161,144 +154,137 @@ export function Platforms({ token }: { token: string }) {
 
   return (
     <>
-      <h2 id="account-panel-title">Connected sites</h2>
-      <p className="meta">Artist sites you signed in to with your Ztor account. Disconnecting one signs you out of it; you can sign in again any time.</p>
+      <h2 id="account-panel-title">Addresses</h2>
+      <p className="meta">Save the pickup contacts for your next order: who collects it, and the number we reach them on.</p>
       {failed ? <p className="field-error" role="alert"><Icon name="alert" />{failed}</p> : null}
-      <ListState items={items} error={error} reload={reload} empty="No other sites yet.">
+      <ListState items={items} error={error} reload={reload} empty="No saved addresses yet.">
         {(list) => (
           <ul className="rows" role="list">
-            {list.map((p) => (
-              <li key={p.clientId} className="row">
-                {p.logoUrl ? <img className="row-mark" src={p.logoUrl} alt="" width={40} height={40} /> : <span className="row-mark" aria-hidden="true">{p.name.charAt(0).toUpperCase()}</span>}
-                <div className="row-text">
-                  <p className="row-title">{p.name}{p.clientId === config.clientId ? <span className="tag">This site</span> : null}</p>
-                  <p className="meta">Last signed in {day(p.lastSignedInAt)} · first {day(p.firstSignedInAt)}</p>
-                </div>
-                {confirming === p.clientId ? (
-                  <div className="row-confirm" role="group" aria-label={`Disconnect ${p.name}?`}>
-                    <span className="meta">{p.clientId === config.clientId ? "This signs you out here." : `Sign out of ${p.name}?`}</span>
-                    <button className="btn" onClick={() => setConfirming(null)} disabled={busy === p.clientId}>Keep</button>
-                    <button className="btn btn-danger" onClick={() => void disconnect(p)} disabled={busy === p.clientId}>{busy === p.clientId ? <span className="spinner" aria-hidden="true" /> : null}Disconnect</button>
+            {list.map((c) =>
+              editing === c.contactId ? (
+                <li key={c.contactId} className="row row-plain">
+                  <ContactForm idPrefix={`c-${c.contactId}`} initial={c} onCancel={() => setEditing(null)} onSave={async (v) => { await shop.updatePickupContact(token, c.contactId, v); setEditing(null); reload(); }} />
+                </li>
+              ) : (
+                <li key={c.contactId} className="row row-plain row-split">
+                  <div className="row-text">
+                    <p className="row-title">{c.name}</p>
+                    <p className="meta">{c.phone}</p>
                   </div>
-                ) : (
-                  <button className="btn" onClick={() => setConfirming(p.clientId)}>Disconnect</button>
-                )}
-              </li>
-            ))}
+                  {confirming === c.contactId ? (
+                    <div className="row-confirm" role="group" aria-label={`Delete ${c.name}?`}>
+                      <span className="meta">Delete this address?</span>
+                      <button className="btn" onClick={() => setConfirming(null)} disabled={busy === c.contactId}>Keep</button>
+                      <button className="btn btn-danger" onClick={() => void remove(c)} disabled={busy === c.contactId}>{busy === c.contactId ? <span className="spinner" aria-hidden="true" /> : null}Delete</button>
+                    </div>
+                  ) : (
+                    <div className="row-confirm">
+                      <button className="btn" onClick={() => setEditing(c.contactId)} aria-label={`Edit ${c.name}`}>Edit</button>
+                      <button className="btn" onClick={() => setConfirming(c.contactId)} aria-label={`Delete ${c.name}`}>Delete</button>
+                    </div>
+                  )}
+                </li>
+              ),
+            )}
           </ul>
         )}
       </ListState>
+      {editing === "new" ? (
+        <div className="account-block">
+          <h3>New address</h3>
+          <ContactForm idPrefix="c-new" onCancel={() => setEditing(null)} onSave={async (v) => { await shop.addPickupContact(token, v); setEditing(null); reload(); }} />
+        </div>
+      ) : (
+        <div><button className="btn btn-primary btn-lg" onClick={() => setEditing("new")}>Add address</button></div>
+      )}
     </>
   );
 }
 
-// ---- Signed-in devices (GET / DELETE sessions, POST revoke-all)
-
-export function Sessions({ token }: { token: string }) {
-  const load = useCallback(() => account.sessions(token), [token]);
-  const { items, error, reload } = useList<SessionView>(load);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [everywhere, setEverywhere] = useState(false);
-  const [failed, setFailed] = useState<string | null>(null);
-
-  const run = async (id: string, action: () => Promise<unknown>, after: () => void) => {
-    setBusy(id);
-    setFailed(null);
+function ContactForm({ idPrefix: id, initial, onSave, onCancel }: { idPrefix: string; initial?: { name: string; phone: string }; onSave: (v: { name: string; phone: string }) => Promise<void>; onCancel: () => void }) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) return setError("Enter a name and a phone number.");
+    setBusy(true);
+    setError(null);
     try {
-      await action();
-      after();
-    } catch (e) {
-      setFailed(problem(e));
-    } finally {
-      setBusy(null);
+      await onSave({ name: name.trim(), phone: phone.trim() });
+    } catch (err) {
+      setError(problem(err));
+      setBusy(false);
     }
   };
-
   return (
-    <>
-      <h2 id="account-panel-title">Signed-in devices</h2>
-      <p className="meta">Where your Ztor account is signed in. Signing a device out ends its Ztor session and the artist sites it opened.</p>
-      {failed ? <p className="field-error" role="alert"><Icon name="alert" />{failed}</p> : null}
-      <ListState items={items} error={error} reload={reload} empty="No open sessions.">
-        {(list) => (
-          <ul className="rows" role="list">
-            {list.map((s) => (
-              <li key={s.id} className="row">
-                <span className="row-mark" aria-hidden="true"><Icon name="monitor" /></span>
-                <div className="row-text">
-                  <p className="row-title">{deviceName(s.userAgent)}{s.current ? <span className="tag">This browser</span> : null}</p>
-                  <p className="meta">{[s.ip, `active ${moment(s.lastActiveAt)}`].filter(Boolean).join(" · ")}</p>
-                </div>
-                {s.current ? null : (
-                  <button className="btn" disabled={busy === s.id} onClick={() => void run(s.id, () => account.revokeSession(token, s.id), reload)}>
-                    {busy === s.id ? <span className="spinner" aria-hidden="true" /> : null}Sign out
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </ListState>
-      <div className="account-block">
-        <h3>Sign out everywhere</h3>
-        <p className="meta">Ends every Ztor session and every artist site’s access, this one included.</p>
-        {everywhere ? (
-          <div className="row-confirm" role="group" aria-label="Sign out everywhere?">
-            <span className="meta">You’ll need to sign in again on every device.</span>
-            <button className="btn" onClick={() => setEverywhere(false)} disabled={busy === "all"}>Keep me signed in</button>
-            <button className="btn btn-danger" disabled={busy === "all"} onClick={() => void run("all", () => account.revokeAll(token), leave)}>
-              {busy === "all" ? <span className="spinner" aria-hidden="true" /> : null}Sign out everywhere
-            </button>
-          </div>
-        ) : (
-          <button className="btn btn-danger" onClick={() => setEverywhere(true)}>Sign out everywhere</button>
-        )}
+    <form className="account-form contact-form" onSubmit={submit} noValidate>
+      <div className="field-row">
+        <div className="field">
+          <label htmlFor={`${id}-name`}>Name</label>
+          <input id={`${id}-name`} value={name} autoComplete="name" onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor={`${id}-phone`}>Phone number</label>
+          <input id={`${id}-phone`} value={phone} type="tel" autoComplete="tel" inputMode="tel" placeholder="+852 9123 4567" onChange={(e) => setPhone(e.target.value)} />
+        </div>
       </div>
-    </>
+      {error ? <p className="field-error" role="alert"><Icon name="alert" />{error}</p> : null}
+      <div className="form-bar-actions">
+        <button type="button" className="btn" onClick={onCancel} disabled={busy}>Cancel</button>
+        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? <span className="spinner" aria-hidden="true" /> : null}Save address</button>
+      </div>
+    </form>
   );
 }
 
-// ---- Privacy & consents (GET consents), named by the connected-site list
+// ---- Payment methods: what this shop takes, and the one you prefer here (remembered per site)
 
-export function Consents({ token }: { token: string }) {
-  const load = useCallback(async () => {
-    const [consents, platforms] = await Promise.all([account.consents(token), account.platforms(token).catch(() => [] as ConnectedPlatform[])]);
-    const site = (id: string | null) => (id ? (platforms.find((p) => p.clientId === id)?.name ?? (id === config.clientId ? "This site" : id)) : "Ztor");
-    return consents.map((c) => ({ ...c, site: site(c.clientId) }));
-  }, [token]);
-  const { items, error, reload } = useList<ConsentRecord & { site: string }>(load);
-  const doc = (d: string) => (d === "terms" ? "Terms of service" : d === "privacy" ? "Privacy policy" : d.charAt(0).toUpperCase() + d.slice(1));
+export function Payments({ token }: { token: string }) {
+  const load = useCallback(() => shop.paymentMethods(token), [token]);
+  const { items, error, reload } = useList<PaymentMethod>(load);
+  const [preferred, setPreferred] = useState<string | null>(null);
+  useEffect(() => setPreferred(preferredPayment()), []);
+  const choose = (code: string | null) => {
+    setPreferredPayment(code);
+    setPreferred(code);
+  };
   return (
     <>
-      <h2 id="account-panel-title">Privacy & consents</h2>
-      <p className="meta">The terms and privacy policies you agreed to, and where.</p>
-      <ListState items={items} error={error} reload={reload} empty="No consent records yet.">
+      <h2 id="account-panel-title">Payment methods</h2>
+      <p className="meta">Pick how you like to pay on this site; checkout starts on it. Each artist site remembers its own choice.</p>
+      <p className="note">Cards and wallets aren’t stored: you confirm each payment on the provider’s page.</p>
+      <ListState items={items} error={error} reload={reload} empty="Add something to your bag to see the payment methods this shop takes for it.">
         {(list) => (
-          <ul className="rows" role="list">
-            {list.map((c, i) => (
-              <li key={`${c.document}-${c.version}-${c.clientId}-${i}`} className="row row-plain">
-                <div className="row-text">
-                  <p className="row-title">{doc(c.document)} <span className="meta">v{c.version}</span></p>
-                  <p className="meta">Agreed {day(c.acceptedAt)} on {c.site}</p>
-                </div>
-              </li>
+          <fieldset className="fieldset">
+            <legend className="sr-only">Preferred payment method</legend>
+            {list.map((m) => (
+              <label key={m.methodCode} className="choice">
+                <input type="radio" name="preferred" checked={preferred === m.methodCode} onChange={() => choose(m.methodCode)} />
+                <span className="choice-text">
+                  <span className="choice-title">{m.displayName}</span>
+                  <span className="meta">{preferred === m.methodCode ? "Preferred on this site" : m.category.replaceAll("_", " ").toLowerCase()}</span>
+                </span>
+              </label>
             ))}
-          </ul>
+            {preferred ? <button type="button" className="btn btn-ghost choice-reset" onClick={() => choose(null)}>Forget my choice</button> : null}
+          </fieldset>
         )}
       </ListState>
     </>
   );
 }
 
-// ---- Security & sign-in: the state, changed on Ztor
+// ---- Security & privacy: the state, changed on Ztor (like Google, a partner site manages none of it)
 
 const PROVIDER = { google: "Google", apple: "Apple", facebook: "Facebook", line: "LINE" } as const;
 
 export function Security({ me }: { me: AccountView }) {
   return (
     <>
-      <h2 id="account-panel-title">Security & sign-in</h2>
-      <p className="meta">Your password, two-step verification and sign-in methods protect every artist site at once, so they’re managed on Ztor.</p>
+      <h2 id="account-panel-title">Security & privacy</h2>
+      <p className="meta">Your Ztor account protects every artist site at once, so its security lives on Ztor: password, two-step verification, sign-in methods, signed-in devices, the sites you’ve connected, and deleting your account.</p>
       <dl className="facts facts-rows">
         <div><dt>Password</dt><dd>{me.hasPassword ? "Set" : "Not set: you sign in with a linked account"}</dd></div>
         <div><dt>Two-step verification</dt><dd>{me.mfa.totp ? `On · ${me.mfa.recoveryCodesRemaining} recovery ${me.mfa.recoveryCodesRemaining === 1 ? "code" : "codes"} left` : "Off"}</dd></div>
@@ -310,11 +296,11 @@ export function Security({ me }: { me: AccountView }) {
       </dl>
       <div className="account-actions">
         <a className="btn btn-primary" href={hostedSettings("security")} target="_blank" rel="noreferrer">
-          Open Ztor security settings
+          Manage security on Ztor
           <Icon name="arrow-up-right" />
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
-        <OnZtor page="connected">Linked sign-ins</OnZtor>
+        <OnZtor page="connected">Connected sites and sign-ins</OnZtor>
       </div>
     </>
   );

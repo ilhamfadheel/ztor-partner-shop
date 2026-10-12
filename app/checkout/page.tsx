@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { CheckoutSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
+import { preferredPayment } from "@/lib/preferences";
 import { errorText, isAuthError, money, shop, type Cart, type PaymentMethod, type PickupContact, type Quote } from "@/lib/shop";
 
 export const PENDING_GROUP = "ztor_pending_group";
@@ -62,7 +63,7 @@ function Checkout({ session }: { session: Session }) {
   useEffect(() => {
     shop.cart(token).then(setCart).catch(setError);
     shop.pickupContacts(token).then((items) => { setContacts(items); if (items[0]) setContactId(items[0].contactId); }).catch(setError);
-    shop.paymentMethods(token).then((m) => { setMethods(m); if (m[0]) setMethod(m[0].methodCode); }).catch(setError);
+    shop.paymentMethods(token).then((m) => { setMethods(m); const preferred = preferredPayment(); setMethod((m.find((x) => x.methodCode === preferred) ?? m[0])?.methodCode ?? ""); }).catch(setError);
   }, [token]);
   useEffect(() => {
     if (lineIds.length) shop.quote(token, lineIds).then(setQuote).catch(setError);

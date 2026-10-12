@@ -49,7 +49,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 | `/checkout` | fan | Quote → pickup contact → payment method → submit (Idempotency-Key) → payment page |
 | `/checkout/done` | fan | Payment return URL: polls the group result, pay again |
 | `/orders`, `/orders/[id]` | fan | Paid orders through this site |
-| `/account` | fan | Your account (lloud.club/edit-profile): display name, connected sites, signed-in devices, consents, in-site; email, password, 2FA, sign-ins and deletion link to Ztor's settings |
+| `/account` | fan | Your account (lloud.club/edit-profile): display name, addresses (saved pickup contacts), payment methods (preferred one per site), orders; security and privacy link to Ztor's settings |
 
 ## Flow
 
@@ -60,7 +60,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 
 ## Fan account
 
-`lib/account.ts` calls the fan Account API (docs → *Fan account*) with the same fan token as the shop. Partner sites may read the account, rename, and manage connected platforms, sessions and consents (Ztor_backend #751/#752, `PartnerMay`); the rest is Ztor's own, so `/account` links to `<issuer origin>/settings/account/security` for it. Until those PRs deploy, the page shows "Your account didn't open here" with the same link.
+Like Google's sign-in, a partner site only reads the fan's Ztor account and changes the display name (`lib/account.ts`, docs → *Fan account*: `GET`/`PATCH /api/v1/account`, Ztor_backend #751/#752). Password, 2FA, sign-in methods, devices, connected sites and deletion are managed on Ztor, so `/account` links to `<issuer origin>/settings/account/security`. Addresses are the fan's saved pickup contacts through the Creator API (`/creator/v1/pickup-contacts`, change/delete in Ztor_backend #759/#760); payment methods are what the shop takes for the bag, with the fan's preferred one remembered per site in the browser (`lib/preferences.ts`) and preselected at checkout. Shopping stores no cards.
 
 ## Design
 
