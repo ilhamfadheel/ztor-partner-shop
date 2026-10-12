@@ -26,9 +26,10 @@ on the right. `app/globals.css` `:root` is the source of truth; this table mirro
 
 | Role | Hex | CSS Variable | lloud source |
 |------|-----|--------------|--------------|
-| Background (paper) | `#F4F2EE` | `--color-background`, `--color-card` | `--l-bg` |
+| Background (paper) | `#F3F1EC` | `--color-background`, `--color-card` | lloud's body as rendered (`--l-bg` is `#F4F2EE`) |
 | Surface | `#FFFFFF` | `--color-surface` | `--l-surface` |
-| Muted / selected | `#E9E6E0` | `--color-muted` | `--l-bg-2` |
+| Muted (hover) | `#E9E6E0` | `--color-muted` | `--l-bg-2` |
+| Selected list item | `#E8E5DE` | `--color-selected` | account nav |
 | Hairline | `#D8D5CE` | `--color-border` | header/list borders |
 | Control boundary | `#8A8681` | `--color-border-control` | `--l-ink-3` (lloud's `#C8C5BD` is 1.5:1, under WCAG 1.4.11; we keep 3.2:1) |
 | Foreground | `#181818` | `--color-foreground` | body text |
@@ -42,8 +43,8 @@ Radii are 0 everywhere (`--l-r-*: 0`); only avatars and the spinner are round.
 ### Typography
 
 - **Font:** Satoshi (Fontshare, free for commercial use), self-hosted variable 300–900 via `next/font/local` (`app/fonts/`).
-- Body 360, nav 440; h1 `clamp(40px…64px)` at -0.06em, h2 24–28px at -0.045em (lloud 64px/-4.16px, 28px/-1.26px).
-- Eyebrows: 13px capitals, +0.14em tracking (`--track-caps`, lloud `--l-track`); FAN CLUB +0.2em.
+- Body 360, nav 440; h1 `clamp(40px…64px)` at -0.065em, h2 24–28px at -0.045em (lloud 64px/-4.16px, 28px/-1.26px).
+- Eyebrows: 13px capitals, +0.14em tracking (`--track-caps`, lloud `--l-track`); FAN CLUB 14px/440 at +0.18em (lloud 2.52px).
 
 ### Spacing Variables
 
