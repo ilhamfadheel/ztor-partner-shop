@@ -434,6 +434,15 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .line-status .icon { width: 1rem; height: 1rem; }
 .line-end { display: inline-flex; align-items: center; gap: var(--space-xs); white-space: nowrap; }
 .line-link { transition: border-color var(--dur) var(--ease-out); }
+/* ---------- Notifications: the order list's rows, an event mark in place of the photo, a dot while unread ---------- */
+.notes-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-md); }
+.notes-bar .meta { margin: 0; }
+.note-icon { display: grid; place-items: center; width: var(--thumb-sm); height: var(--thumb-sm); border-radius: var(--radius-sm); background: var(--color-muted); color: var(--color-muted-foreground); }
+.note[data-unread] .note-icon { color: var(--color-foreground); }
+.note:not([data-unread]) .line-title { font-weight: var(--weight-regular); }
+.note-detail { overflow-wrap: anywhere; }
+.note-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
+.notes-more { display: flex; justify-content: center; margin-top: var(--space-lg); }
 .line-link:hover { border-color: var(--color-border-control); }
 .line-link .line-end .icon { color: var(--color-muted-foreground); }
 /* Cart: on phones the controls get their own row under the details. */

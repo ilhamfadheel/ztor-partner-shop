@@ -41,15 +41,43 @@ export function useSession(): Session | null | undefined {
   return session;
 }
 
+/** How often an open page asks for new notifications; also on coming back to the tab, and after reading some. */
+const NOTIFICATIONS_POLL_MS = 60_000;
+
+/** The fan's unread notifications on this site (the bell's badge); null signed out or unknown. */
+function useUnread(session: Session | null | undefined): number | null {
+  const [unread, setUnread] = useState<number | null>(null);
+  useEffect(() => {
+    if (!session) return setUnread(null);
+    const read = () =>
+      void shop
+        .notifications(session.accessToken, 1, 1)
+        .then((page) => setUnread(page.unread))
+        .catch(() => {});
+    const onVisible = () => document.visibilityState === "visible" && read();
+    read();
+    const timer = setInterval(read, NOTIFICATIONS_POLL_MS);
+    window.addEventListener("ztor-notifications", read);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("ztor-notifications", read);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [session]);
+  return unread;
+}
+
 /**
  * The lloud.club fan-club header: mark + FAN CLUB on the left, the sections in the middle (a row of
- * their own on phones), account and bag on the right. Account and bag always show; signed out they
+ * their own on phones), account, notifications and bag on the right. All three always show; signed out they
  * lead to the sign-in page, which brings the fan back to where they were going.
  */
 export function Header() {
   const session = useSession();
   const pathname = usePathname();
   const [cartCount, setCartCount] = useState<number | null>(null);
+  const unread = useUnread(session);
   useEffect(() => {
     if (!session) return setCartCount(null);
     const read = () => shop.cart(session.accessToken).then((cart) => setCartCount(cart.shopGroups.reduce((n, g) => n + g.items.length, 0))).catch(() => {});
@@ -76,6 +104,13 @@ export function Header() {
           <Link href={gated("/account")} className="icon-link" aria-current={current(pathname.startsWith("/account"))}>
             <Icon name="user" />
             <span className="sr-only">{session ? `Your account (${who})` : "Sign in"}</span>
+          </Link>
+          <Link href={gated("/notifications")} className="icon-link" aria-current={current(pathname === "/notifications")}>
+            <span className="nav-icon">
+              <Icon name="bell" />
+              {unread ? <span className="badge" aria-hidden="true">{unread > 99 ? "99+" : unread}</span> : null}
+            </span>
+            <span className="sr-only">Notifications{unread ? `, ${unread} unread` : ""}</span>
           </Link>
           <Link href={gated("/cart")} className="icon-link" aria-current={current(pathname === "/cart")}>
             <span className="nav-icon">
