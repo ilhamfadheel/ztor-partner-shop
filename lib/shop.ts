@@ -50,6 +50,17 @@ export const isAuthError = (error: unknown): boolean => error instanceof ShopErr
 // ---- shapes (the subset this site renders; everything else passes through untouched)
 
 export type Artist = { name: string; avatarUrl: string | null };
+/** What happened to an order the fan placed on this site (Creator API Notifications). */
+export type NotificationEvent = "order-paid" | "order-cancel-requested" | "order-cancelled" | "order-picked-up" | "order-completed" | "payment-failed";
+export type ShopNotification = {
+  notificationId: string;
+  event: NotificationEvent;
+  checkoutGroupId: string;
+  /** The orders it is about, as they were then; `items` are the ones the change is about. Empty for payment-failed. */
+  orders: { orderId?: string; orderNo?: string; shopName?: string | null; items: { orderItemId?: string; title?: string; quantity?: number }[] }[];
+  createdAt: number;
+  readAt: number | null;
+};
 export type Page<T> = { pageNum: number; pageSize: number; total: number; pages: number; items: T[] };
 export type ProductCard = {
   productId: string;
@@ -166,6 +177,11 @@ export const shop = {
   updatePickupContact: (token: string, id: string, body: { name: string; phone: string }) => api<PickupContact>(`/pickup-contacts/${encodeURIComponent(id)}`, { method: "PUT", token, body }),
   deletePickupContact: (token: string, id: string) => api<unknown>(`/pickup-contacts/${encodeURIComponent(id)}`, { method: "DELETE", token }),
   paymentMethods: (token: string) => api<{ methods: PaymentMethod[] }>("/checkout/payment-methods", { token }).then((d) => d.methods ?? []),
+  notifications: (token: string, pageNum = 1, pageSize = 20) =>
+    api<Page<ShopNotification> & { unread: number }>(`/notifications?pageNum=${pageNum}&pageSize=${pageSize}`, { token }),
+  readNotifications: (token: string, notification_ids: string[]) => api<{ unread: number }>("/notifications/read", { method: "POST", token, body: { notification_ids } }),
+  readAllNotifications: (token: string) => api<{ unread: number }>("/notifications/read-all", { method: "POST", token }),
+
   quote: (token: string, cart_item_ids: string[]) => api<Quote>("/checkout/quote", { method: "POST", token, body: { cart_item_ids } }),
   checkout: (
     token: string,
