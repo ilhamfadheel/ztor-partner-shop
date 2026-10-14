@@ -2,23 +2,40 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getSession, type Session } from "@/lib/oidc";
+import { currentSession, REFRESH_EARLY_MS, type Session } from "@/lib/oidc";
 import { loginHref } from "@/lib/login-href";
 import { shop } from "@/lib/shop";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 
-/** Reads the browser session; re-renders on sign-in/out (same tab via our event, other tabs via `storage`). */
+/**
+ * Reads the browser session; re-renders on sign-in/out (same tab via our event, other tabs via
+ * `storage`). Keeps it alive while the page is open: the access token is renewed a minute before it
+ * runs out, and again on coming back to a tab whose timer slept (a closed laptop).
+ */
 export function useSession(): Session | null | undefined {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   useEffect(() => {
-    const read = () => setSession(getSession());
+    let live = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const read = () =>
+      void currentSession().then((s) => {
+        if (!live) return;
+        setSession(s);
+        clearTimeout(timer);
+        if (s?.refreshToken) timer = setTimeout(read, Math.max(0, s.expiresAt - REFRESH_EARLY_MS - Date.now()));
+      });
+    const onVisible = () => document.visibilityState === "visible" && read();
     read();
     window.addEventListener("ztor-session", read);
     window.addEventListener("storage", read);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      live = false;
+      clearTimeout(timer);
       window.removeEventListener("ztor-session", read);
       window.removeEventListener("storage", read);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
   return session;

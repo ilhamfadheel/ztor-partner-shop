@@ -10,6 +10,8 @@ import { config } from "./config.ts";
 export type Session = {
   accessToken: string;
   idToken: string;
+  /** Present when Ztor granted offline_access: renews the access token, and is replaced on every use. */
+  refreshToken?: string;
   /** Epoch ms. */
   expiresAt: number;
   user: { sub: string; name?: string; email?: string };
@@ -21,7 +23,10 @@ const SIGNIN_KEY = "ztor_signin";
 /** Where to go after a sign-in the hosted buttons started: they keep only verifier + state under SIGNIN_KEY. */
 const RETURN_KEY = "ztor_return_to";
 const SESSION_KEY = "ztor_session";
-const SCOPE = "openid email profile";
+/** offline_access = a refresh token, so the fan stays signed in past the 1-hour access token (30 days). */
+export const SCOPE = "openid email profile offline_access";
+/** Renew this long before the access token runs out, so no request leaves with a dying token. */
+export const REFRESH_EARLY_MS = 60_000;
 
 export const b64url = (bytes: Uint8Array): string =>
   btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -67,6 +72,8 @@ export async function signIn(returnTo = location.pathname + location.search, idp
     response_type: "code",
     redirect_uri: redirectUri(),
     scope: SCOPE,
+    // Ztor drops offline_access unless the request asks for consent (granted without a screen).
+    prompt: "consent",
     code_challenge: challenge,
     code_challenge_method: "S256",
     state,
@@ -104,31 +111,107 @@ export async function completeSignIn(params: URLSearchParams): Promise<string> {
       ...(config.shopResource ? { resource: config.shopResource } : {}),
     }),
   });
-  const token = (await response.json().catch(() => ({}))) as { access_token?: string; id_token?: string; expires_in?: number; error?: string; error_description?: string };
+  const token = (await response.json().catch(() => ({}))) as TokenResponse;
   if (!response.ok || !token.access_token || !token.id_token) throw new Error(token.error_description || token.error || `Token exchange failed (HTTP ${response.status})`);
-  const id = claims(token.id_token);
-  if (id.iss !== config.issuer || id.aud !== config.clientId || typeof id.exp !== "number" || id.exp * 1000 < Date.now()) throw new Error("ID token rejected.");
-  const session: Session = {
-    accessToken: token.access_token,
-    idToken: token.id_token,
-    expiresAt: Date.now() + (token.expires_in ?? 3600) * 1000,
-    user: { sub: String(id.sub), name: typeof id.name === "string" ? id.name : undefined, email: typeof id.email === "string" ? id.email : undefined },
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  window.dispatchEvent(new Event("ztor-session"));
+  save(toSession(token));
   // Our own signIn() keeps returnTo in the record; the hosted buttons keep only verifier + state,
   // so the login page's stash is the fallback — then "/".
   return pending.returnTo ?? takeReturnTo();
 }
 
-export function getSession(): Session | null {
+type TokenResponse = { access_token?: string; id_token?: string; refresh_token?: string; expires_in?: number; error?: string; error_description?: string };
+
+/** A token response as the session; on a refresh, what the response leaves out stays as it was. */
+function toSession(token: TokenResponse, previous?: Session): Session {
+  const idToken = token.id_token ?? previous?.idToken;
+  if (!token.access_token || !idToken) throw new Error("Incomplete token response.");
+  const id = claims(idToken);
+  if (id.iss !== config.issuer || id.aud !== config.clientId || typeof id.exp !== "number" || (token.id_token && id.exp * 1000 < Date.now())) throw new Error("ID token rejected.");
+  return {
+    accessToken: token.access_token,
+    idToken,
+    refreshToken: token.refresh_token ?? previous?.refreshToken,
+    expiresAt: Date.now() + (token.expires_in ?? 3600) * 1000,
+    user: { sub: String(id.sub), name: typeof id.name === "string" ? id.name : undefined, email: typeof id.email === "string" ? id.email : undefined },
+  };
+}
+
+function save(session: Session): void {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  window.dispatchEvent(new Event("ztor-session"));
+}
+
+/** What this browser holds, expired or not. */
+function stored(): Session | null {
   if (typeof window === "undefined") return null;
   try {
-    const session = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null") as Session | null;
-    return session && session.expiresAt > Date.now() ? session : null;
+    return JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null") as Session | null;
   } catch {
     return null;
   }
+}
+
+/** The session while its access token is still good, else null (see currentSession for one that renews). */
+export function getSession(): Session | null {
+  const session = stored();
+  return session && session.expiresAt > Date.now() ? session : null;
+}
+
+const lasts = (session: Session | null): boolean => !!session && session.expiresAt - REFRESH_EARLY_MS > Date.now();
+
+let renewing: Promise<Session | null> | undefined;
+
+/**
+ * The session, its access token renewed with the refresh token when less than a minute is left.
+ * One renewal at a time — in this tab (one promise) and across tabs (Web Locks) — because Ztor
+ * hands out a new refresh token on every use and treats a second use of the old one as theft,
+ * revoking the whole sign-in.
+ */
+export function currentSession(): Promise<Session | null> {
+  if (lasts(stored())) return Promise.resolve(stored());
+  renewing ??= renewLocked().finally(() => (renewing = undefined));
+  return renewing;
+}
+
+async function renewLocked(): Promise<Session | null> {
+  return navigator.locks ? navigator.locks.request("ztor-session-refresh", renew) : renew();
+}
+
+async function renew(): Promise<Session | null> {
+  const session = stored();
+  if (lasts(session)) return session; // another tab renewed it while this one waited for the lock
+  if (!session?.refreshToken) return getSession();
+  let response: Response;
+  try {
+    response = await fetch((await discover()).token_endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: config.clientId,
+        refresh_token: session.refreshToken,
+        // Repeated so the new access token works on the shop API too (RFC 8707).
+        ...(config.shopResource ? { resource: config.shopResource } : {}),
+      }),
+    });
+  } catch {
+    return getSession(); // offline: the refresh token stays for the next try
+  }
+  const token = (await response.json().catch(() => ({}))) as TokenResponse;
+  if (response.ok && token.access_token) {
+    try {
+      const next = toSession(token, session);
+      save(next);
+      return next;
+    } catch {
+      // An answer that doesn't hold together ends the sign-in, like a refusal.
+    }
+  } else if (response.status >= 500 || response.status === 429) {
+    return getSession(); // Ztor is having trouble: try again later with the same refresh token
+  }
+  // invalid_grant & co.: the sign-in is over (30 days passed, signed out or revoked on Ztor).
+  clearSession();
+  return null;
 }
 
 export function clearSession(): void {
@@ -143,16 +226,22 @@ export function clearSession(): void {
  * end-session endpoint would end the shared SSO session, which took partners' consoles down too.)
  */
 export async function signOut(): Promise<void> {
-  const session = getSession();
+  const session = stored();
   clearSession();
   if (session) {
     try {
       const { revocation_endpoint } = await discover();
-      if (revocation_endpoint) {
+      // The refresh token first: it is what would keep this sign-in alive for 30 days.
+      const tokens = [
+        [session.refreshToken, "refresh_token"],
+        [session.accessToken, "access_token"],
+      ] as const;
+      for (const [token, hint] of tokens) {
+        if (!revocation_endpoint || !token) continue;
         await fetch(revocation_endpoint, {
           method: "POST",
           headers: { "content-type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ token: session.accessToken, token_type_hint: "access_token", client_id: config.clientId }),
+          body: new URLSearchParams({ token, token_type_hint: hint, client_id: config.clientId }),
         });
       }
     } catch {

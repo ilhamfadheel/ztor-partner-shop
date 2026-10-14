@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSession } from "@/components/Header";
 import { StateMessage } from "@/components/StateMessage";
 import { config, embedBase } from "@/lib/config";
-import { rememberReturnTo, safePath, signIn } from "@/lib/oidc";
+import { rememberReturnTo, safePath, SCOPE, signIn } from "@/lib/oidc";
 
 export default function LoginPage() {
   return (
@@ -52,6 +52,7 @@ function Login() {
             data-redirect-uri={`${origin}/auth/callback`}
             data-providers={config.providers.join(",") || undefined}
             data-resource={config.shopResource}
+            data-scope={SCOPE}
             data-lang="en-us"
             aria-busy={embed === "loading"}
           />
