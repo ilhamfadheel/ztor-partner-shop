@@ -52,7 +52,10 @@ export type Page<T> = { pageNum: number; pageSize: number; total: number; pages:
 export type ProductCard = {
   productId: string;
   title: string;
-  coverUrl: string;
+  /** Always an image (the Creator API swaps a video-first gallery's video out; null when there is no image). */
+  coverUrl: string | null;
+  /** The gallery's opening video, when there is one. */
+  coverVideoUrl?: string | null;
   currency: string;
   minPrice: number;
   maxPrice: number;
@@ -74,13 +77,15 @@ export type ProductSku = {
   stockQuantity?: number | null;
   selectedOptions: { optionId: string; optionValueId: string; valueName: string }[];
 };
+export type PickupSession = { sessionId: string; name: string; location: string; instruction: string; startAt: number; endAt: number; statusCode?: string };
 export type ProductDetail = Omit<ProductCard, "coverUrl"> & {
   description: string | null;
   media: { type: "IMAGE" | "VIDEO"; url: string; sortOrder: number }[];
   attributes: { name: string; value: string }[];
   purchaseLimit: number;
   fulfillmentType: "SHIPPING" | "QR_PICKUP";
-  pickup: { name: string; location: string; instruction: string; startAt: number; endAt: number } | null;
+  /** QR pickup: the sessions (venue + window) a buyer can collect at. */
+  pickup: { sessions: PickupSession[] } | null;
   options: ProductOption[];
   skus: ProductSku[];
   productStructure: "SINGLE" | "BUNDLE";

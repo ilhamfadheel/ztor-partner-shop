@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
-import { mediaUrl } from "@/lib/media";
+import { coverImage } from "@/lib/media";
 import { errorText, isAuthError, money, orderStatusLabel, shop, type OrderGroup } from "@/lib/shop";
 
 const skeleton = <Loading label="Loading your orders…"><LinesSkeleton rows={3} /></Loading>;
@@ -56,7 +56,7 @@ function Orders({ session }: { session: Session }) {
         g.orders.map((o) => (
           <li key={o.orderId}>
             <Link href={`/orders/${o.orderId}`} className="line line-link">
-              {mediaUrl(o.items[0]?.coverUrl) ? <img className="line-thumb" src={mediaUrl(o.items[0]?.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" /> : <span className="line-thumb" aria-hidden="true" />}
+              {coverImage(o.items[0]?.coverUrl) ? <img className="line-thumb" src={coverImage(o.items[0]?.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" /> : <span className="line-thumb" aria-hidden="true" />}
               <span className="line-meta">
                 <span className="line-title">{o.items.map((i) => i.title).filter(Boolean).join(", ") || `Order ${o.orderNo}`}</span>
                 <span className="meta">#{o.orderNo} · {new Date(g.createdAt).toLocaleDateString()}</span>

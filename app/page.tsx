@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 import { GridSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import { missingConfig } from "@/lib/config";
-import { mediaUrl } from "@/lib/media";
+import { coverImage, galleryItems, isVideoUrl } from "@/lib/media";
 import { errorText, money, shop, type ProductCard } from "@/lib/shop";
 
 export default function Home() {
@@ -37,6 +37,18 @@ async function ArtistLine() {
   return <p className="eyebrow">{artist?.name ? `${artist.name} · Official merch` : "Official merch"}</p>;
 }
 
+/**
+ * A card whose cover is still a video (a Creator API older than the video-cover rule, which sends
+ * no `coverVideoUrl`) gets its product's first image here; null when it has none. Newer APIs do
+ * this themselves, so this never fetches once they're deployed.
+ */
+async function withImageCover(p: ProductCard, lang?: string): Promise<ProductCard> {
+  if (p.coverVideoUrl !== undefined || !isVideoUrl(p.coverUrl)) return p;
+  const detail = await shop.product(p.productId, lang).catch(() => null);
+  const image = detail ? galleryItems(detail.media).find((m) => m.type === "IMAGE") : undefined;
+  return { ...p, coverUrl: image?.url ?? null, coverVideoUrl: p.coverUrl };
+}
+
 /** Streams in after the heading; the grid skeleton holds the same boxes meanwhile. */
 async function Catalogue() {
   const lang = (await headers()).get("accept-language") ?? undefined;
@@ -44,6 +56,7 @@ async function Catalogue() {
   let error: string | undefined;
   try {
     page = await shop.products(1, 48, lang);
+    page = { ...page, items: await Promise.all(page.items.map((p) => withImageCover(p, lang))) };
   } catch (e) {
     error = errorText(e);
   }
@@ -75,7 +88,7 @@ async function Catalogue() {
       {page.items.map((p, i) => (
         <li key={p.productId}>
           <Link href={`/products/${p.productId}`} className="card">
-            <Cover className="card-media" src={mediaUrl(p.coverUrl)} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" />
+            <Cover className="card-media" src={coverImage(p.coverUrl)} alt="" width={400} height={400} loading={i < 4 ? "eager" : "lazy"} decoding="async" />
             <div className="card-body">
               <span className="card-title">{p.title}</span>
               <span className="price">{p.minPrice === p.maxPrice ? money(p.minPrice, p.currency) : `${money(p.minPrice, p.currency)} – ${money(p.maxPrice, p.currency)}`}</span>

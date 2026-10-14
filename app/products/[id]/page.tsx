@@ -3,10 +3,11 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/AddToCart";
+import { Gallery } from "@/components/Gallery";
 import { Icon } from "@/components/Icon";
 import { StateMessage } from "@/components/StateMessage";
-import { mediaUrl } from "@/lib/media";
-import { ShopError, errorText, money, shop } from "@/lib/shop";
+import { galleryItems } from "@/lib/media";
+import { ShopError, errorText, money, shop, type PickupSession } from "@/lib/shop";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -55,13 +56,9 @@ export default async function ProductPage({ params }: Props) {
       </StateMessage>
     );
   }
-  const images = product.media
-    .filter((m) => m.type === "IMAGE")
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((m) => mediaUrl(m.url))
-    .filter((url) => url !== undefined);
+  const gallery = galleryItems(product.media);
   const fulfilment =
-    product.fulfillmentType === "QR_PICKUP" && product.pickup ? { icon: "pin" as const, text: `Pickup · ${product.pickup.name}, ${product.pickup.location}` } : product.fulfillmentType === "SHIPPING" ? { icon: "truck" as const, text: "Ships to you" } : null;
+    product.fulfillmentType === "QR_PICKUP" ? pickupLine(product.pickup?.sessions ?? []) : product.fulfillmentType === "SHIPPING" ? { icon: "truck" as const, text: "Ships to you" } : null;
   return (
     <>
       <Link href="/" className="back-link">
@@ -69,18 +66,7 @@ export default async function ProductPage({ params }: Props) {
         Shop
       </Link>
       <div className="product">
-        <div className="gallery">
-          {images[0] ? <img className="gallery-main" src={images[0]} alt={product.title} width={800} height={800} fetchPriority="high" decoding="async" /> : <span className="gallery-main" aria-hidden="true" />}
-          {images.length > 1 ? (
-            <ul className="thumbs" role="list">
-              {images.slice(1, 6).map((url, i) => (
-                <li key={url}>
-                  <img src={url} alt={`${product.title}, image ${i + 2}`} width={160} height={160} loading="lazy" decoding="async" />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+        <Gallery items={gallery} title={product.title} />
         <div className="product-info">
           <h1>{product.title}</h1>
           <p className="price product-price">
@@ -113,4 +99,12 @@ export default async function ProductPage({ params }: Props) {
       </div>
     </>
   );
+}
+
+/** "Pickup · 台北簽署會場, B區取貨地 (+1 more)": the first session still open (else the first), and how many others there are. */
+function pickupLine(sessions: PickupSession[]) {
+  const shown = sessions.find((x) => x.statusCode !== "ENDED") ?? sessions[0];
+  if (!shown) return { icon: "pin" as const, text: "Pickup with a QR code" };
+  const more = sessions.length > 1 ? ` (+${sessions.length - 1} more)` : "";
+  return { icon: "pin" as const, text: `Pickup · ${[shown.name, shown.location].filter(Boolean).join(", ")}${more}` };
 }
