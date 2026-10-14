@@ -327,6 +327,20 @@ strong, b { font-weight: var(--weight-semibold); }
   .header-actions { justify-self: end; gap: var(--space-lg); }
 }
 
+/* ---------- Product search (the input matches .field input) ---------- */
+.search { position: relative; max-width: 28rem; margin: 0 0 var(--space-lg); }
+.search .icon { position: absolute; left: var(--space-md); top: 50%; translate: 0 -50%; color: var(--color-muted-foreground); pointer-events: none; }
+.search input {
+  width: 100%; height: var(--tap-lg); padding: 0 var(--space-md) 0 calc(var(--space-md) * 2 + var(--icon-md));
+  background: var(--color-background); border: 1px solid var(--color-border-control); border-radius: var(--radius-sm);
+  font-size: var(--text-base); transition: border-color var(--dur-fast) var(--ease-out);
+}
+.search input:hover { border-color: var(--color-muted-foreground); }
+.search input:focus-visible { border-color: var(--color-accent); outline-offset: 1px; }
+.search input::placeholder { color: var(--color-muted-foreground); }
+.search-summary { margin: 0 0 var(--space-md); color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.search-summary .link { color: var(--color-foreground); }
+
 /* ---------- Catalogue grid (2 / 3 / 4 columns) ---------- */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-ms); list-style: none; padding: 0; }
 @media (min-width: 768px) {
