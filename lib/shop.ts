@@ -7,13 +7,15 @@
 import { config } from "./config.ts";
 
 export class ShopError extends Error {
-  constructor(
-    public status: number,
-    public code: string,
-    message: string,
-    public traceId?: string,
-  ) {
+  // Plain fields, not parameter properties: node's strip-only TypeScript runs this file in tests.
+  status: number;
+  code: string;
+  traceId?: string;
+  constructor(status: number, code: string, message: string, traceId?: string) {
     super(message);
+    this.status = status;
+    this.code = code;
+    this.traceId = traceId;
   }
 }
 
@@ -149,7 +151,9 @@ export function money(value: number | string | null | undefined, currency: strin
 
 export const shop = {
   artist: (lang?: string) => api<{ artists: Artist[] }>("/artist", { lang }).then((d) => d.artists ?? []),
-  products: (pageNum = 1, pageSize = 48, lang?: string) => api<Page<ProductCard>>(`/products?pageNum=${pageNum}&pageSize=${pageSize}`, { lang }),
+  /** `q` = a search phrase found inside product titles (any case, at most 100 characters). */
+  products: (pageNum = 1, pageSize = 48, lang?: string, q?: string) =>
+    api<Page<ProductCard>>(`/products?pageNum=${pageNum}&pageSize=${pageSize}${q ? `&q=${encodeURIComponent(q)}` : ""}`, { lang }),
   product: (id: string, lang?: string) => api<ProductDetail>(`/products/${encodeURIComponent(id)}`, { lang }),
 
   cart: (token: string) => api<Cart>("/cart", { token }),

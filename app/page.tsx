@@ -1,3 +1,4 @@
+import Form from "next/form";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Suspense } from "react";
@@ -9,7 +10,7 @@ import { missingConfig } from "@/lib/config";
 import { coverImage, galleryItems, isVideoUrl } from "@/lib/media";
 import { errorText, money, shop, type ProductCard } from "@/lib/shop";
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const missing = missingConfig();
   if (missing.length)
     return (
@@ -17,14 +18,26 @@ export default function Home() {
         <p className="state-detail">Set {missing.join(", ")}.</p>
       </StateMessage>
     );
+  const raw = (await searchParams).q;
+  // The Creator API refuses a phrase over 100 characters: the box stops typing there, this trims a hand-made URL.
+  const q = (Array.isArray(raw) ? raw[0] : raw ?? "").trim().slice(0, 100);
   return (
     <>
       <Suspense fallback={<span className="eyebrow sk-inline skeleton" aria-hidden="true" />}>
         <ArtistLine />
       </Suspense>
       <h1>Shop</h1>
-      <Suspense fallback={<Loading label="Loading products…"><GridSkeleton /></Loading>}>
-        <Catalogue />
+      {/* A plain GET form: /?q=… works without JavaScript; next/form makes it a client navigation when it loads. */}
+      <Form action="/" role="search" className="search">
+        <label htmlFor="q" className="sr-only">
+          Search products
+        </label>
+        <Icon name="search" />
+        {/* Keyed by the search, so "Clear" and back/forward reset what the box shows. */}
+        <input key={q} id="q" name="q" type="search" defaultValue={q} maxLength={100} placeholder="Search products" enterKeyHint="search" autoComplete="off" />
+      </Form>
+      <Suspense key={q} fallback={<Loading label={q ? "Searching…" : "Loading products…"}><GridSkeleton /></Loading>}>
+        <Catalogue q={q} />
       </Suspense>
     </>
   );
@@ -49,13 +62,13 @@ async function withImageCover(p: ProductCard, lang?: string): Promise<ProductCar
   return { ...p, coverUrl: image?.url ?? null, coverVideoUrl: p.coverUrl };
 }
 
-/** Streams in after the heading; the grid skeleton holds the same boxes meanwhile. */
-async function Catalogue() {
+/** Streams in after the heading; the grid skeleton holds the same boxes meanwhile. `q` = the search, "" for all. */
+async function Catalogue({ q }: { q: string }) {
   const lang = (await headers()).get("accept-language") ?? undefined;
   let page: { items: ProductCard[]; total: number } | undefined;
   let error: string | undefined;
   try {
-    page = await shop.products(1, 48, lang);
+    page = await shop.products(1, 48, lang, q || undefined);
     page = { ...page, items: await Promise.all(page.items.map((p) => withImageCover(p, lang))) };
   } catch (e) {
     error = errorText(e);
@@ -67,7 +80,7 @@ async function Catalogue() {
         title="Couldn’t load the shop"
         actions={
           // A plain link = a fresh request, so retry works before (or without) JavaScript.
-          <a href="/" className="btn btn-primary">
+          <a href={q ? `/?q=${encodeURIComponent(q)}` : "/"} className="btn btn-primary">
             <Icon name="refresh" />
             Try again
           </a>
@@ -77,6 +90,20 @@ async function Catalogue() {
         <p className="state-detail">{error}</p>
       </StateMessage>
     );
+  if (q && (!page || page.items.length === 0))
+    return (
+      <StateMessage
+        icon="search"
+        title="No matches"
+        actions={
+          <Link href="/" className="btn">
+            Show all products
+          </Link>
+        }
+      >
+        <p>Nothing in this shop has “{q}” in its name. Try a shorter or different word.</p>
+      </StateMessage>
+    );
   if (!page || page.items.length === 0)
     return (
       <StateMessage icon="bag" title="No products yet">
@@ -84,6 +111,16 @@ async function Catalogue() {
       </StateMessage>
     );
   return (
+    <>
+    {q ? (
+      <p className="search-summary" role="status">
+        {page.total} {page.total === 1 ? "product matches" : "products match"} “{q}”
+        {page.total > page.items.length ? ` · showing the first ${page.items.length}` : ""} ·{" "}
+        <Link href="/" className="link">
+          Clear
+        </Link>
+      </p>
+    ) : null}
     <ul className="grid" role="list">
       {page.items.map((p, i) => (
         <li key={p.productId}>
@@ -98,5 +135,6 @@ async function Catalogue() {
         </li>
       ))}
     </ul>
+    </>
   );
 }
