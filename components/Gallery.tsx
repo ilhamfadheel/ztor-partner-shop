@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import { Cover } from "./Cover";
 import { Icon } from "./Icon";
+import { Placeholder } from "./Placeholder";
 import type { GalleryItem } from "@/lib/media";
 
 /**
@@ -15,11 +17,11 @@ export function Gallery({ items, title }: { items: GalleryItem[]; title: string 
   return (
     <div className="gallery">
       {!shown ? (
-        <span className="gallery-main" aria-hidden="true" />
+        <Placeholder className="gallery-main" />
       ) : shown.type === "VIDEO" ? (
         <video key={shown.url} className="gallery-main" src={shown.url} poster={poster} controls playsInline preload="metadata" aria-label={`${title}, video`} />
       ) : (
-        <img className="gallery-main" src={shown.url} alt={title} width={800} height={800} fetchPriority={current === 0 ? "high" : undefined} decoding="async" />
+        <Cover key={shown.url} className="gallery-main" src={shown.url} alt={title} width={800} height={800} fetchPriority={current === 0 ? "high" : undefined} decoding="async" />
       )}
       {items.length > 1 ? (
         <ul className="thumbs" role="list">
@@ -28,11 +30,11 @@ export function Gallery({ items, title }: { items: GalleryItem[]; title: string 
               <button type="button" className="thumb" aria-pressed={i === current} aria-label={m.type === "VIDEO" ? `${title}, play video` : `${title}, image ${i + 1}`} onClick={() => setCurrent(i)}>
                 {m.type === "VIDEO" ? (
                   <>
-                    {poster ? <img src={poster} alt="" width={160} height={160} loading="lazy" decoding="async" /> : <span className="thumb-blank" />}
+                    <Cover className="thumb-img" src={poster} alt="" width={160} height={160} loading="lazy" decoding="async" />
                     <span className="thumb-play" aria-hidden="true"><Icon name="play" /></span>
                   </>
                 ) : (
-                  <img src={m.url} alt="" width={160} height={160} loading="lazy" decoding="async" />
+                  <Cover className="thumb-img" src={m.url} alt="" width={160} height={160} loading="lazy" decoding="async" />
                 )}
               </button>
             </li>

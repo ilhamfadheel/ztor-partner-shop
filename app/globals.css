@@ -359,7 +359,7 @@ strong, b { font-weight: var(--weight-semibold); }
 .thumbs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-sm); list-style: none; padding: 0; }
 .thumb { position: relative; display: block; width: 100%; padding: 0; border: 1px solid transparent; background: none; }
 .thumb[aria-pressed="true"] { border-color: var(--color-foreground); }
-.thumbs img, .thumb-blank { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); background: var(--color-muted); }
+.thumb-img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); background: var(--color-muted); }
 .thumb-play { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-on-accent); }
 .thumb-play .icon { width: var(--icon-lg); height: var(--icon-lg); padding: 6px; box-sizing: content-box; background: rgb(17 17 17 / 0.6); fill: currentColor; stroke: none; }
 video.gallery-main { background: var(--color-accent); }
@@ -577,3 +577,8 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* lloud's quiet aside: a rule on the left, muted text */
 .note { padding-left: var(--space-md); border-left: 1px solid var(--color-border-control); color: var(--color-muted-foreground); font-size: var(--text-sm); }
 .choice-reset { justify-self: start; padding-inline: 0; text-decoration: underline; text-underline-offset: 4px; }
+
+/* "No image" thumbnail (components/Placeholder.tsx): the box it replaces, a centred outline photo */
+.media-placeholder { display: grid; place-items: center; background: var(--color-muted); color: var(--color-border-control); }
+.media-placeholder svg { width: 40%; max-width: 96px; height: auto; }
+.line-thumb.media-placeholder svg { width: 50%; }

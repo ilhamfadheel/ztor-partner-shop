@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
+import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
 import { errorText, isAuthError, money, shop, type Cart } from "@/lib/shop";
 
@@ -76,7 +77,7 @@ function CartView({ session }: { session: Session }) {
           const options = l.skuSelections.map((s) => s.skuLabel).filter(Boolean).join(" · ");
           return (
             <li key={l.cartItemId} className="line line-cart">
-              {coverImage(l.coverUrl) ? <img className="line-thumb" src={coverImage(l.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" /> : <span className="line-thumb" aria-hidden="true" />}
+              <Cover className="line-thumb" src={coverImage(l.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" />
               <div className="line-meta">
                 <Link href={`/products/${l.productId}`} className="line-title">{title}</Link>
                 {options ? <span className="meta">{options}</span> : null}

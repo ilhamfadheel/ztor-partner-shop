@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
+import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
 import { errorText, money, orderStatusLabel, shop, type Order } from "@/lib/shop";
 
@@ -61,7 +62,7 @@ function OrderView({ session, id }: { session: Session; id: string }) {
         <ul className="lines" role="list">
           {order.items.map((i) => (
             <li key={i.orderItemId} className="line">
-              {coverImage(i.coverUrl) ? <img className="line-thumb" src={coverImage(i.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" /> : <span className="line-thumb" aria-hidden="true" />}
+              <Cover className="line-thumb" src={coverImage(i.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" />
               <div className="line-meta">
                 <span className="line-title">{i.title ?? "Item"}</span>
                 <span className="meta">{[i.specification, `× ${i.quantity}`].filter(Boolean).join(" · ")}</span>
