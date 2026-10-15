@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icon";
 import { GridSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import { missingConfig } from "@/lib/config";
+import { isSoldOut } from "@/lib/availability";
 import { coverImage, galleryItems, isVideoUrl } from "@/lib/media";
 import { errorText, money, shop, type ProductCard } from "@/lib/shop";
 
@@ -129,7 +130,7 @@ async function Catalogue({ q }: { q: string }) {
             <div className="card-body">
               <span className="card-title">{p.title}</span>
               <span className="price">{p.minPrice === p.maxPrice ? money(p.minPrice, p.currency) : `${money(p.minPrice, p.currency)} – ${money(p.maxPrice, p.currency)}`}</span>
-              <span className="meta cap">{!p.sellable ? p.availabilityStatus.replaceAll("_", " ").toLowerCase() : p.newProduct ? "New" : p.limited ? "Limited" : p.mainCategoryName ?? ""}</span>
+              <span className="meta cap">{isSoldOut(p) ? "Sold out" : p.newProduct ? "New" : p.limited ? "Limited" : p.mainCategoryName ?? ""}</span>
             </div>
           </Link>
         </li>

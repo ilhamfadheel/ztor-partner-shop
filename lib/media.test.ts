@@ -26,3 +26,12 @@ test("a video cover never reaches an <img>; a gallery keeps its order with the v
     { type: "IMAGE", url: "https://d1k50uq0sig7az.cloudfront.net/image/b.png" },
   ]);
 });
+
+test("sold out follows Ztor's rule: not sellable, or no stock left — AVAILABLE with stock isn't enough", async () => {
+  const { isSoldOut } = await import("./availability.ts");
+  // staging 1268364137482817536 (舒芙蕾 number 1): AVAILABLE, stock 99, sellable false → sold out on ztor.com.
+  assert.equal(isSoldOut({ sellable: false, stockQuantity: 99 }), true);
+  assert.equal(isSoldOut({ sellable: true, stockQuantity: 0 }), true);
+  assert.equal(isSoldOut({ sellable: true, stockQuantity: null }), false);
+  assert.equal(isSoldOut({ sellable: true }), false);
+});

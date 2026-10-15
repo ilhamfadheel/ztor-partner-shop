@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "./Header";
 import { Icon } from "./Icon";
 import { signIn } from "@/lib/oidc";
+import { isSoldOut } from "@/lib/availability";
 import { errorText, isAuthError, money, shop, type ProductDetail } from "@/lib/shop";
 
 /** Option chips → one SKU → quantity → the cart. Signed-out fans are sent to "Continue with Ztor" and come back here. */
@@ -25,6 +26,8 @@ export function AddToCart({ product }: { product: ProductDetail }) {
         s.selectedOptions.some((so) => so.optionId === optionId && so.optionValueId === valueId) &&
         product.options.every((o) => o.optionId === optionId || !picked[o.optionId] || s.selectedOptions.some((so) => so.optionId === o.optionId && so.optionValueId === picked[o.optionId])),
     );
+  // Sold out by Ztor's rule (not sellable, or no stock), the product as a whole or the picked SKU.
+  const soldOut = isSoldOut(product) || (sku ? isSoldOut(sku) : false);
   const max = Math.min(99, product.purchaseLimit || 99, sku?.stockQuantity ?? 99);
 
   async function add() {
@@ -76,7 +79,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
           <>
             <span className="price">{money(sku.effectivePrice, product.currency)}</span>
             {sku.originalPrice && sku.originalPrice > sku.effectivePrice ? <s className="meta">{money(sku.originalPrice, product.currency)}</s> : null}
-            {!sku.sellable ? <span className="status-chip">{sku.availabilityStatus.replaceAll("_", " ").toLowerCase()}</span> : null}
+            {soldOut ? <span className="status-chip">Sold out</span> : null}
           </>
         ) : (
           <span className="meta">Choose your options</span>
@@ -84,16 +87,18 @@ export function AddToCart({ product }: { product: ProductDetail }) {
       </p>
       <div className="buy-row">
         <div className="qty" role="group" aria-label="Quantity">
-          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="Decrease quantity">
+          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={soldOut || qty <= 1} aria-label="Decrease quantity">
             <Icon name="minus" />
           </button>
           <span aria-live="polite">{qty}</span>
-          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} disabled={qty >= max} aria-label="Increase quantity">
+          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} disabled={soldOut || qty >= max} aria-label="Increase quantity">
             <Icon name="plus" />
           </button>
         </div>
-        <button className="btn btn-primary btn-lg" type="button" disabled={!sku || !sku.sellable || state.busy} onClick={() => void add()}>
-          {session === null ? (
+        <button className="btn btn-primary btn-lg" type="button" disabled={!sku || soldOut || state.busy} onClick={() => void add()}>
+          {soldOut ? (
+            "Sold out"
+          ) : session === null ? (
             "Continue with Ztor to buy"
           ) : state.busy ? (
             <>
