@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import { Icon } from "@/components/Icon";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
-import { account, AccountError, hostedSettings, type AccountView } from "@/lib/account";
+import { account, AccountError, AVATAR_TYPES, BIO_MAX, hostedSettings, PROFILE_LANGUAGES, type AccountView, type ProfileLanguage, type ProfilePatch } from "@/lib/account";
 import { preferredPayment, setPreferredPayment } from "@/lib/preferences";
 import { errorText, shop, type PaymentMethod, type PickupContact } from "@/lib/shop";
 
@@ -45,71 +45,113 @@ function ListState<T>({ items, error, reload, empty, children }: { items: T[] | 
   return <>{children(items)}</>;
 }
 
-// ---- Personal details: avatar, display name (PATCH), contact details (read-only here)
+// ---- Personal details: the profile a partner site may edit (name, bio, avatar, default language)
 
 export function Personal({ token, me, onChange }: { token: string; me: AccountView; onChange: (me: AccountView) => void }) {
-  const [name, setName] = useState(me.name ?? "");
+  const initial = { name: me.name ?? "", bio: me.bio ?? "", language: (me.language ?? "") as ProfileLanguage | "" };
+  const [form, setForm] = useState(initial);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
-  const trimmed = name.trim();
-  const dirty = trimmed !== (me.name ?? "");
-  const invalid = trimmed.length === 0 || trimmed.length > 16;
+  const [photo, setPhoto] = useState<{ busy?: boolean; error?: string }>({});
+
+  const name = form.name.trim();
+  const bio = form.bio.trim();
+  const patch: ProfilePatch = {};
+  if (name !== (me.name ?? "")) patch.name = name;
+  if (bio !== (me.bio ?? "")) patch.bio = bio;
+  if (form.language && form.language !== me.language) patch.language = form.language;
+  const dirty = Object.keys(patch).length > 0;
+  const invalid = name.length === 0 || name.length > 16 || [...bio].length > BIO_MAX;
+  const set = (key: keyof typeof form) => (value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setSaved(false);
+    setErrors({});
+  };
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (!dirty || invalid) return;
     setBusy(true);
-    setError(null);
+    setErrors({});
     try {
-      const updated = await account.rename(token, trimmed);
+      const updated = await account.update(token, patch);
       onChange(updated);
-      setName(updated.name ?? "");
+      setForm({ name: updated.name ?? "", bio: updated.bio ?? "", language: updated.language ?? "" });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof AccountError ? (err.fields?.name ?? err.message) : problem(err));
+      setErrors(err instanceof AccountError ? (err.fields ?? { form: err.message }) : { form: problem(err) });
     } finally {
       setBusy(false);
     }
   };
 
-  const initial = (me.name || me.email || "?").trim().charAt(0).toUpperCase();
+  const changePhoto = async (file: File | undefined) => {
+    if (!file) return;
+    setPhoto({ busy: true });
+    try {
+      onChange(await account.uploadAvatar(token, file));
+      setPhoto({});
+    } catch (err) {
+      setPhoto({ error: err instanceof AccountError ? (err.fields?.avatarUrl ?? err.fields?.contentType ?? err.message) : problem(err) });
+    }
+  };
+  const removePhoto = async () => {
+    setPhoto({ busy: true });
+    try {
+      onChange(await account.update(token, { avatarUrl: null }));
+      setPhoto({});
+    } catch (err) {
+      setPhoto({ error: problem(err) });
+    }
+  };
+
+  const letter = (me.name || me.email || "?").trim().charAt(0).toUpperCase();
   return (
     <>
       <h2 id="account-panel-title">Personal details</h2>
       <div className="profile">
-        {me.avatarUrl ? <img className="profile-avatar" src={me.avatarUrl} alt="" width={80} height={80} /> : <span className="profile-avatar" aria-hidden="true">{initial}</span>}
+        <label className="profile-avatar profile-avatar-edit" aria-busy={photo.busy || undefined}>
+          {me.avatarUrl ? <img src={me.avatarUrl} alt="" width={80} height={80} /> : <span aria-hidden="true">{letter}</span>}
+          <span className="profile-avatar-label">{photo.busy ? <span className="spinner" aria-hidden="true" /> : "Edit"}</span>
+          <input className="sr-only" type="file" accept={AVATAR_TYPES.join(",")} disabled={photo.busy} aria-label="Change profile photo" onChange={(e) => { void changePhoto(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>
         <div className="profile-who">
           <p className="profile-name">{me.name || "No display name yet"}</p>
           <p className="meta">{me.createdAt ? `Member since ${day(me.createdAt)}` : "Ztor member"}</p>
+          {me.avatarUrl ? <button type="button" className="link-button" onClick={() => void removePhoto()} disabled={photo.busy}>Remove photo</button> : null}
         </div>
       </div>
-      <p className="meta">Profile photo · changed on Ztor, shown on every artist site. <OnZtor>Change photo</OnZtor></p>
+      <p className="meta">Profile photo · JPG, PNG or GIF · Up to 5 MB. It shows on every artist site you use with Ztor.</p>
+      {photo.error ? <p className="field-error" role="alert"><Icon name="alert" />{photo.error}</p> : null}
 
       <form className="account-form" onSubmit={save} noValidate>
         <div className="field">
           <label htmlFor="display-name">Display name</label>
-          <input
-            id="display-name"
-            name="name"
-            value={name}
-            maxLength={16}
-            autoComplete="nickname"
-            aria-invalid={error || (dirty && invalid) ? true : undefined}
-            aria-describedby="display-name-help"
-            onChange={(e) => {
-              setName(e.target.value);
-              setSaved(false);
-              setError(null);
-            }}
-          />
+          <input id="display-name" name="name" value={form.name} maxLength={16} autoComplete="nickname" aria-invalid={errors.name || name.length === 0 ? true : undefined} aria-describedby="display-name-help" onChange={(e) => set("name")(e.target.value)} />
           <p id="display-name-help" className="field-help">The name on your orders and on every artist site you use with Ztor. 1 to 16 characters.</p>
-          {error ? <p className="field-error" role="alert"><Icon name="alert" />{error}</p> : null}
+          {errors.name ? <p className="field-error" role="alert"><Icon name="alert" />{errors.name}</p> : null}
         </div>
+        <div className="field">
+          <label htmlFor="bio">About you <span className="field-required">· Optional</span></label>
+          <textarea id="bio" name="bio" rows={3} value={form.bio} aria-invalid={errors.bio || [...bio].length > BIO_MAX ? true : undefined} aria-describedby="bio-help" onChange={(e) => set("bio")(e.target.value)} />
+          <p id="bio-help" className="field-help">A line or two for your Ztor profile. {[...bio].length} / {BIO_MAX}</p>
+          {errors.bio ? <p className="field-error" role="alert"><Icon name="alert" />{errors.bio}</p> : null}
+        </div>
+        <div className="field">
+          <label htmlFor="language">Default language</label>
+          <select id="language" name="language" value={form.language} onChange={(e) => set("language")(e.target.value)} aria-describedby="language-help">
+            {!me.language ? <option value="">Not set</option> : null}
+            {PROFILE_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+          </select>
+          <p id="language-help" className="field-help">The language Ztor uses for you, including its emails.</p>
+          {errors.language ? <p className="field-error" role="alert"><Icon name="alert" />{errors.language}</p> : null}
+        </div>
+        {errors.form ? <p className="field-error" role="alert"><Icon name="alert" />{errors.form}</p> : null}
         <div className="form-bar">
           <p className="meta" role="status">{busy ? "Saving…" : saved ? "Saved." : dirty ? "Unsaved changes" : "No unsaved changes"}</p>
           <div className="form-bar-actions">
-            <button type="button" className="btn" disabled={!dirty || busy} onClick={() => { setName(me.name ?? ""); setError(null); }}>Cancel</button>
+            <button type="button" className="btn" disabled={!dirty || busy} onClick={() => { setForm(initial); setErrors({}); }}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={!dirty || invalid || busy}>{busy ? <span className="spinner" aria-hidden="true" /> : null}Save changes</button>
           </div>
         </div>

@@ -490,14 +490,14 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .field { display: grid; gap: var(--space-sm); min-width: 0; }
 .field label { font-size: var(--text-sm); }
 .field-required { color: var(--color-muted-foreground); }
-.field input {
+.field input, .field textarea, .field select {
   width: 100%; height: var(--tap-lg); padding: 0 var(--space-md);
   background: var(--color-background); border: 1px solid var(--color-border-control); border-radius: var(--radius-sm);
   font-size: var(--text-base); transition: border-color var(--dur-fast) var(--ease-out);
 }
-.field input:hover { border-color: var(--color-muted-foreground); }
-.field input:focus-visible { border-color: var(--color-accent); outline-offset: 1px; }
-.field input[aria-invalid="true"] { border-color: var(--color-destructive); }
+.field input:hover, .field textarea:hover, .field select:hover { border-color: var(--color-muted-foreground); }
+.field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible { border-color: var(--color-accent); outline-offset: 1px; }
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: var(--color-destructive); }
 .field-help { font-size: var(--text-sm); color: var(--color-muted-foreground); }
 .field-error { display: flex; align-items: flex-start; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-destructive); }
 .field-error .icon { width: 1rem; height: 1rem; margin-top: 3px; }
@@ -605,3 +605,20 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .media-placeholder { display: grid; place-items: center; background: var(--color-muted); color: var(--color-border-control); }
 .media-placeholder svg { width: 40%; max-width: 96px; height: auto; }
 .line-thumb.media-placeholder svg { width: 50%; }
+
+/* Profile: bio and language reuse the input look; the bio grows, the select keeps the theme's arrow-free square */
+.field textarea { height: auto; min-height: calc(var(--tap-lg) * 2); padding: var(--space-ms) var(--space-md); resize: vertical; line-height: var(--leading); }
+.field select { appearance: none; background-image: none; }
+/* lloud's avatar edit: a dark band reading "Edit" across the bottom of the circle */
+.profile-avatar-edit { position: relative; overflow: hidden; cursor: pointer; }
+.profile-avatar-edit img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-label {
+  position: absolute; left: 0; right: 0; bottom: 0; display: grid; place-items: center; height: 30%;
+  background: rgb(17 17 17 / 0.72); color: var(--color-on-accent); font-size: var(--text-xs); letter-spacing: 0;
+}
+.profile-avatar-edit:focus-within { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+.link-button { justify-self: start; padding: 0; border: 0; background: none; color: var(--color-muted-foreground); font-size: var(--text-sm); text-decoration: underline; text-underline-offset: 4px; }
+.link-button:hover { color: var(--color-foreground); }
+/* Footer: the demo note under the brand line */
+.footer-note { font-size: var(--text-xs); }
+.footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-lg); }

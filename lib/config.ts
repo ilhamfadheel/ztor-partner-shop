@@ -11,6 +11,9 @@ export const config = {
   media: (process.env.NEXT_PUBLIC_ZTOR_MEDIA || "https://d1k50uq0sig7az.cloudfront.net").replace(/\/+$/, ""),
 };
 
+/** The public Partner API reference this site is built from (the console, on the issuer's origin). */
+export const docsUrl = (): string => (config.issuer ? `${new URL(config.issuer).origin}/docs` : "https://ztorpartners.tripcaststudio.com/docs");
+
 /** The console serves the hosted sign-in buttons from its own origin (the issuer's host): {origin}/embed/v1/signin.{js,css}. */
 export const embedBase = (): string => (config.issuer ? `${new URL(config.issuer).origin}/embed/v1` : "");
 
