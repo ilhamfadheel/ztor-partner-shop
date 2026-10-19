@@ -4,6 +4,7 @@ import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useSession } from "@/components/Header";
+import { useT } from "@/components/LangProvider";
 import { StateMessage } from "@/components/StateMessage";
 import { config, embedBase } from "@/lib/config";
 import { rememberReturnTo, safePath, SCOPE, signIn } from "@/lib/oidc";
@@ -24,6 +25,7 @@ export default function LoginPage() {
  * (or if it can't) the page's own button does the same sign-in through lib/oidc.
  */
 function Login() {
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const session = useSession();
@@ -43,8 +45,8 @@ function Login() {
   return (
     <div className="login">
       {base ? <link rel="stylesheet" href={`${base}/signin.css`} /> : null}
-      <StateMessage heading="h1" tone="accent" icon="user" title="Sign in">
-        <p>Use your Ztor account — the same one works on every artist site.</p>
+      <StateMessage heading="h1" tone="accent" icon="user" title={t.login.title}>
+        <p>{t.common.sameAccountEverywhere}</p>
         {origin && base ? (
           <div
             className="ztor-signin login-buttons"
@@ -53,19 +55,18 @@ function Login() {
             data-providers={config.providers.join(",") || undefined}
             data-resource={config.shopResource}
             data-scope={SCOPE}
-            data-lang="en-us"
             aria-busy={embed === "loading"}
           />
         ) : null}
         {embed !== "ready" ? (
           <p className="login-fallback">
             <button className="btn btn-primary btn-lg" data-ztor-signin onClick={() => void signIn(returnTo)}>
-              Continue with Ztor
+              {t.common.continueWithZtor}
             </button>
           </p>
         ) : null}
         <p className="meta">
-          By continuing you agree to Ztor’s terms. <Link href="/" className="link">Back to the shop</Link>
+          {t.login.agreeBefore}<Link href="/" className="link">{t.login.backToShop}</Link>
         </p>
       </StateMessage>
       {origin && base ? (

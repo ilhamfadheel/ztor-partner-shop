@@ -1,6 +1,5 @@
 import Form from "next/form";
 import Link from "next/link";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Cover } from "@/components/Cover";
 import { Icon } from "@/components/Icon";
@@ -8,36 +7,36 @@ import { GridSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import { missingConfig } from "@/lib/config";
 import { isSoldOut } from "@/lib/availability";
+import { dict } from "@/lib/i18n";
+import { resolveLang } from "@/lib/lang";
 import { coverImage, galleryItems, isVideoUrl } from "@/lib/media";
 import { errorText, money, shop, type ProductCard } from "@/lib/shop";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
+  const t = dict(await resolveLang());
   const missing = missingConfig();
   if (missing.length)
     return (
-      <StateMessage tone="error" heading="h1" title="This shop isn’t configured">
-        <p className="state-detail">Set {missing.join(", ")}.</p>
+      <StateMessage tone="error" heading="h1" title={t.home.notConfigured}>
+        <p className="state-detail">{t.home.setVars(missing.join(", "))}</p>
       </StateMessage>
     );
   const raw = (await searchParams).q;
-  // The Creator API refuses a phrase over 100 characters: the box stops typing there, this trims a hand-made URL.
   const q = (Array.isArray(raw) ? raw[0] : raw ?? "").trim().slice(0, 100);
   return (
     <>
       <Suspense fallback={<span className="eyebrow sk-inline skeleton" aria-hidden="true" />}>
         <ArtistLine />
       </Suspense>
-      <h1>Shop</h1>
-      {/* A plain GET form: /?q=… works without JavaScript; next/form makes it a client navigation when it loads. */}
+      <h1>{t.home.title}</h1>
       <Form action="/" role="search" className="search">
         <label htmlFor="q" className="sr-only">
-          Search products
+          {t.home.searchProducts}
         </label>
         <Icon name="search" />
-        {/* Keyed by the search, so "Clear" and back/forward reset what the box shows. */}
-        <input key={q} id="q" name="q" type="search" defaultValue={q} maxLength={100} placeholder="Search products" enterKeyHint="search" autoComplete="off" />
+        <input key={q} id="q" name="q" type="search" defaultValue={q} maxLength={100} placeholder={t.home.searchProducts} enterKeyHint="search" autoComplete="off" />
       </Form>
-      <Suspense key={q} fallback={<Loading label={q ? "Searching…" : "Loading products…"}><GridSkeleton /></Loading>}>
+      <Suspense key={q} fallback={<Loading label={q ? t.home.searching : t.home.loadingProducts}><GridSkeleton /></Loading>}>
         <Catalogue q={q} />
       </Suspense>
     </>
@@ -46,9 +45,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
 /** "ILHAMFADHEEL · OFFICIAL MERCH": whose fan club this is, now that the header carries the club's name. */
 async function ArtistLine() {
-  const lang = (await headers()).get("accept-language") ?? undefined;
+  const lang = await resolveLang();
+  const t = dict(lang);
   const artist = await shop.artist(lang).then((a) => a[0]).catch(() => undefined);
-  return <p className="eyebrow">{artist?.name ? `${artist.name} · Official merch` : "Official merch"}</p>;
+  return <p className="eyebrow">{artist?.name ? t.home.artistMerch(artist.name) : t.home.officialMerch}</p>;
 }
 
 /**
@@ -65,7 +65,8 @@ async function withImageCover(p: ProductCard, lang?: string): Promise<ProductCar
 
 /** Streams in after the heading; the grid skeleton holds the same boxes meanwhile. `q` = the search, "" for all. */
 async function Catalogue({ q }: { q: string }) {
-  const lang = (await headers()).get("accept-language") ?? undefined;
+  const lang = await resolveLang();
+  const t = dict(lang);
   let page: { items: ProductCard[]; total: number } | undefined;
   let error: string | undefined;
   try {
@@ -78,16 +79,15 @@ async function Catalogue({ q }: { q: string }) {
     return (
       <StateMessage
         tone="error"
-        title="Couldn’t load the shop"
+        title={t.home.couldntLoad}
         actions={
-          // A plain link = a fresh request, so retry works before (or without) JavaScript.
           <a href={q ? `/?q=${encodeURIComponent(q)}` : "/"} className="btn btn-primary">
             <Icon name="refresh" />
-            Try again
+            {t.common.tryAgain}
           </a>
         }
       >
-        <p>The shop didn’t answer. Give it a moment and try again.</p>
+        <p>{t.home.noAnswer}</p>
         <p className="state-detail">{error}</p>
       </StateMessage>
     );
@@ -95,30 +95,30 @@ async function Catalogue({ q }: { q: string }) {
     return (
       <StateMessage
         icon="search"
-        title="No matches"
+        title={t.home.noMatches}
         actions={
           <Link href="/" className="btn">
-            Show all products
+            {t.home.showAll}
           </Link>
         }
       >
-        <p>Nothing in this shop has “{q}” in its name. Try a shorter or different word.</p>
+        <p>{t.home.nothingNamed(q)}</p>
       </StateMessage>
     );
   if (!page || page.items.length === 0)
     return (
-      <StateMessage icon="bag" title="No products yet">
-        <p>Check back soon.</p>
+      <StateMessage icon="bag" title={t.home.noProducts}>
+        <p>{t.home.checkBack}</p>
       </StateMessage>
     );
   return (
     <>
     {q ? (
       <p className="search-summary" role="status">
-        {page.total} {page.total === 1 ? "product matches" : "products match"} “{q}”
-        {page.total > page.items.length ? ` · showing the first ${page.items.length}` : ""} ·{" "}
+        {t.home.matches(page.total, q)}
+        {page.total > page.items.length ? t.home.showingFirst(page.items.length) : ""} ·{" "}
         <Link href="/" className="link">
-          Clear
+          {t.home.clear}
         </Link>
       </p>
     ) : null}
@@ -130,7 +130,7 @@ async function Catalogue({ q }: { q: string }) {
             <div className="card-body">
               <span className="card-title">{p.title}</span>
               <span className="price">{p.minPrice === p.maxPrice ? money(p.minPrice, p.currency) : `${money(p.minPrice, p.currency)} – ${money(p.maxPrice, p.currency)}`}</span>
-              <span className="meta cap">{isSoldOut(p) ? "Sold out" : p.newProduct ? "New" : p.limited ? "Limited" : p.mainCategoryName ?? ""}</span>
+              <span className="meta cap">{isSoldOut(p) ? t.home.soldOut : p.newProduct ? t.home.newProduct : p.limited ? t.home.limited : p.mainCategoryName ?? ""}</span>
             </div>
           </Link>
         </li>

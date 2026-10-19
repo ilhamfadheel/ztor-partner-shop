@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Gate } from "@/components/Gate";
 import { Icon } from "@/components/Icon";
+import { useT } from "@/components/LangProvider";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
 import { errorText, isFinal, money, shop, type PaymentResult } from "@/lib/shop";
@@ -11,19 +12,21 @@ const PENDING_GROUP = "ztor_pending_group";
 const POLL_MS = 3000;
 const POLL_LIMIT = 40; // two minutes, then the fan can refresh or pay again
 
-const checking = <StateMessage live icon="spinner" tone="info" title="Checking your payment…" />;
-
 export default function DonePage() {
+  const t = useT();
+  const checking = <StateMessage live icon="spinner" tone="info" title={t.done.checking} />;
   return (
     <>
-      <h1>Payment</h1>
-      <Gate title="Sign in to check your payment" fallback={checking}>{(session) => <Result session={session} />}</Gate>
+      <h1>{t.done.title}</h1>
+      <Gate title={t.done.signInToCheck} fallback={checking}>{(session) => <Result session={session} />}</Gate>
     </>
   );
 }
 
 /** The payment return URL. The group id was saved before leaving for the payment page; poll its converged result. */
 function Result({ session }: { session: Session }) {
+  const t = useT();
+  const checking = <StateMessage live icon="spinner" tone="info" title={t.done.checking} />;
   const [groupId] = useState(() => sessionStorage.getItem(PENDING_GROUP));
   const [result, setResult] = useState<PaymentResult | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -62,19 +65,19 @@ function Result({ session }: { session: Session }) {
 
   if (!groupId)
     return (
-      <StateMessage icon="package" title="No payment in progress" actions={<Link href="/orders" className="btn btn-primary">See your orders</Link>}>
-        <p>Paid orders from this site are listed under Orders.</p>
+      <StateMessage icon="package" title={t.done.noPayment} actions={<Link href="/orders" className="btn btn-primary">{t.done.seeOrders}</Link>}>
+        <p>{t.done.paidListed}</p>
       </StateMessage>
     );
   if (error)
     return (
       <StateMessage
         tone="error"
-        title="Couldn’t check your payment"
+        title={t.done.couldntCheck}
         actions={
           <a href="/checkout/done" className="btn btn-primary">
             <Icon name="refresh" />
-            Try again
+            {t.common.tryAgain}
           </a>
         }
       >
@@ -89,19 +92,19 @@ function Result({ session }: { session: Session }) {
       live
       tone={ok ? "success" : final ? "error" : "info"}
       icon={ok ? "check-circle" : final ? "x-circle" : "spinner"}
-      title={ok ? "Paid — thank you!" : final ? `Payment ${result.groupStatus.toLowerCase()}.` : "Waiting for the payment to confirm…"}
+      title={ok ? t.done.paidThanks : final ? t.done.paymentStatus(result.groupStatus.toLowerCase()) : t.done.waiting}
       actions={
         ok ? (
-          <Link href="/orders" className="btn btn-primary">Your orders</Link>
+          <Link href="/orders" className="btn btn-primary">{t.done.yourOrders}</Link>
         ) : !final && result.paymentMethods?.length ? (
           result.paymentMethods.map((m) => (
             <button key={m.methodCode} className="btn" disabled={busy} onClick={() => void payAgain(m.methodCode)}>
               {busy ? <span className="spinner" aria-hidden="true" /> : null}
-              Pay again with {m.displayName}
+              {t.done.payAgainWith(m.displayName)}
             </button>
           ))
         ) : final ? (
-          <Link href="/" className="btn">Back to the shop</Link>
+          <Link href="/" className="btn">{t.common.backToShop}</Link>
         ) : null
       }
     >
@@ -109,7 +112,7 @@ function Result({ session }: { session: Session }) {
       <ul className="result-orders" role="list">
         {result.orders.map((o) => (
           <li key={o.orderId}>
-            {ok ? <Link href={`/orders/${o.orderId}`} className="link">Order {o.orderNo}</Link> : `Order ${o.orderNo}`} · {money(o.payableAmount, result.currency)} · {o.paymentState.toLowerCase()}
+            {ok ? <Link href={`/orders/${o.orderId}`} className="link">{t.done.order(o.orderNo)}</Link> : t.done.order(o.orderNo)} · {money(o.payableAmount, result.currency)} · {o.paymentState.toLowerCase()}
           </li>
         ))}
       </ul>

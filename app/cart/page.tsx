@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Gate, SignInPrompt } from "@/components/Gate";
 import { Icon } from "@/components/Icon";
+import { useT } from "@/components/LangProvider";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
@@ -10,18 +11,20 @@ import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
 import { errorText, isAuthError, money, shop, type Cart } from "@/lib/shop";
 
-const skeleton = <Loading label="Loading your cart…"><LinesSkeleton rows={2} summary /></Loading>;
-
 export default function CartPage() {
+  const t = useT();
+  const skeleton = <Loading label={t.cart.loading}><LinesSkeleton rows={2} summary /></Loading>;
   return (
     <>
-      <h1>Cart</h1>
-      <Gate title="Sign in to see your cart" fallback={skeleton}>{(session) => <CartView session={session} />}</Gate>
+      <h1>{t.cart.title}</h1>
+      <Gate title={t.cart.signInToSee} fallback={skeleton}>{(session) => <CartView session={session} />}</Gate>
     </>
   );
 }
 
 function CartView({ session }: { session: Session }) {
+  const t = useT();
+  const skeleton = <Loading label={t.cart.loading}><LinesSkeleton rows={2} summary /></Loading>;
   const [cart, setCart] = useState<Cart | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [pending, setPending] = useState(false);
@@ -43,15 +46,15 @@ function CartView({ session }: { session: Session }) {
 
   if (error)
     return isAuthError(error) ? (
-      <SignInPrompt title="Sign in again" text="Your Ztor sign-in doesn’t cover this shop yet." />
+      <SignInPrompt title={t.common.signInAgain} text={t.common.signInNotCover} />
     ) : (
       <StateMessage
         tone="error"
-        title="Couldn’t load your cart"
+        title={t.cart.couldntLoad}
         actions={
           <button className="btn btn-primary" onClick={() => { setError(null); setCart(null); void load(); }}>
             <Icon name="refresh" />
-            Try again
+            {t.common.tryAgain}
           </button>
         }
       >
@@ -62,8 +65,8 @@ function CartView({ session }: { session: Session }) {
   const lines = cart.shopGroups.flatMap((g) => g.items.map((i) => ({ ...i, currency: g.currency })));
   if (lines.length === 0)
     return (
-      <StateMessage icon="bag" title="Your cart is empty" actions={<Link href="/" className="btn btn-primary">Browse the shop</Link>}>
-        <p>Find something you like and it’ll wait for you here.</p>
+      <StateMessage icon="bag" title={t.cart.empty} actions={<Link href="/" className="btn btn-primary">{t.cart.browse}</Link>}>
+        <p>{t.cart.emptyBody}</p>
       </StateMessage>
     );
   const payable = lines.filter((l) => l.itemStatus === "AVAILABLE");
@@ -73,7 +76,7 @@ function CartView({ session }: { session: Session }) {
     <div className="with-summary">
       <ul className="lines" role="list" aria-busy={pending}>
         {lines.map((l) => {
-          const title = l.title ?? "Product";
+          const title = l.title ?? t.cart.product;
           const options = l.skuSelections.map((s) => s.skuLabel).filter(Boolean).join(" · ");
           return (
             <li key={l.cartItemId} className="line line-cart">
@@ -90,12 +93,12 @@ function CartView({ session }: { session: Session }) {
                 <span className="price">{money(l.lineSubtotal, l.currency)}</span>
               </div>
               <div className="line-actions">
-                <div className="qty" role="group" aria-label={`Quantity of ${title}`}>
+                <div className="qty" role="group" aria-label={t.cart.qtyOf(title)}>
                   <button
                     type="button"
                     disabled={pending}
                     onClick={() => void mutate(() => (l.quantity > 1 ? shop.setQty(session.accessToken, l.cartItemId, l.quantity - 1) : shop.removeLine(session.accessToken, l.cartItemId)))}
-                    aria-label={l.quantity > 1 ? "Decrease quantity" : "Remove from cart"}
+                    aria-label={l.quantity > 1 ? t.product.decrease : t.cart.removeFromCart}
                   >
                     <Icon name={l.quantity > 1 ? "minus" : "trash"} />
                   </button>
@@ -104,35 +107,35 @@ function CartView({ session }: { session: Session }) {
                     type="button"
                     disabled={pending || (l.maxQuantity != null && l.quantity >= l.maxQuantity)}
                     onClick={() => void mutate(() => shop.setQty(session.accessToken, l.cartItemId, l.quantity + 1))}
-                    aria-label="Increase quantity"
+                    aria-label={t.product.increase}
                   >
                     <Icon name="plus" />
                   </button>
                 </div>
                 <button type="button" className="btn btn-ghost" disabled={pending} onClick={() => void mutate(() => shop.removeLine(session.accessToken, l.cartItemId))}>
                   <Icon name="trash" />
-                  Remove<span className="sr-only"> {title}</span>
+                  {t.cart.remove}<span className="sr-only"> {title}</span>
                 </button>
               </div>
             </li>
           );
         })}
       </ul>
-      <aside className="summary" aria-label="Cart summary">
+      <aside className="summary" aria-label={t.cart.summary}>
         <div className="summary-row summary-total">
-          <span>Subtotal</span>
+          <span>{t.cart.subtotal}</span>
           <span>{money(subtotal, currency)}</span>
         </div>
         {payable.length < lines.length ? (
           <p className="summary-note">
             <Icon name="alert" />
-            {payable.length ? "Unavailable items aren’t included." : "None of these items can be bought right now."}
+            {payable.length ? t.cart.unavailableLeftOut : t.cart.noneBuyable}
           </p>
         ) : null}
         {payable.length ? (
-          <Link href="/checkout" className="btn btn-primary btn-lg btn-block">Checkout</Link>
+          <Link href="/checkout" className="btn btn-primary btn-lg btn-block">{t.cart.checkout}</Link>
         ) : (
-          <button type="button" className="btn btn-primary btn-lg btn-block" disabled>Checkout</button>
+          <button type="button" className="btn btn-primary btn-lg btn-block" disabled>{t.cart.checkout}</button>
         )}
       </aside>
     </div>
