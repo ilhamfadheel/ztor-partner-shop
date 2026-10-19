@@ -6,6 +6,7 @@ import { currentSession, REFRESH_EARLY_MS, type Session } from "@/lib/oidc";
 import { loginHref } from "@/lib/login-href";
 import { shop } from "@/lib/shop";
 import { Icon } from "./Icon";
+import { useT } from "./LangProvider";
 import { Logo } from "./Logo";
 
 /**
@@ -74,6 +75,7 @@ function useUnread(session: Session | null | undefined): number | null {
  * lead to the sign-in page, which brings the fan back to where they were going.
  */
 export function Header() {
+  const t = useT();
   const session = useSession();
   const pathname = usePathname();
   const [cartCount, setCartCount] = useState<number | null>(null);
@@ -94,30 +96,30 @@ export function Header() {
       <div className="header-bar">
         <Link href="/" className="brand">
           <Logo />
-          <span className="brand-name">Fan Club</span>
+          <span className="brand-name">{t.layout.siteName}</span>
         </Link>
-        <nav className="nav" aria-label="Main">
-          <Link href="/" className="nav-link" aria-current={current(pathname === "/" || pathname.startsWith("/products"))}>Shop</Link>
-          <Link href={gated("/orders")} className="nav-link" aria-current={current(pathname.startsWith("/orders"))}>Orders</Link>
+        <nav className="nav" aria-label={t.header.mainNav}>
+          <Link href="/" className="nav-link" aria-current={current(pathname === "/" || pathname.startsWith("/products"))}>{t.header.shop}</Link>
+          <Link href={gated("/orders")} className="nav-link" aria-current={current(pathname.startsWith("/orders"))}>{t.header.orders}</Link>
         </nav>
         <div className="header-actions">
           <Link href={gated("/account")} className="icon-link" aria-current={current(pathname.startsWith("/account"))}>
             <Icon name="user" />
-            <span className="sr-only">{session ? `Your account (${who})` : "Sign in"}</span>
+            <span className="sr-only">{session ? t.header.yourAccount(who) : t.common.signIn}</span>
           </Link>
           <Link href={gated("/notifications")} className="icon-link" aria-current={current(pathname === "/notifications")}>
             <span className="nav-icon">
               <Icon name="bell" />
               {unread ? <span className="badge" aria-hidden="true">{unread > 99 ? "99+" : unread}</span> : null}
             </span>
-            <span className="sr-only">Notifications{unread ? `, ${unread} unread` : ""}</span>
+            <span className="sr-only">{t.header.notifications}{unread ? t.header.unreadSuffix(unread) : ""}</span>
           </Link>
           <Link href={gated("/cart")} className="icon-link" aria-current={current(pathname === "/cart")}>
             <span className="nav-icon">
               <Icon name="bag" />
               {cartCount ? <span className="badge" aria-hidden="true">{cartCount > 99 ? "99+" : cartCount}</span> : null}
             </span>
-            <span className="sr-only">Bag{cartCount ? `, ${cartCount} ${cartCount === 1 ? "item" : "items"}` : ""}</span>
+            <span className="sr-only">{t.header.bag}{cartCount ? t.header.bagCount(cartCount) : ""}</span>
           </Link>
         </div>
       </div>

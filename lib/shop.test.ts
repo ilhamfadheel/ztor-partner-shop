@@ -31,3 +31,20 @@ test("notifications: the fan's page, then marking some or all read", async () =>
   ]);
   assert.ok(calls.every((c) => c.auth === "Bearer tok"));
 });
+
+test("browser calls carry the fan's saved language; an explicit lang still wins", async () => {
+  const langs: Array<string | null> = [];
+  globalThis.fetch = (async (url: string, init: RequestInit = {}) => {
+    langs.push(new Headers(init.headers).get("accept-language"));
+    return new Response(JSON.stringify({ traceId: "t", success: true, code: "OK", msg: "", data: { artists: [] } }));
+  }) as typeof fetch;
+  (globalThis as { document?: unknown }).document = { cookie: "other=1; ztor_lang=zh-hk" };
+  try {
+    await shop.artist();
+    await shop.artist("en-us");
+  } finally {
+    delete (globalThis as { document?: unknown }).document;
+  }
+  await shop.artist(); // no document (the server side): no header unless passed
+  assert.deepEqual(langs, ["zh-hk", "en-us", null]);
+});

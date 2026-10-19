@@ -3,13 +3,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Gate, SignInPrompt } from "@/components/Gate";
 import { Icon, type IconName } from "@/components/Icon";
+import { useT } from "@/components/LangProvider";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import { notificationText } from "@/lib/notifications";
 import type { Session } from "@/lib/oidc";
 import { errorText, isAuthError, shop, type ShopNotification } from "@/lib/shop";
 
-const skeleton = <Loading label="Loading your notifications…"><LinesSkeleton rows={3} /></Loading>;
 const PAGE_SIZE = 20;
 
 const ICON: Record<string, IconName> = {
@@ -22,16 +22,20 @@ const ICON: Record<string, IconName> = {
 };
 
 export default function NotificationsPage() {
+  const t = useT();
+  const skeleton = <Loading label={t.notifications.loading}><LinesSkeleton rows={3} /></Loading>;
   return (
     <>
-      <h1>Notifications</h1>
-      <Gate title="Sign in to see your notifications" fallback={skeleton}>{(session) => <Notifications session={session} />}</Gate>
+      <h1>{t.notifications.title}</h1>
+      <Gate title={t.notifications.signInToSee} fallback={skeleton}>{(session) => <Notifications session={session} />}</Gate>
     </>
   );
 }
 
 /** Newest first; opening one marks it read, and "Mark all as read" clears the bell. */
 function Notifications({ session }: { session: Session }) {
+  const t = useT();
+  const skeleton = <Loading label={t.notifications.loading}><LinesSkeleton rows={3} /></Loading>;
   const token = session.accessToken;
   const [items, setItems] = useState<ShopNotification[] | null>(null);
   const [more, setMore] = useState(false);
@@ -66,28 +70,28 @@ function Notifications({ session }: { session: Session }) {
 
   if (error)
     return isAuthError(error) ? (
-      <SignInPrompt title="Sign in again to see your notifications" />
+      <SignInPrompt title={t.notifications.signInAgainToSee} />
     ) : (
-      <StateMessage tone="error" title="Couldn’t load your notifications" actions={<a href="/notifications" className="btn btn-primary"><Icon name="refresh" />Try again</a>}>
+      <StateMessage tone="error" title={t.notifications.couldntLoad} actions={<a href="/notifications" className="btn btn-primary"><Icon name="refresh" />{t.common.tryAgain}</a>}>
         <p className="state-detail">{errorText(error)}</p>
       </StateMessage>
     );
   if (!items) return skeleton;
   if (items.length === 0)
     return (
-      <StateMessage icon="bell" title="No notifications yet" actions={<Link href="/" className="btn btn-primary">Browse the shop</Link>}>
-        <p>When you order here, you’ll see it here: paid, ready, picked up, or cancelled.</p>
+      <StateMessage icon="bell" title={t.notifications.none} actions={<Link href="/" className="btn btn-primary">{t.notifications.browse}</Link>}>
+        <p>{t.notifications.noneBody}</p>
       </StateMessage>
     );
   return (
     <>
       <div className="notes-bar">
-        <p className="meta" role="status">{unread ? `${unread} unread` : "All caught up"}</p>
-        {unread ? <button type="button" className="btn btn-ghost" onClick={readAll}>Mark all as read</button> : null}
+        <p className="meta" role="status">{unread ? t.notifications.unreadCount(unread) : t.notifications.allCaughtUp}</p>
+        {unread ? <button type="button" className="btn btn-ghost" onClick={readAll}>{t.notifications.markAllRead}</button> : null}
       </div>
       <ul className="lines" role="list">
         {items.map((n) => {
-          const { title, detail, href } = notificationText(n);
+          const { title, detail, href } = notificationText(n, t);
           return (
             <li key={n.notificationId}>
               <Link href={href} className="line line-link note" data-unread={n.readAt ? undefined : ""} onClick={() => open(n)}>
@@ -95,7 +99,7 @@ function Notifications({ session }: { session: Session }) {
                 <span className="line-meta">
                   <span className="line-title">
                     {title}
-                    {n.readAt ? null : <span className="sr-only"> (unread)</span>}
+                    {n.readAt ? null : <span className="sr-only">{t.notifications.unreadSr}</span>}
                   </span>
                   <span className="note-detail">{detail}</span>
                   <span className="meta">{new Date(n.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
@@ -111,7 +115,7 @@ function Notifications({ session }: { session: Session }) {
       </ul>
       {more ? (
         <p className="notes-more">
-          <button type="button" className="btn" onClick={() => void load(pageNum + 1)}>Show older</button>
+          <button type="button" className="btn" onClick={() => void load(pageNum + 1)}>{t.notifications.showOlder}</button>
         </p>
       ) : null}
     </>

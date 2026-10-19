@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/AddToCart";
 import { Gallery } from "@/components/Gallery";
 import { Icon } from "@/components/Icon";
 import { StateMessage } from "@/components/StateMessage";
+import { dict, type Messages } from "@/lib/i18n";
+import { resolveLang } from "@/lib/lang";
 import { galleryItems } from "@/lib/media";
 import { ShopError, errorText, money, shop, type PickupSession } from "@/lib/shop";
 
 type Props = { params: Promise<{ id: string }> };
 
 async function load(id: string) {
-  const lang = (await headers()).get("accept-language") ?? undefined;
+  const lang = await resolveLang();
   try {
     return await shop.product(id, lang);
   } catch (e) {
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
+  const t = dict(await resolveLang());
   let product: Awaited<ReturnType<typeof load>>;
   try {
     product = await load(id);
@@ -40,30 +42,30 @@ export default async function ProductPage({ params }: Props) {
       <StateMessage
         tone="error"
         heading="h1"
-        title="Couldn’t load this product"
+        title={t.product.couldntLoad}
         actions={
           <>
             <a href={`/products/${encodeURIComponent(id)}`} className="btn btn-primary">
               <Icon name="refresh" />
-              Try again
+              {t.common.tryAgain}
             </a>
-            <Link href="/" className="btn">Back to the shop</Link>
+            <Link href="/" className="btn">{t.common.backToShop}</Link>
           </>
         }
       >
-        <p>The shop didn’t answer. Give it a moment and try again.</p>
+        <p>{t.home.noAnswer}</p>
         <p className="state-detail">{errorText(e)}</p>
       </StateMessage>
     );
   }
   const gallery = galleryItems(product.media);
   const fulfilment =
-    product.fulfillmentType === "QR_PICKUP" ? pickupLine(product.pickup?.sessions ?? []) : product.fulfillmentType === "SHIPPING" ? { icon: "truck" as const, text: "Ships to you" } : null;
+    product.fulfillmentType === "QR_PICKUP" ? pickupLine(product.pickup?.sessions ?? [], t) : product.fulfillmentType === "SHIPPING" ? { icon: "truck" as const, text: t.product.shipsToYou } : null;
   return (
     <>
       <Link href="/" className="back-link">
         <Icon name="chevron-left" />
-        Shop
+        {t.header.shop}
       </Link>
       <div className="product">
         <Gallery items={gallery} title={product.title} />
@@ -81,7 +83,7 @@ export default async function ProductPage({ params }: Props) {
           <AddToCart product={product} />
           {product.description ? (
             <section className="product-section">
-              <h2>About</h2>
+              <h2>{t.product.about}</h2>
               <p className="prose">{product.description}</p>
             </section>
           ) : null}
@@ -102,9 +104,9 @@ export default async function ProductPage({ params }: Props) {
 }
 
 /** "Pickup · 台北簽署會場, B區取貨地 (+1 more)": the first session still open (else the first), and how many others there are. */
-function pickupLine(sessions: PickupSession[]) {
+function pickupLine(sessions: PickupSession[], t: Messages) {
   const shown = sessions.find((x) => x.statusCode !== "ENDED") ?? sessions[0];
-  if (!shown) return { icon: "pin" as const, text: "Pickup with a QR code" };
-  const more = sessions.length > 1 ? ` (+${sessions.length - 1} more)` : "";
-  return { icon: "pin" as const, text: `Pickup · ${[shown.name, shown.location].filter(Boolean).join(", ")}${more}` };
+  if (!shown) return { icon: "pin" as const, text: t.product.pickupQr };
+  const more = sessions.length > 1 ? t.product.pickupMore(sessions.length - 1) : "";
+  return { icon: "pin" as const, text: `${t.product.pickupAt([shown.name, shown.location].filter(Boolean).join(", "))}${more}` };
 }

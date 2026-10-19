@@ -3,16 +3,18 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "./Header";
 import { Icon } from "./Icon";
+import { useT } from "./LangProvider";
 import { signIn } from "@/lib/oidc";
 import { isSoldOut } from "@/lib/availability";
 import { errorText, isAuthError, money, shop, type ProductDetail } from "@/lib/shop";
 
 /** Option chips → one SKU → quantity → the cart. Signed-out fans are sent to "Continue with Ztor" and come back here. */
 export function AddToCart({ product }: { product: ProductDetail }) {
+  const t = useT();
   const session = useSession();
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
-  const [state, setState] = useState<{ busy?: boolean; ok?: boolean; error?: string }>({});
+  const [state, setState] = useState<{ busy?: boolean; ok?: boolean; error?: string; authError?: boolean }>({});
 
   const sku =
     product.options.length === 0
@@ -39,7 +41,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
       window.dispatchEvent(new Event("ztor-cart"));
       setState({ ok: true });
     } catch (e) {
-      setState({ error: isAuthError(e) ? "Your Ztor sign-in doesn’t cover this shop yet. Sign in again." : errorText(e) });
+      setState({ error: isAuthError(e) ? `${t.common.signInNotCover} ${t.common.signInAgain}` : errorText(e), authError: isAuthError(e) });
     }
   }
 
@@ -47,7 +49,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
     return (
       <p className="notice">
         <Icon name="alert" />
-        <span>Bundles can’t be added from this site yet.</span>
+        <span>{t.product.bundles}</span>
       </p>
     );
   return (
@@ -79,34 +81,34 @@ export function AddToCart({ product }: { product: ProductDetail }) {
           <>
             <span className="price">{money(sku.effectivePrice, product.currency)}</span>
             {sku.originalPrice && sku.originalPrice > sku.effectivePrice ? <s className="meta">{money(sku.originalPrice, product.currency)}</s> : null}
-            {soldOut ? <span className="status-chip">Sold out</span> : null}
+            {soldOut ? <span className="status-chip">{t.home.soldOut}</span> : null}
           </>
         ) : (
-          <span className="meta">Choose your options</span>
+          <span className="meta">{t.product.chooseOptions}</span>
         )}
       </p>
       <div className="buy-row">
-        <div className="qty" role="group" aria-label="Quantity">
-          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={soldOut || qty <= 1} aria-label="Decrease quantity">
+        <div className="qty" role="group" aria-label={t.product.quantity}>
+          <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={soldOut || qty <= 1} aria-label={t.product.decrease}>
             <Icon name="minus" />
           </button>
           <span aria-live="polite">{qty}</span>
-          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} disabled={soldOut || qty >= max} aria-label="Increase quantity">
+          <button type="button" onClick={() => setQty((q) => Math.min(max, q + 1))} disabled={soldOut || qty >= max} aria-label={t.product.increase}>
             <Icon name="plus" />
           </button>
         </div>
         <button className="btn btn-primary btn-lg" type="button" disabled={!sku || soldOut || state.busy} onClick={() => void add()}>
           {soldOut ? (
-            "Sold out"
+            t.home.soldOut
           ) : session === null ? (
-            "Continue with Ztor to buy"
+            t.product.continueToBuy
           ) : state.busy ? (
             <>
               <span className="spinner" aria-hidden="true" />
-              Adding…
+              {t.product.adding}
             </>
           ) : (
-            "Add to cart"
+            t.product.addToCart
           )}
         </button>
       </div>
@@ -115,7 +117,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
           <p className="notice" data-tone="success">
             <Icon name="check-circle" />
             <span>
-              Added to your cart. <Link href="/cart" className="link">View cart</Link>
+              {t.product.added}<Link href="/cart" className="link">{t.product.viewCart}</Link>
             </span>
           </p>
         ) : null}
@@ -124,7 +126,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
             <Icon name="alert" />
             <div className="notice-body">
               <span>{state.error}</span>
-              {state.error.includes("Sign in again") ? <button className="btn" onClick={() => void signIn()}>Sign in</button> : null}
+              {state.authError ? <button className="btn" onClick={() => void signIn()}>{t.common.signIn}</button> : null}
             </div>
           </div>
         ) : null}

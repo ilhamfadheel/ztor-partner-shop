@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Gate, SignInPrompt } from "@/components/Gate";
 import { Icon } from "@/components/Icon";
+import { useT } from "@/components/LangProvider";
 import { LinesSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
@@ -10,18 +11,20 @@ import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
 import { errorText, isAuthError, money, orderStatusLabel, shop, type OrderGroup } from "@/lib/shop";
 
-const skeleton = <Loading label="Loading your orders…"><LinesSkeleton rows={3} /></Loading>;
-
 export default function OrdersPage() {
+  const t = useT();
+  const skeleton = <Loading label={t.orders.loading}><LinesSkeleton rows={3} /></Loading>;
   return (
     <>
-      <h1>Orders</h1>
-      <Gate title="Sign in to see your orders" fallback={skeleton}>{(session) => <Orders session={session} />}</Gate>
+      <h1>{t.orders.title}</h1>
+      <Gate title={t.orders.signInToSee} fallback={skeleton}>{(session) => <Orders session={session} />}</Gate>
     </>
   );
 }
 
 function Orders({ session }: { session: Session }) {
+  const t = useT();
+  const skeleton = <Loading label={t.orders.loading}><LinesSkeleton rows={3} /></Loading>;
   const [groups, setGroups] = useState<OrderGroup[] | null>(null);
   const [error, setError] = useState<unknown>(null);
   useEffect(() => {
@@ -29,15 +32,15 @@ function Orders({ session }: { session: Session }) {
   }, [session.accessToken]);
   if (error)
     return isAuthError(error) ? (
-      <SignInPrompt title="Sign in again" text="Your Ztor sign-in doesn’t cover this shop yet." />
+      <SignInPrompt title={t.common.signInAgain} text={t.common.signInNotCover} />
     ) : (
       <StateMessage
         tone="error"
-        title="Couldn’t load your orders"
+        title={t.orders.couldntLoad}
         actions={
           <a href="/orders" className="btn btn-primary">
             <Icon name="refresh" />
-            Try again
+            {t.common.tryAgain}
           </a>
         }
       >
@@ -47,8 +50,8 @@ function Orders({ session }: { session: Session }) {
   if (!groups) return skeleton;
   if (groups.length === 0)
     return (
-      <StateMessage icon="package" title="No orders yet" actions={<Link href="/" className="btn btn-primary">Browse the shop</Link>}>
-        <p>Orders you pay for on this site show up here.</p>
+      <StateMessage icon="package" title={t.orders.none} actions={<Link href="/" className="btn btn-primary">{t.cart.browse}</Link>}>
+        <p>{t.orders.noneBody}</p>
       </StateMessage>
     );
   return (
@@ -59,9 +62,9 @@ function Orders({ session }: { session: Session }) {
             <Link href={`/orders/${o.orderId}`} className="line line-link">
               <Cover className="line-thumb" src={coverImage(o.items[0]?.coverUrl)} alt="" width={88} height={88} loading="lazy" decoding="async" />
               <span className="line-meta">
-                <span className="line-title">{o.items.map((i) => i.title).filter(Boolean).join(", ") || `Order ${o.orderNo}`}</span>
+                <span className="line-title">{o.items.map((i) => i.title).filter(Boolean).join(", ") || t.orders.order(o.orderNo ?? "")}</span>
                 <span className="meta">#{o.orderNo} · {new Date(g.createdAt).toLocaleDateString()}</span>
-                <span className="status-chip">{orderStatusLabel(o.displayStatus)}</span>
+                <span className="status-chip">{orderStatusLabel(o.displayStatus, t.orders.status)}</span>
               </span>
               <span className="line-end">
                 <span className="price">{money(o.payableAmount, o.currency)}</span>

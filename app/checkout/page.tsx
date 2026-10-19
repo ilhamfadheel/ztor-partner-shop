@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Gate, SignInPrompt } from "@/components/Gate";
 import { Icon } from "@/components/Icon";
+import { useT } from "@/components/LangProvider";
 import { CheckoutSkeleton, Loading } from "@/components/Skeletons";
 import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
@@ -11,13 +12,13 @@ import { errorText, isAuthError, money, shop, type Cart, type PaymentMethod, typ
 
 export const PENDING_GROUP = "ztor_pending_group";
 
-const skeleton = <Loading label="Loading checkout…"><CheckoutSkeleton /></Loading>;
-
 export default function CheckoutPage() {
+  const t = useT();
+  const skeleton = <Loading label={t.checkout.loading}><CheckoutSkeleton /></Loading>;
   return (
     <>
-      <h1>Checkout</h1>
-      <Gate title="Sign in to check out" fallback={skeleton}>{(session) => <Checkout session={session} />}</Gate>
+      <h1>{t.checkout.title}</h1>
+      <Gate title={t.checkout.signInToCheckout} fallback={skeleton}>{(session) => <Checkout session={session} />}</Gate>
     </>
   );
 }
@@ -44,6 +45,8 @@ function Field({ id, label, help, error, children }: { id: string; label: string
 
 /** Quote → pickup contact → payment method → submit → off to the payment page; /checkout/done picks it up. */
 function Checkout({ session }: { session: Session }) {
+  const t = useT();
+  const skeleton = <Loading label={t.checkout.loading}><CheckoutSkeleton /></Loading>;
   const token = session.accessToken;
   const [cart, setCart] = useState<Cart | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -90,18 +93,18 @@ function Checkout({ session }: { session: Session }) {
 
   if (error)
     return isAuthError(error) ? (
-      <SignInPrompt title="Sign in again" text="Your Ztor sign-in doesn’t cover this shop yet." />
+      <SignInPrompt title={t.common.signInAgain} text={t.common.signInNotCover} />
     ) : (
       <StateMessage
         tone="error"
-        title="Couldn’t load checkout"
+        title={t.checkout.couldntLoad}
         actions={
           <>
             <a href="/checkout" className="btn btn-primary">
               <Icon name="refresh" />
-              Try again
+              {t.common.tryAgain}
             </a>
-            <Link href="/cart" className="btn">Back to cart</Link>
+            <Link href="/cart" className="btn">{t.checkout.backToCart}</Link>
           </>
         }
       >
@@ -111,14 +114,14 @@ function Checkout({ session }: { session: Session }) {
   if (!cart) return skeleton;
   if (lineIds.length === 0)
     return (
-      <StateMessage icon="bag" title="Nothing to pay for" actions={<Link href="/cart" className="btn btn-primary">Back to cart</Link>}>
-        <p>Your cart has no available items.</p>
+      <StateMessage icon="bag" title={t.checkout.nothingToPay} actions={<Link href="/cart" className="btn btn-primary">{t.checkout.backToCart}</Link>}>
+        <p>{t.checkout.noAvailableItems}</p>
       </StateMessage>
     );
 
   const isNew = contactId === "new";
-  const nameError = isNew && !contact.name.trim() ? "Enter the name of the person collecting the order." : null;
-  const phoneError = isNew && !contact.phone.trim() ? "Enter a phone number so the shop can reach you." : null;
+  const nameError = isNew && !contact.name.trim() ? t.checkout.nameError : null;
+  const phoneError = isNew && !contact.phone.trim() ? t.checkout.phoneError : null;
   const describe = (id: string, err: string | null) => (err ? `${id}-error` : `${id}-help`);
 
   function onSubmit(e: FormEvent) {
@@ -135,7 +138,7 @@ function Checkout({ session }: { session: Session }) {
     <div className="with-summary">
       <form id="checkout-form" className="form" noValidate onSubmit={onSubmit}>
         <fieldset className="fieldset">
-          <legend>Pickup contact</legend>
+          <legend>{t.checkout.pickupContact}</legend>
           {contacts.map((c) => (
             <label key={c.contactId} className="choice">
               <input type="radio" name="contact" checked={contactId === c.contactId} onChange={() => setContactId(c.contactId)} />
@@ -148,13 +151,13 @@ function Checkout({ session }: { session: Session }) {
           <label className="choice">
             <input type="radio" name="contact" checked={isNew} onChange={() => setContactId("new")} />
             <span className="choice-text">
-              <span className="choice-title">New contact</span>
-              <span className="meta">Who’s collecting this order</span>
+              <span className="choice-title">{t.checkout.newContact}</span>
+              <span className="meta">{t.checkout.whoCollects}</span>
             </span>
           </label>
           {isNew ? (
             <div className="field-row">
-              <Field id="name" label="Name" help="The person collecting the order." error={touched.name ? nameError : null}>
+              <Field id="name" label={t.checkout.name} help={t.checkout.nameHelp} error={touched.name ? nameError : null}>
                 <input
                   id="name"
                   value={contact.name}
@@ -166,7 +169,7 @@ function Checkout({ session }: { session: Session }) {
                   aria-describedby={describe("name", touched.name ? nameError : null)}
                 />
               </Field>
-              <Field id="phone" label="Phone" help="So the shop can reach you about this pickup." error={touched.phone ? phoneError : null}>
+              <Field id="phone" label={t.checkout.phone} help={t.checkout.phoneHelp} error={touched.phone ? phoneError : null}>
                 <input
                   id="phone"
                   type="tel"
@@ -184,11 +187,11 @@ function Checkout({ session }: { session: Session }) {
           ) : null}
         </fieldset>
         <fieldset className="fieldset">
-          <legend>Payment</legend>
+          <legend>{t.checkout.payment}</legend>
           {methods.length === 0 ? (
             <p className="notice">
               <Icon name="alert" />
-              <span>No payment methods available.</span>
+              <span>{t.checkout.noMethods}</span>
             </p>
           ) : null}
           {methods.map((m) => (
@@ -199,8 +202,8 @@ function Checkout({ session }: { session: Session }) {
           ))}
         </fieldset>
       </form>
-      <aside className="summary" aria-label="Order summary">
-        <h2 className="summary-title">Order summary</h2>
+      <aside className="summary" aria-label={t.checkout.summary}>
+        <h2 className="summary-title">{t.checkout.summary}</h2>
         {cart.shopGroups.flatMap((g) => g.items).filter((i) => i.itemStatus === "AVAILABLE").map((i) => (
           <div key={i.cartItemId} className="summary-row">
             <span className="meta">{i.title} × {i.quantity}</span>
@@ -209,19 +212,19 @@ function Checkout({ session }: { session: Session }) {
         ))}
         {quote?.discountAmount ? (
           <div className="summary-row">
-            <span className="meta">Discount</span>
+            <span className="meta">{t.checkout.discount}</span>
             <span>−{money(quote.discountAmount, quote.currency)}</span>
           </div>
         ) : null}
         <div className="summary-row summary-total">
-          <span>Total</span>
+          <span>{t.checkout.total}</span>
           <span>
             {quote ? (
               money(quote.payableAmount, quote.currency)
             ) : (
               <>
                 <span className="skeleton sk-inline" aria-hidden="true" />
-                <span className="sr-only">Calculating…</span>
+                <span className="sr-only">{t.checkout.calculating}</span>
               </>
             )}
           </span>
@@ -230,29 +233,29 @@ function Checkout({ session }: { session: Session }) {
           <p className="notice" data-tone="error">
             <Icon name="alert" />
             <span>
-              This order can’t be placed right now. <Link href="/cart" className="link">Review your cart</Link>
+              {t.checkout.cantPlace} <Link href="/cart" className="link">{t.checkout.reviewCart}</Link>
             </span>
           </p>
         ) : null}
         {submitError ? (
           <p className="notice" data-tone="error" role="alert">
             <Icon name="alert" />
-            <span>Payment didn’t start: {submitError}</span>
+            <span>{t.checkout.didntStart(submitError)}</span>
           </p>
         ) : null}
         <button type="submit" form="checkout-form" className="btn btn-primary btn-lg btn-block" disabled={busy || !quote?.confirmationHash || !quote.canCreate || !method}>
           {busy ? (
             <>
               <span className="spinner" aria-hidden="true" />
-              Taking you to payment…
+              {t.checkout.takingToPayment}
             </>
           ) : (
-            "Pay now"
+            t.checkout.payNow
           )}
         </button>
         <p className="summary-note">
           <Icon name="lock" />
-          You’ll pay on Ztor’s secure payment page and come straight back here.
+          {t.checkout.securePage}
         </p>
       </aside>
     </div>

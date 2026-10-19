@@ -5,6 +5,7 @@
  * `data` is the shop backend's camelCase, every 64-bit id is a string.
  */
 import { config } from "./config.ts";
+import { readLangCookie } from "./i18n.ts";
 
 export class ShopError extends Error {
   // Plain fields, not parameter properties: node's strip-only TypeScript runs this file in tests.
@@ -25,7 +26,10 @@ type Init = { method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; token?: stri
 
 async function api<T>(path: string, init: Init = {}): Promise<T> {
   const headers: Record<string, string> = { "x-channel-key": config.clientId };
-  if (init.lang) headers["accept-language"] = init.lang;
+  // Server calls pass the resolved language; browser calls read the fan's saved choice, and
+  // without one the browser's own Accept-Language rides along as usual.
+  const lang = init.lang ?? readLangCookie();
+  if (lang) headers["accept-language"] = lang;
   if (init.token) headers.authorization = `Bearer ${init.token}`;
   if (init.body !== undefined) headers["content-type"] = "application/json";
   if (init.idempotencyKey) headers["idempotency-key"] = init.idempotencyKey;
@@ -136,14 +140,8 @@ export type OrderItem = { orderItemId: string; title: string | null; coverUrl: s
 export type Order = { orderId: string; orderNo: string; shopName?: string | null; displayStatus: OrderStatus; fulfilmentStatus: string | null; currency: string; payableAmount: string; paidAt: number | null; items: OrderItem[]; pickupContact?: { name: string | null; phoneCode: string | null; phoneNumber: string | null } | null };
 /** Shopping's buyer display status (接口说明 §8.2): voided orders stay in the history. */
 export type OrderStatus = "PAID" | "COMPLETED" | "CANCEL_PENDING" | "CANCELLED";
-const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  PAID: "paid",
-  COMPLETED: "completed",
-  CANCEL_PENDING: "cancellation pending",
-  CANCELLED: "cancelled",
-};
-/** The chip text for an order; an unknown future status still renders, lower-cased. */
-export const orderStatusLabel = (status: string) => ORDER_STATUS_LABEL[status as OrderStatus] ?? status.toLowerCase();
+/** The chip text for an order, from the dictionary (i18n.ts orders.status); an unknown future status still renders, lower-cased. */
+export const orderStatusLabel = (status: string, labels: Record<string, string>) => labels[status] ?? status.toLowerCase();
 export type OrderGroup = { checkoutGroupId: string; createdAt: number; paymentReference: string; paymentCurrency: string; paymentPayableAmount: string; orders: Order[] };
 
 export const isFinal = (status: PaymentStatus) => status === "SUCCEEDED" || status === "CANCELED" || status === "EXPIRED";
