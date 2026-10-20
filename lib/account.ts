@@ -32,7 +32,8 @@ export const PROFILE_LANGUAGES = [
 ] as const;
 export type ProfileLanguage = (typeof PROFILE_LANGUAGES)[number]["code"];
 export const BIO_MAX = 150;
-export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/gif"] as const;
+/** Profile pictures are JPG/JPEG or PNG; Ztor refuses GIFs (docs → Avatar upload URL). */
+export const AVATAR_TYPES = ["image/jpeg", "image/png"] as const;
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /** The profile fields a partner site may change; send only the ones that changed. */
@@ -77,7 +78,7 @@ export const account = {
    * straight to the image store with exactly that Content-Type, then its publicUrl saved.
    */
   async uploadAvatar(token: string, file: File): Promise<AccountView> {
-    if (!(AVATAR_TYPES as readonly string[]).includes(file.type)) throw new AccountError("VALIDATION", "Use a JPG, PNG or GIF picture.");
+    if (!(AVATAR_TYPES as readonly string[]).includes(file.type)) throw new AccountError("VALIDATION", "Use a JPG or PNG picture.");
     if (file.size > AVATAR_MAX_BYTES) throw new AccountError("VALIDATION", "Use a picture up to 5 MB.");
     const upload = await call<AvatarUpload>(token, "/avatar/upload-url", { method: "POST", body: { contentType: file.type } });
     const put = await fetch(upload.uploadUrl, { method: upload.method ?? "PUT", headers: upload.headers ?? { "Content-Type": file.type }, body: file });
