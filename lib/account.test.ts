@@ -38,7 +38,8 @@ test("a new avatar: upload URL for its type, the file PUT there with that type, 
 test("an avatar of another type, or over 5 MB, is refused before anything is sent", async () => {
   let sent = 0;
   globalThis.fetch = (async () => { sent += 1; return ok({}); }) as typeof fetch;
-  await assert.rejects(account.uploadAvatar("tok", new File(["x"], "a.webp", { type: "image/webp" })), /JPG, PNG or GIF/);
+  await assert.rejects(account.uploadAvatar("tok", new File(["x"], "a.webp", { type: "image/webp" })), /JPG or PNG/);
+  await assert.rejects(account.uploadAvatar("tok", new File(["x"], "a.gif", { type: "image/gif" })), /JPG or PNG/); // no GIF profile pictures
   await assert.rejects(account.uploadAvatar("tok", new File([new Uint8Array(5 * 1024 * 1024 + 1)], "a.png", { type: "image/png" })), /up to 5 MB/);
   assert.equal(sent, 0);
 });
