@@ -622,3 +622,61 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* Footer: the demo note under the brand line */
 .footer-note { font-size: var(--text-xs); }
 .footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-lg); }
+
+/* ---------- Order pickup (components/PickupCards.tsx) ----------
+   Ztor's My orders card in this site's skin: one card per piece under a heading per session;
+   picture | text | QR. The two fact groups (the session's place/time/notes, the buyer's own
+   name/phone) sit side by side once the text column is wide, and stack below that. On a narrow
+   card the QR centres under the text at 120px and the state moves under the code. */
+.pickup { display: grid; gap: var(--space-lg); container-type: inline-size; }
+.pickup-group { display: grid; gap: var(--space-sm); }
+.pickup-group-title { font-size: var(--text-xs); font-weight: var(--weight-medium); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--color-muted-foreground); }
+.pickup-card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-md); align-items: center;
+  padding: var(--space-md) var(--space-lg); background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+}
+.pickup-card:not(:has(.pickup-side)) { grid-template-columns: auto minmax(0, 1fr); }
+.pickup-thumb { display: block; align-self: start; width: 56px; height: 84px; object-fit: cover; background: var(--color-muted); }
+.pickup-thumb.media-placeholder svg { width: 60%; }
+.pickup-body { display: grid; gap: var(--space-sm); min-width: 0; container-type: inline-size; }
+.pickup-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+.pickup-lines { display: grid; gap: var(--space-sm); }
+@container (min-width: 520px) { .pickup-lines { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-lg); } }
+.pickup-facts { display: grid; gap: var(--space-xs); margin: 0; align-content: start; }
+.pickup-facts > div { font-size: var(--text-xs); line-height: var(--leading); overflow-wrap: anywhere; }
+.pickup-facts dt { display: inline; color: var(--color-muted-foreground); }
+.pickup-facts dt::after { content: "："; }
+:lang(en) .pickup-facts dt::after { content: ": "; }
+.pickup-facts dd { display: inline; margin: 0; white-space: pre-wrap; }
+.pickup-note { font-size: var(--text-2xs); }
+.pickup-state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-ms); margin: 0; }
+.pickup-state .status-chip[data-state="PENDING"] { background: var(--color-accent); color: var(--color-on-accent); }
+.pickup-state .status-chip[data-state="RECEIVED"] { background: var(--color-success-tint); color: var(--color-success); }
+.pickup-side { display: grid; justify-items: center; gap: var(--space-xs); }
+.pickup-qr { display: block; padding: 6px; width: 108px; height: 108px; background: var(--color-surface); border: 1px solid var(--color-border); cursor: zoom-in; }
+.pickup-qr svg { display: block; width: 100%; height: 100%; }
+.pickup-qr:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+.pickup-code { font-size: var(--text-xs); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--color-muted-foreground); }
+.pickup-state-side { display: none; }
+@container (max-width: 560px) {
+  .pickup-card, .pickup-card:not(:has(.pickup-side)) { grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: var(--space-ms) var(--space-md); }
+  .pickup-side { grid-column: 1 / -1; justify-self: center; }
+  .pickup-qr { width: 132px; height: 132px; }
+  .pickup-state-side { display: block; }
+  .pickup-card:has(.pickup-side) .pickup-state-main { display: none; }
+}
+.pickup-card[data-status="CANCELLED"] .pickup-title { color: var(--color-muted-foreground); }
+
+/* the enlarged QR: a modal <dialog>, the code under it, a PNG download */
+.pickup-zoom {
+  width: min(420px, calc(100vw - 32px)); padding: var(--space-xl) var(--space-lg) var(--space-lg); text-align: center;
+  background: var(--color-background); color: var(--color-foreground); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+}
+.pickup-zoom::backdrop { background: rgb(17 17 17 / 0.45); }
+.pickup-zoom[open] { display: grid; gap: var(--space-md); justify-items: center; }
+.pickup-zoom-close { position: absolute; top: var(--space-sm); right: var(--space-sm); min-height: var(--tap); padding: 0 var(--space-ms); border: 0; }
+.pickup-zoom-title { font-size: var(--text-base); font-weight: var(--weight-semibold); padding-inline: var(--space-xl); }
+.pickup-zoom-qr { padding: var(--space-ms); background: var(--color-surface); border: 1px solid var(--color-border); }
+.pickup-zoom-qr svg { display: block; width: min(240px, 60vw); height: auto; }
+.pickup-zoom-code strong { font-size: var(--text-lg); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.order-status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }

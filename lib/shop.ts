@@ -136,8 +136,64 @@ export type PaymentResult = {
   paymentMethods: PaymentMethod[];
 };
 export type CheckoutSubmission = { group: PaymentResult; paymentAction: "ACTION_REQUIRED" | "ATTEMPT_FAILED" | "UNKNOWN" | "ALREADY_PAID" | "NOT_STARTED"; paymentUrl: string | null; paymentMessage: string | null };
-export type OrderItem = { orderItemId: string; title: string | null; coverUrl: string | null; specification: string | null; quantity: number; currency: string; unitAmount: string; totalAmount: string; qrCodes?: { seq: number; status: string; qrContent: string | null }[] };
-export type Order = { orderId: string; orderNo: string; shopName?: string | null; displayStatus: OrderStatus; fulfilmentStatus: string | null; currency: string; payableAmount: string; paidAt: number | null; items: OrderItem[]; pickupContact?: { name: string | null; phoneCode: string | null; phoneNumber: string | null } | null };
+/** A pickup session as an order carries it (Creator API `PickupSession`); any line may be missing. */
+export type OrderPickupSession = { sessionId: string; createdAt?: number | null; name: string | null; location: string | null; instruction: string | null; startAt: number | null; endAt: number | null };
+/** One pickup QR record: one per purchased piece (Creator API `OrderQrCode`). `qrContent` is what the counter scans. */
+export type OrderQrCode = {
+  orderItemId: string;
+  productId?: string;
+  /** The bundle member this piece is; null for a plain line. */
+  bundleItemId?: string | null;
+  seq: number;
+  status: "PENDING" | "RECEIVED" | "EXPIRED" | "CANCELLED";
+  qrContent: string | null;
+  /** The short code said at the counter instead of scanning. */
+  pickupCode?: string | null;
+  receivedAt: number | null;
+  pickupSessions: OrderPickupSession[];
+  receivedPickupSession: OrderPickupSession | null;
+};
+export type OrderBundleItem = { bundleItemId: string; productId: string; skuId: string; productType: string | null; title: string | null; coverUrl: string | null; specification: string | null; memberQuantity: number; totalQuantity: number; fulfillmentType?: "SHIPPING" | "QR_PICKUP" | null; pickupSessions?: OrderPickupSession[] };
+export type OrderItem = {
+  orderItemId: string;
+  productId?: string;
+  productType?: string | null;
+  title: string | null;
+  coverUrl: string | null;
+  specification: string | null;
+  quantity: number;
+  currency: string;
+  unitAmount: string;
+  totalAmount: string;
+  fulfilmentStatus?: string | null;
+  fulfillmentType?: "SHIPPING" | "QR_PICKUP" | null;
+  pickupInstruction?: string | null;
+  bundleItems?: OrderBundleItem[] | null;
+  /** The sessions this line is associated with. */
+  pickupSessions?: OrderPickupSession[];
+  /** Detail only: every session the product is associated with. */
+  pickup?: { sessions: OrderPickupSession[] } | null;
+  /** Detail only: the line's pickup QR records. */
+  qrCodes?: OrderQrCode[];
+  cancelledAt?: number | null;
+  cancelReason?: string | null;
+};
+/** Pieces of the order and how many were collected (list read). */
+export type PickupProgress = { totalCount: number; receivedCount: number; pendingCount: number };
+export type Order = {
+  orderId: string;
+  orderNo: string;
+  shopName?: string | null;
+  paymentStatus?: "PAID" | "NO_PAYMENT_REQUIRED";
+  displayStatus: OrderStatus;
+  fulfilmentStatus: string | null;
+  currency: string;
+  payableAmount: string;
+  paidAt: number | null;
+  items: OrderItem[];
+  pickupContact?: { name: string | null; phoneCode: string | null; phoneNumber: string | null } | null;
+  pickupProgress?: PickupProgress;
+};
 /** Shopping's buyer display status (接口说明 §8.2): voided orders stay in the history. */
 export type OrderStatus = "PAID" | "COMPLETED" | "CANCEL_PENDING" | "CANCELLED";
 /** The chip text for an order, from the dictionary (i18n.ts orders.status); an unknown future status still renders, lower-cased. */

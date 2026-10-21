@@ -9,6 +9,7 @@ import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
 import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
+import { displayStatusKey, pickupProgressText } from "@/lib/pickup";
 import { errorText, isAuthError, money, orderStatusLabel, shop, type OrderGroup } from "@/lib/shop";
 
 export default function OrdersPage() {
@@ -64,7 +65,10 @@ function Orders({ session }: { session: Session }) {
               <span className="line-meta">
                 <span className="line-title">{o.items.map((i) => i.title).filter(Boolean).join(", ") || t.orders.order(o.orderNo ?? "")}</span>
                 <span className="meta">#{o.orderNo} · {new Date(g.createdAt).toLocaleDateString()}</span>
-                <span className="status-chip">{orderStatusLabel(o.displayStatus, t.orders.status)}</span>
+                <span className="order-status">
+                  <span className="status-chip">{orderStatusLabel(displayStatusKey(o), t.orders.status)}</span>
+                  {pickupProgressText(o, t.orders.progress) ? <span className="meta">{pickupProgressText(o, t.orders.progress)}</span> : null}
+                </span>
               </span>
               <span className="line-end">
                 <span className="price">{money(o.payableAmount, o.currency)}</span>

@@ -9,6 +9,8 @@ import { StateMessage } from "@/components/StateMessage";
 import type { Session } from "@/lib/oidc";
 import { Cover } from "@/components/Cover";
 import { coverImage } from "@/lib/media";
+import { PickupCards } from "@/components/PickupCards";
+import { displayStatusKey } from "@/lib/pickup";
 import { errorText, money, orderStatusLabel, shop, type Order } from "@/lib/shop";
 
 export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,7 +60,7 @@ function OrderView({ session, id }: { session: Session; id: string }) {
     <div className="stack">
       <p className="meta order-meta">
         <span>#{order.orderNo}</span>
-        <span className="status-chip">{orderStatusLabel(order.displayStatus, t.orders.status)}</span>
+        <span className="status-chip">{orderStatusLabel(displayStatusKey(order), t.orders.status)}</span>
         {order.paidAt ? <span>{t.order.paidAt(new Date(order.paidAt).toLocaleString())}</span> : null}
       </p>
       <div className="with-summary">
@@ -69,25 +71,21 @@ function OrderView({ session, id }: { session: Session; id: string }) {
               <div className="line-meta">
                 <span className="line-title">{i.title ?? t.order.item}</span>
                 <span className="meta">{[i.specification, `× ${i.quantity}`].filter(Boolean).join(" · ")}</span>
-                {i.qrCodes?.length ? <span className="meta">{t.order.pickupQr(i.qrCodes.map((q) => `#${q.seq} ${q.status.toLowerCase()}`).join(", "))}</span> : null}
               </div>
               <span className="price line-end">{money(i.totalAmount, i.currency)}</span>
             </li>
           ))}
         </ul>
         <aside className="summary" aria-label={t.order.summary}>
-          {order.pickupContact ? (
-            <div className="summary-row">
-              <span className="meta">{t.order.pickupContact}</span>
-              <span>{order.pickupContact.name} · {order.pickupContact.phoneCode ?? ""}{order.pickupContact.phoneNumber ?? ""}</span>
-            </div>
-          ) : null}
+          {/* The pickup contact is on each pickup card below, next to where and when (Ztor's My orders). */}
           <div className="summary-row summary-total">
             <span>{t.order.total}</span>
             <span>{money(order.payableAmount, order.currency)}</span>
           </div>
         </aside>
       </div>
+      {/* Each piece's pickup card: where and when, who collects it, and its QR + pickup code while it can be collected. */}
+      <PickupCards order={order} />
     </div>
   );
 }
