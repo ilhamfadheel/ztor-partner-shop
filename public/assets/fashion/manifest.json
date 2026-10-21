@@ -1,0 +1,228 @@
+{
+  "version": 1,
+  "updated": "2026-09-10",
+  "model": "kling3_0",
+  "fps": 24,
+  "sourceRaster": [
+    2160,
+    3840
+  ],
+  "mobileRaster": [1080, 1920],
+  "mobileEncoding": "H.264 High Level 5.1, 24fps, CRF18, 6-frame GOP, faststart. Color and alpha halves independently downsampled with Lanczos; original motion, timing and shadow preserved.",
+  "alphaMethod": "Local-plate mixed-edge coverage, edge-color recovery, foreground-padded transparent RGB and source-derived shadow. One CRF14 encode; pixel-centered packed RGB/alpha sampling. Visible raster remains 2160x3840 at 24fps.",
+  "processingRevision": "clean-edges-20260909",
+  "outfits": {
+    "silence-is-loud": {
+      "modelId": "model-silence-01",
+      "model": "kling3_0",
+      "poster": "assets/fashion/silence-is-loud/slim-face-20260909/back-poster.webp",
+      "nearPoster": "assets/fashion/silence-is-loud/slim-face-20260909/near-poster.webp",
+      "video": "assets/fashion/silence-is-loud/slim-face-20260909/master.mp4",
+      "mobileVideo": "assets/fashion/silence-is-loud/slim-face-20260909/mobile-1080-v1.mp4",
+      "farStage": {
+        "height": 0.3334969017094017,
+        "bottom": 0.606771,
+        "cx": 0.5
+      },
+      "format": "packed-alpha",
+      "width": 2160,
+      "height": 3840,
+      "fps": 24,
+      "frames": 894,
+      "duration": 37.25,
+      "posterTime": 35.25,
+      "ranges": {
+        "approach": [
+          0,
+          6
+        ],
+        "idle": [
+          6,
+          29.25
+        ],
+        "retreat": [
+          29.25,
+          35.25
+        ],
+        "retreatTurn": [
+          29.25,
+          31.25
+        ],
+        "return": [
+          35.25,
+          37
+        ]
+      },
+      "expression": "Composed walk, comfortable settled stance, brief picture-right wink and immediate reopening, then quiet natural standing. Finite wink once; only original quiet source12..15 loops. Native1x throughout.",
+      "status": "slim-face character refresh; agent-QA local integration",
+      "nearStage": {
+        "height": 0.8740835470085471,
+        "bottom": 0.921875,
+        "cx": 0.5
+      },
+      "outfitId": "silence-wrap-01",
+      "idleLoopStart": 26.25,
+      "personality": "composed",
+      "winkTime": 11.125,
+      "characterRevision": "front-v10/neutral-v2"
+    },
+    "paddock": {
+      "modelId": "model-silence-01",
+      "model": "kling3_0",
+      "poster": "assets/fashion/paddock/slim-face-20260909/back-poster.webp",
+      "nearPoster": "assets/fashion/paddock/slim-face-20260909/near-poster.webp",
+      "video": "assets/fashion/paddock/slim-face-20260909/master.mp4",
+      "mobileVideo": "assets/fashion/paddock/slim-face-20260909/mobile-1080-v1.mp4",
+      "farStage": {
+        "height": 0.322917,
+        "bottom": 0.606771,
+        "cx": 0.5
+      },
+      "format": "packed-alpha",
+      "width": 2160,
+      "height": 3840,
+      "fps": 24,
+      "frames": 696,
+      "duration": 29,
+      "posterTime": 26.5,
+      "ranges": {
+        "approach": [
+          0,
+          6
+        ],
+        "idle": [
+          6,
+          21
+        ],
+        "retreat": [
+          21,
+          26.5
+        ],
+        "retreatTurn": [
+          21,
+          22.5
+        ],
+        "return": [
+          26.5,
+          28.25
+        ]
+      },
+      "expression": "Warm soft smile during one relaxed planted stance; normal 1x movement. No recurring major support-leg change.",
+      "status": "slim-face character refresh; agent-QA local integration",
+      "nearStage": {
+        "height": 0.846354,
+        "bottom": 0.921875,
+        "cx": 0.5
+      },
+      "personality": "sporty",
+      "characterRevision": "front-v10/neutral-v2"
+    },
+    "beach": {
+      "modelId": "model-silence-01",
+      "model": "kling3_0",
+      "status": "user-directed local review; known idle cadence and retreat shoe-crop defects",
+      "poster": "assets/fashion/beach/clean-edges-20260909/back-poster.webp",
+      "nearPoster": "assets/fashion/beach/clean-edges-20260909/near-poster.webp",
+      "video": "assets/fashion/beach/clean-edges-20260909/master.mp4",
+      "mobileVideo": "assets/fashion/beach/clean-edges-20260909/mobile-1080-v1.mp4",
+      "farStage": {
+        "height": 0.322917,
+        "bottom": 0.606771,
+        "cx": 0.5
+      },
+      "nearStage": {
+        "height": 0.846354,
+        "bottom": 0.921875,
+        "cx": 0.5
+      },
+      "format": "packed-alpha",
+      "width": 2160,
+      "height": 3840,
+      "fps": 24,
+      "frames": 696,
+      "duration": 29,
+      "posterTime": 26,
+      "ranges": {
+        "approach": [
+          0.75,
+          6
+        ],
+        "idle": [
+          6,
+          21
+        ],
+        "retreat": [
+          21,
+          26
+        ],
+        "retreatTurn": [
+          21,
+          22.5
+        ],
+        "return": [
+          26,
+          27.5
+        ]
+      },
+      "personality": "lighthearted",
+      "expression": "Warm soft smile near, natural free performance. Six-second stance-hold direction was supplied but the source still changes stance more frequently; normal 1x playback."
+    },
+    "rockstar": {
+      "modelId": "model-silence-01",
+      "model": "kling3_0",
+      "poster": "assets/fashion/rockstar/clean-edges-20260909/back-poster.webp",
+      "nearPoster": "assets/fashion/rockstar/clean-edges-20260909/near-poster.webp",
+      "video": "assets/fashion/rockstar/clean-edges-20260909/master.mp4",
+      "mobileVideo": "assets/fashion/rockstar/clean-edges-20260909/mobile-1080-v1.mp4",
+      "farStage": {
+        "height": 0.322917,
+        "bottom": 0.606771,
+        "cx": 0.5
+      },
+      "format": "packed-alpha",
+      "width": 2160,
+      "height": 3840,
+      "fps": 24,
+      "frames": 456,
+      "duration": 19,
+      "posterTime": 15.5,
+      "ranges": {
+        "approach": [
+          0,
+          6
+        ],
+        "idle": [
+          6,
+          11
+        ],
+        "retreat": [
+          11,
+          15.5
+        ],
+        "retreatTurn": [
+          11,
+          11.875
+        ],
+        "return": [
+          15.5,
+          17.25
+        ]
+      },
+      "expression": "Cool, effortless natural runway presence; neutral identity close-up only. Free gaze and head/shoulder motion, relaxed living near pose; no imposed focused face throughout.",
+      "status": "natural-performance revision; local review",
+      "nearStage": {
+        "height": 0.846354,
+        "bottom": 0.921875,
+        "cx": 0.5
+      }
+    }
+  },
+  "limitations": [
+    "Down input plays the complete approach at 1x even after scrolling stops. Up requests authored retreat; arbitrary mid-walk turn poses are not separately generated.",
+    "Silence plays its arrival wink once, then repeats a living quiet tail; major stance does not reset at the media-loop seam.",
+    "Beach natural-rockstar-01 is integrated by explicit user direction for local review. Idle stance changes remain too frequent, and the retreat source clips a sneaker during the initial turn; these source defects are not represented as fixed.",
+    "Fast pivots retain source motion blur; this is not a claim of artifact-free footage at arbitrary zoom.",
+    "Photographic camera look and likeness are creative references, not camera provenance or exact identity guarantees.",
+    "Native iOS Safari physical-device playback has not been verified."
+  ]
+}

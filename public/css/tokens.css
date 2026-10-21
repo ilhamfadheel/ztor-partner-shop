@@ -1,0 +1,88 @@
+/* css/tokens.css — Lisa site. Fonts + a tiny reset, then LISA BASE SHELL v2 VERBATIM (both markers kept).
+   Re-theme = edit base-shell.css upstream and re-paste; never edit the shell block here. */
+@import url("./fonts.css");
+
+/* reset (before the shell): border-box, no body margin, fluid images */
+*,*::before,*::after{box-sizing:border-box;}
+/* Satoshi Light for body/UI text. Splash keeps its original faces in entry.css. */
+body{margin:0;font-weight:300;}
+h1,h2,h3,h4,h5,h6,b,strong,th{font-weight:300;}
+input,select,textarea{font-weight:300;}
+img{max-width:100%;height:auto;}
+
+/* LISA BASE SHELL v2 — paste verbatim into every artboard's <helmet><style>. Do not edit. */
+/* v2 rules: ZERO radius everywhere · no purple anywhere · achromatic fan layer · floating header with no background (active page underlined) */
+:root{
+  --l-bg:#F4F2EE; --l-bg-2:#E9E6E0; --l-surface:#FFFFFF;
+  --l-ink:#111111; --l-ink-2:#5C5955; --l-ink-3:#8A8681;
+  --l-line:rgba(17,17,17,.12); --l-line-2:rgba(17,17,17,.24);
+  --l-signal:#111111; --l-signal-fg:#FFFFFF; --l-signal-soft:rgba(17,17,17,.06);
+  --l-font:'Geist',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+  --l-r-1:0; --l-r-2:0; --l-r-3:0; --l-pill:0;
+  --l-ease:cubic-bezier(.2,.8,.2,1); --l-ease-out:cubic-bezier(.16,1,.3,1); --l-d1:240ms; --l-d2:520ms; --l-d3:900ms;
+  --l-shadow:0 30px 80px -30px rgba(17,17,17,.45);
+  --l-track:.14em;
+  /* RETIRED (L, 2026-09-05: the header has no background / blur / rim). No consumer; kept only so the shell's token list stays whole. */
+  --glass-tint:rgba(255,255,255,.28); --glass-blur:22px; --glass-rim:rgba(255,255,255,.55); --glass-specular:rgba(255,255,255,.65);
+}
+/* Collection worlds. ONLY these tokens may change per collection. */
+[data-collection="rockstar"]{ --c-bg:#E0091D; --c-bg-2:#FF2B3A; --c-fg:#FFFFFF; --c-fg-2:rgba(255,255,255,.74); --c-line:rgba(255,255,255,.22); --c-accent:#FFFFFF; --c-accent-fg:#E0091D; --c-accent-2:#111111; --c-touch:rgba(255,255,255,.62); --c-touch-2:rgba(255,255,255,.28); --c-glass-fg:#111111; --c-display:'Bebas Neue',Impact,'Arial Narrow',sans-serif; --c-display-weight:400; --c-display-style:normal; --c-display-tracking:.02em; --c-display-scale:1.18; }
+[data-collection="beach"]{ --c-bg:#EADCC2; --c-bg-2:#F6EEDF; --c-fg:#14343F; --c-fg-2:rgba(20,52,63,.78); --c-line:rgba(20,52,63,.18); --c-accent:#FF6A45; --c-accent-fg:#111111; --c-accent-2:#14343F; --c-touch:rgba(255,255,255,.92); --c-touch-2:rgba(255,255,255,.5); --c-glass-fg:#111111; --c-display:'Instrument Serif',Georgia,'Times New Roman',serif; --c-display-weight:400; --c-display-style:italic; --c-display-tracking:-.01em; --c-display-scale:1.0; }
+[data-collection="paddock"]{ --c-bg:#080808; --c-bg-2:#1C1C1E; --c-fg:#FFFFFF; --c-fg-2:rgba(255,255,255,.7); --c-line:rgba(255,255,255,.2); --c-accent:#FFFFFF; --c-accent-fg:#080808; --c-accent-2:#FFFFFF; --c-touch:rgba(255,255,255,.34); --c-touch-2:rgba(255,255,255,.14); --c-glass-fg:#FFFFFF; --c-display:'Michroma','Eurostile','Arial Black',sans-serif; --c-display-weight:400; --c-display-style:normal; --c-display-tracking:.04em; --c-display-scale:.82; }
+[data-collection="silence-is-loud"]{--c-bg:#B9B7B2;--c-bg-2:#D1CFCA;--c-fg:#171717;--c-fg-2:rgba(23,23,23,.78);--c-line:rgba(23,23,23,.2);--c-accent:#171717;--c-accent-fg:#FFFFFF;--c-accent-2:#171717;--c-touch:rgba(255,255,255,.6);--c-touch-2:rgba(255,255,255,.25);--c-glass-fg:#171717;--c-display:Georgia,'Times New Roman',serif;--c-display-weight:400;--c-display-style:normal;--c-display-tracking:-.045em;--c-display-scale:1}
+
+.l-root{font-family:var(--l-font);color:var(--l-ink);background:var(--l-bg);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+.l-world{background:var(--c-bg);color:var(--c-fg);transition:background-color var(--l-d3) var(--l-ease),color var(--l-d3) var(--l-ease);}
+/* Floating header: no background, no pill, no blur (L, 2026-09-05). The text sits straight on the page; the tone logic (world / base colour) keeps it legible and the active page is underlined. */
+.l-nav{position:absolute;left:24px;right:24px;top:20px;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:20;color:var(--c-glass-fg);transition:color var(--l-d3) var(--l-ease);}
+/* The member chip inside the header is L's one exception to the zero-radius rule (the header itself has no pill). */
+.l-wordmark{display:inline-flex;align-items:center;height:24px;text-decoration:none;color:inherit;}
+.l-logo{display:block;width:37px;height:24px;fill:currentColor;}
+.l-navlinks{display:flex;gap:32px;font-size:12px;font-weight:500;letter-spacing:var(--l-track);text-transform:uppercase;}
+.l-navlinks a{color:inherit;text-decoration:none;opacity:.78;transition:opacity var(--l-d1) var(--l-ease);}
+.l-navlinks a:hover{opacity:1;}
+.l-navright{display:flex;align-items:center;gap:18px;}
+.l-member{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 12px;border:1px solid currentColor;color:inherit;background:transparent;font-size:11px;font-weight:600;letter-spacing:var(--l-track);text-transform:uppercase;font-variant-numeric:tabular-nums;border-radius:999px;}
+.l-passport{display:inline-flex;align-items:center;gap:12px;height:36px;padding:0 14px 0 12px;border:1px solid currentColor;font-size:11px;font-weight:500;letter-spacing:var(--l-track);text-transform:uppercase;opacity:.92;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.l-swatches{display:inline-flex;gap:4px;}
+.l-swatches i{display:block;width:10px;height:10px;border:1px solid var(--c-line,var(--l-line-2));}
+.l-cta{display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 28px;background:var(--c-accent);color:var(--c-accent-fg);font-family:var(--l-font);font-size:12px;font-weight:600;letter-spacing:var(--l-track);text-transform:uppercase;border:0;cursor:pointer;transition:transform var(--l-d1) var(--l-ease),background-color var(--l-d3) var(--l-ease),color var(--l-d3) var(--l-ease);}
+.l-cta:hover{transform:translateY(-1px);}
+.l-cta-ghost{display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 28px;background:transparent;color:inherit;border:1px solid currentColor;font-family:var(--l-font);font-size:12px;font-weight:600;letter-spacing:var(--l-track);text-transform:uppercase;cursor:pointer;transition:background-color var(--l-d1) var(--l-ease),color var(--l-d1) var(--l-ease);}
+.l-skip{font-size:12px;font-weight:500;letter-spacing:var(--l-track);text-transform:uppercase;color:inherit;opacity:.72;text-decoration:underline;text-underline-offset:6px;cursor:pointer;background:none;border:0;padding:0;font-family:var(--l-font);}
+.l-display{font-family:var(--c-display);font-weight:var(--c-display-weight);font-style:var(--c-display-style);letter-spacing:var(--c-display-tracking);line-height:.9;margin:0;text-wrap:balance;}
+.l-eyebrow{font-size:11px;font-weight:600;letter-spacing:var(--l-track);text-transform:uppercase;opacity:.8;}
+/* Slide-over = the base theme surface (shared pages look like this) */
+.l-panel{position:absolute;inset:0;z-index:30;pointer-events:none;}
+.l-panel-scrim{position:absolute;inset:0;background:rgba(17,17,17,.32);opacity:0;transition:opacity var(--l-d2) var(--l-ease);}
+.l-sheet{position:absolute;background:var(--l-bg);color:var(--l-ink);box-shadow:var(--l-shadow);transition:transform var(--l-d2) var(--l-ease-out),opacity var(--l-d2) var(--l-ease);}
+.l-panel.is-open{pointer-events:auto;}
+.l-panel.is-open .l-panel-scrim{opacity:1;}
+.l-close{width:44px;height:44px;border:1px solid var(--l-line-2);background:var(--l-surface);color:var(--l-ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+.l-chips{display:flex;gap:8px;}
+.l-chip{height:36px;padding:0 16px;border:1px solid var(--l-line-2);font-size:11px;font-weight:500;letter-spacing:var(--l-track);text-transform:uppercase;display:inline-flex;align-items:center;color:var(--l-ink);background:transparent;cursor:pointer;font-family:var(--l-font);}
+.l-chip.is-on{background:var(--l-ink);color:var(--l-bg);border-color:var(--l-ink);}
+.l-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;}
+.l-card{display:flex;flex-direction:column;gap:12px;cursor:pointer;}
+.l-card-art{aspect-ratio:1/1;background:var(--l-bg-2);overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.l-card-art img{width:100%;height:100%;object-fit:contain;display:block;transition:transform var(--l-d3) var(--l-ease-out);}
+.l-card:hover .l-card-art img{transform:scale(1.04);}
+.l-card-name{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--l-ink);}
+.l-card-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--l-ink-2);font-variant-numeric:tabular-nums;}
+.l-tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border:1px solid var(--l-line-2);color:var(--l-ink);font-size:10px;font-weight:600;letter-spacing:var(--l-track);text-transform:uppercase;}
+.l-token{font-variant-numeric:tabular-nums;color:var(--l-ink-2);font-weight:500;}
+/* Reveal grammar: elements enter with a 24px rise + fade, staggered 60ms via --i */
+.l-reveal{opacity:0;transform:translateY(24px);animation:l-rise var(--l-d3) var(--l-ease-out) forwards;animation-delay:calc(var(--i,0) * 60ms);}
+@keyframes l-rise{to{opacity:1;transform:none;}}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px;}
+::selection{background:#111111;color:#FFFFFF;}
+[data-collection="rockstar"] ::selection,[data-collection="paddock"] ::selection{background:#FFFFFF;color:#111111;}
+@media (prefers-reduced-motion:reduce){.l-world,.l-cta,.l-cta-ghost,.l-sheet,.l-panel-scrim,.l-navlinks a,.l-card-art img{transition:none;} .l-reveal{animation:none;opacity:1;transform:none;} *{animation:none!important;}}
+/* END LISA BASE SHELL v2 */
+
+/* App typography adjustment; keep the upstream base-shell block verbatim. */
+:root{--l-font:'Satoshi',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;}
+.l-navlinks,.l-passport,.l-skip,.l-chip,.l-token{font-weight:300;}
+.l-member,.l-cta,.l-cta-ghost,.l-eyebrow,.l-card-name,.l-tag{font-weight:300;}
+.l-display{font-weight:calc(var(--c-display-weight) * .8);}
+[data-collection="silence-is-loud"]{--c-display:'Bodoni Moda',Georgia,serif}

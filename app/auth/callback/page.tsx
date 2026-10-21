@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
@@ -42,7 +41,7 @@ export default function Callback() {
               <Icon name="refresh" />
               {t.common.tryAgain}
             </button>
-            <Link href="/" className="btn">{t.common.backToShop}</Link>
+            <a href="/shop" className="btn">{t.common.backToShop}</a>
           </>
         }
       >

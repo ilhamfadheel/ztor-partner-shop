@@ -94,19 +94,21 @@ export function Header() {
   return (
     <header className="header">
       <div className="header-bar">
-        <Link href="/" className="brand">
+        <a href="/" className="brand">
           <Logo />
           <span className="brand-name">{t.layout.siteName}</span>
-        </Link>
+        </a>
         <nav className="nav" aria-label={t.header.mainNav}>
-          <Link href="/" className="nav-link" aria-current={current(pathname === "/" || pathname.startsWith("/products"))}>{t.header.shop}</Link>
+          {/* The LLOUD pages are static files (public/): plain links, full page loads. */}
+          <a href="/shop" className="nav-link">{t.header.shop}</a>
+          <a href="/fan-club" className="nav-link">{t.header.fanClub}</a>
           <Link href={gated("/orders")} className="nav-link" aria-current={current(pathname.startsWith("/orders"))}>{t.header.orders}</Link>
         </nav>
         <div className="header-actions">
-          <Link href={gated("/account")} className="icon-link" aria-current={current(pathname.startsWith("/account"))}>
+          <a href="/account" className="icon-link">
             <Icon name="user" />
             <span className="sr-only">{session ? t.header.yourAccount(who) : t.common.signIn}</span>
-          </Link>
+          </a>
           <Link href={gated("/notifications")} className="icon-link" aria-current={current(pathname === "/notifications")}>
             <span className="nav-icon">
               <Icon name="bell" />
@@ -114,13 +116,13 @@ export function Header() {
             </span>
             <span className="sr-only">{t.header.notifications}{unread ? t.header.unreadSuffix(unread) : ""}</span>
           </Link>
-          <Link href={gated("/cart")} className="icon-link" aria-current={current(pathname === "/cart")}>
+          <a href="/shop?view=bag" className="icon-link">
             <span className="nav-icon">
               <Icon name="bag" />
               {cartCount ? <span className="badge" aria-hidden="true">{cartCount > 99 ? "99+" : cartCount}</span> : null}
             </span>
             <span className="sr-only">{t.header.bag}{cartCount ? t.header.bagCount(cartCount) : ""}</span>
-          </Link>
+          </a>
         </div>
       </div>
     </header>

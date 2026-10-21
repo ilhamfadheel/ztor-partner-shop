@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -66,7 +65,7 @@ function Login() {
           </p>
         ) : null}
         <p className="meta">
-          {t.login.agreeBefore}<Link href="/" className="link">{t.login.backToShop}</Link>
+          {t.login.agreeBefore}<a href="/shop" className="link">{t.login.backToShop}</a>
         </p>
       </StateMessage>
       {origin && base ? (

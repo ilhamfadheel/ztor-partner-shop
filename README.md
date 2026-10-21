@@ -27,6 +27,7 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 | `NEXT_PUBLIC_ZTOR_CLIENT_ID` | Your platform's client id, also the `X-Channel-Key` |
 | `NEXT_PUBLIC_ZTOR_SHOP_RESOURCE` | RFC 8707 resource indicator of the Creator API (the SSO's `SSO_CREATOR_API_RESOURCE`, same literal). Empty = sign-in works, fan shop calls answer 401 |
 | `NEXT_PUBLIC_ZTOR_MEDIA` | Optional. Shopping's media CDN; product images arrive as paths relative to it. Default `https://d1k50uq0sig7az.cloudfront.net` |
+| `LLOUD_MEDIA_ORIGIN` | Optional, build time. Where the runway's films (`/assets/fashion/*`, Git LFS in LLOUD's repo, ~430 MB) are served from. Default `https://lloud.club` |
 
 ## Register the site in the SSO Platforms console → Site & URLs
 
@@ -40,16 +41,24 @@ pnpm test                    # the PKCE / JWT / return-path self-check
 
 ## Pages
 
+The fan-facing site is **LLOUD's own** (github `codeL1985/lloud-club`, Asana 1219623889042756): its static HTML, CSS and ES modules under `public/`, served at clean URLs (`next.config.ts`), with its preview data stores swapped for Ztor (`public/js/ztor/`). Pages with nothing behind them in Ztor yet stay static.
+
 | Route | Who | Does |
 | --- | --- | --- |
-| `/` | public | Catalogue (server-rendered, channel key only) |
-| `/products/[id]` | public | Detail; option chips → SKU → add to cart (asks for Ztor sign-in first) |
-| `/auth/callback` | — | Sign-in return URL: state check, code exchange, session in `localStorage` |
-| `/cart` | fan | Quantities, remove |
+| `/` | public | LLOUD's runway (static; the films stream from lloud.club, `LLOUD_MEDIA_ORIGIN`) |
+| `/fan-club` (`/loyalty`) | public / fan | Fan pass, tier, rank, gap to the next tier, next unlock — `/creator/v1/loyalty/me` |
+| `/rewards` | public / fan | The Media Vault: rewards with their unlock steps; opening one fetches a short-lived media link — `/creator/v1/vault/*` |
+| `/leaderboard` | public | The artist's fan board (public names) — `/creator/v1/loyalty/board` |
+| `/shop`, `/product?id=` | public | The creator's products; options → SKU → add to bag (asks for Ztor sign-in first) |
 | `/checkout` | fan | Quote → pickup contact → payment method → submit (Idempotency-Key) → payment page |
+| `/account`, `/edit-profile` | fan | Pass, orders, points; name, bio and photo on the fan's Ztor account |
+| `/signup` | public | Continue with Ztor (the hosted sign-in) |
+| `/auction` | public | LLOUD's auction room (static: no auction service in Ztor yet) |
+| `/login`, `/auth/callback` | — | Hosted sign-in buttons; sign-in return URL: state check, code exchange, session in `localStorage` |
 | `/checkout/done` | fan | Payment return URL: polls the group result, pay again |
-| `/orders`, `/orders/[id]` | fan | Paid orders through this site |
-| `/account` | fan | Your account (lloud.club/edit-profile): display name, addresses (saved pickup contacts), payment methods (preferred one per site), orders; security and privacy link to Ztor's settings |
+| `/orders`, `/orders/[id]`, `/notifications` | fan | Order detail (pickup QR codes) and order notifications |
+
+LLOUD's modules read synchronously (`member()`, `rewardCatalog()`, `cart.getItems()`…), so `public/js/ztor/state.js` loads what a page needs from the Creator API before it renders and holds it in memory; changes go to the API and the page is told with the events LLOUD already listens to (`member:change`, `cart:change`). `public/js/ztor/session.js` shares the React pages' sign-in (`localStorage.ztor_session`) and renews it the same way `lib/oidc.ts` does. Public config reaches the static files as `/lloud-config.js`. Tests: `pnpm test` (`test/lloud/*.test.mjs`).
 
 ## Flow
 

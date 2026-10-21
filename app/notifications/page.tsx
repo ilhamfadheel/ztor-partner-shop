@@ -79,7 +79,7 @@ function Notifications({ session }: { session: Session }) {
   if (!items) return skeleton;
   if (items.length === 0)
     return (
-      <StateMessage icon="bell" title={t.notifications.none} actions={<Link href="/" className="btn btn-primary">{t.notifications.browse}</Link>}>
+      <StateMessage icon="bell" title={t.notifications.none} actions={<a href="/shop" className="btn btn-primary">{t.notifications.browse}</a>}>
         <p>{t.notifications.noneBody}</p>
       </StateMessage>
     );

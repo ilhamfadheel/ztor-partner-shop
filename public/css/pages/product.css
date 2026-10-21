@@ -1,0 +1,70 @@
+/* css/pages/product.css — product.html page rules on top of kit.css Section 4 (PDP) + 5 (size guide).
+   Only page-level composition lives here; every component class is the kit's. Tokens only, no hex. */
+
+/* page rhythm: the floating header clears via .l-page; the rail ends with room for the sticky buy bar */
+.pdp{padding-bottom:calc(var(--space-12) + 72px);}
+.pdp[aria-busy="true"]{min-height:60svh;}
+.pdp__page{min-width:0;}
+/* Transparent sticky shell; only the compact return control has a surface. */
+.pdp-return{position:sticky;top:var(--site-nav-clear);z-index:10;margin-bottom:20px;pointer-events:none;}
+.pdp-return .collection-back{pointer-events:auto;}
+.pdp-details__inner,.pdp-recs__inner{max-width:1440px;}
+.pdp-recs{padding-block:var(--space-8) 0;}
+
+/* the crop views are the same photograph re-framed: the frame zooms between them (state transition) */
+.pdp-gallery__img{transition:transform var(--l-d2) var(--l-ease-out);}
+.pdp-gallery__frame{touch-action:pan-y;}
+/* the stage keeps its arrows while a keyboard user walks the views */
+.pdp-gallery__stage:focus-within .pdp-gallery__arrow{opacity:1;pointer-events:auto;}
+
+/* the seller's videos sit in the gallery like its photographs (the kit styles the thumb's <img> only) */
+.pdp-gallery__thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;}
+.pdp-gallery__frame video{pointer-events:none;}
+.pdp-swatch.is-oos:hover{transform:none;}
+
+/* wishlist heart: the kit's 320ms pop, re-keyed for the PDP heart (rf-wish--pop is the card's) */
+.pdp-buy__heart.is-pop{animation:pdp-heart-pop 320ms var(--l-ease-out);}
+@keyframes pdp-heart-pop{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
+
+/* size chip out of stock: the diagonal strike is decorative, the chip stays in the tab order for the label */
+.pdp-size-chip.is-oos:hover{border-color:var(--border-default);background:var(--white-alpha-4);}
+
+/* sticky buy bar: the buybar add keeps the PDP's monochrome voice but does not stretch */
+.shop-buybar__thumb{display:block;flex:0 0 44px;width:44px;height:44px;object-fit:contain;border:1px solid var(--border-subtle);}
+.shop-buybar .pdp-buy__add{flex:0 0 auto;}
+.shop-buybar__add .pdp-buy__add-glyph svg{width:16px;height:16px;}
+/* while the size guide or the bag is open the buy bar steps out of the way (both are fixed layers above it) */
+body.ds-drawer-open .shop-buybar,body.cart-open .shop-buybar{transform:translateY(100%);pointer-events:none;}
+/* the kit toast and the buy bar share the viewport bottom: while the bar is up (and no layer has pushed it out)
+   the toast rides above it. Bar height = its 12px paddings + the 44px .btn--md + the 1px hairline. */
+body.l-root{--pdp-buybar-h:calc(2 * var(--space-3) + 44px + 1px);}
+body:has(.shop-buybar.is-shown):not(.cart-open):not(.ds-drawer-open) .ds-toast{bottom:calc(28px + var(--pdp-buybar-h));}
+
+/* size guide: the pushed page is inert; the panel is the whole screen on phones (kit Section 10) */
+.pdp.is-ref-pushed .pdp__page{pointer-events:none;}
+.ref-table th:not(:first-child),.ref-table td:not(:first-child){text-align:right;}
+.ref-table td:first-child{white-space:nowrap;}
+
+@media (max-width:767.98px){
+  .pdp{padding-bottom:calc(var(--space-12) + 84px);}
+  .shop-buybar{padding-inline:var(--site-gutter);}
+  .shop-buybar__add{padding-inline:20px;}
+  /* Locked membership labels wrap inside their own space, never displacing the product thumbnail. */
+  .shop-buybar__add:disabled{max-width:50%;white-space:normal;padding:8px 12px;line-height:14px;letter-spacing:.06em;}
+  .shop-buybar__add:disabled .pdp-buy__add-glyph{display:none;}
+  body:has(.shop-buybar.is-shown):not(.cart-open):not(.ds-drawer-open) .ds-toast{bottom:calc(16px + var(--pdp-buybar-h));}
+  /* the measurement figure is a 200x220 drawing: on a phone the kit's one-column layout would let it fill the panel */
+  .ref-measure__fig{max-width:180px;}
+}
+@media (max-width:479.98px){
+  /* delivery line: the two bracketed notes stack under the icon instead of wrapping side by side */
+  .pdp-delivery{display:grid;grid-template-columns:auto 1fr;column-gap:var(--space-2);row-gap:2px;align-items:start;}
+  .pdp-delivery__icon{grid-row:1 / span 2;margin-top:1px;}
+  .pdp-delivery__sep{display:none;}
+  .pdp-delivery__text{grid-column:2;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .pdp-gallery__img{transition:none;}
+  .pdp-buy__heart.is-pop{animation:none;}
+}

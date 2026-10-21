@@ -1,0 +1,3 @@
+/* css/pages/placeholder.css — loyalty / auction / leaderboard: base theme, one line. Not designed yet. */
+.l-placeholder{min-height:100svh;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:16px;padding-bottom:64px;}
+.l-placeholder__line{margin:0;font-family:var(--l-font);font-size:clamp(28px,5vw,56px);font-weight:300;letter-spacing:-.02em;line-height:1;color:var(--l-ink);}
