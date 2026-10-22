@@ -5,7 +5,7 @@ import {earningCatalog,missionState,submitMissionProof} from './earning-store.js
 const num=n=>Number(n||0).toLocaleString('en-US');
 const join=mission=> {
   const url=new URL(location.href); if(mission)url.searchParams.set('mission',mission);
-  return 'signup.html?return='+encodeURIComponent(url.pathname.split('/').pop()+url.search+url.hash);
+  return '/signup?return='+encodeURIComponent(url.pathname.split('/').pop()+url.search+url.hash);
 };
 const drafts=new Map(); // Same-tab drafts only; never persist proof image bytes.
 function step(parent,title,content) {
@@ -38,7 +38,7 @@ export function openEarnPoints(parent=null) {
     const per=e=>e?.pointsPerNtd!=null?`+${num(e.pointsPerNtd)} <small>points / NT$1</small>`:`+${num(e?.points)} <small>points</small>`;
     const shopRule=earn('A4'),pledgeRule=earn('A1'),like=earn('B4'),save=earn('B5');
     const options=[
-      shopRule&&`<article class="earning-option"><div><span class="earning-points">${per(shopRule)}</span><h4>Find your next favourite.</h4><p>Every piece from the artist’s store earns points on its price. Other currencies are converted to NT$ first.</p></div>${action(who.id?'Go to the shop':'Join to earn',who.id?'shop.html':join())}</article>`,
+      shopRule&&`<article class="earning-option"><div><span class="earning-points">${per(shopRule)}</span><h4>Find your next favourite.</h4><p>Every piece from the artist’s store earns points on its price. Other currencies are converted to NT$ first.</p></div>${action(who.id?'Go to the shop':'Join to earn',who.id?'/shop':join())}</article>`,
       pledgeRule&&`<article class="earning-option"><div><span class="earning-points">${per(pledgeRule)}</span><h4>Back a co-creation.</h4><p>Support the artist’s projects on Ztor. Points arrive when your pledge is charged.</p></div></article>`,
       (like||save)&&`<article class="earning-option"><div><span class="earning-points">${like?`+${num(like.points)}`:''}${like&&save?' / ':''}${save?`+${num(save.points)}`:''} <small>points</small></span><h4>Love the artist’s posts.</h4><p>Like${save?' or save':''} the artist’s own posts on Ztor. Once per post — taking a like back keeps your points, liking again adds none.</p></div></article>`,
     ].filter(Boolean).join('');

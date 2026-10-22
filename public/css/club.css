@@ -335,3 +335,8 @@ html[data-page="club"]{--club-paper:#f3f1ec;--club-ink:#181818;--club-muted:#696
 @media(max-width:650px){.club-header-actions .club-runway-link{display:none}}
 /* Five nav items now (Shop joined): lloud.club's fan-v2 layout for them. */
 .club-header .club-nav{grid-template-columns:repeat(5,max-content);justify-content:space-between;column-gap:20px;overflow-x:auto}
+
+/* "Opening your club…" only when loading actually takes a while (a first visit on a slow line):
+   pages render from the tab's snapshot (ztor/state.js) before it would show. */
+.club-loading{animation:club-loading-in 0s linear .6s both}
+@keyframes club-loading-in{from{visibility:hidden}to{visibility:visible}}

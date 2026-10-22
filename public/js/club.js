@@ -8,12 +8,13 @@ import { rewardPreview, rewardTasks, rewardIsReady, rewardCover } from './reward
 import { openEarnPoints } from './earning-ui.js';
 import { leaderboardRows, nextTierProgress } from './member-progress.js';
 import * as state from './ztor/state.js';
+import { viewOf, TITLES } from './club-routes.js';
 import { money as priceOf, mediaUrl } from './ztor/map.js';
 import { api, ApiError } from './ztor/api.js';
 import { signInHref, signOut, signInEmbed, rememberReturnTo } from './ztor/session.js';
 
 const root = document.getElementById('club-main');
-const view = document.documentElement.dataset.clubView || 'home';
+let view = document.documentElement.dataset.clubView || 'home';
 // What each view reads from Ztor, loaded before the first render (member + bag on every page).
 const PARTS = { home: ['vault', 'products'], rewards: ['vault', 'products'], leaderboard: ['board'], shop: ['products'], account: ['vault', 'orders'], profile: ['orders'] };
 await state.hydrate(['member', 'cart', ...(PARTS[view] ?? [])]);
@@ -27,22 +28,58 @@ let profileLoading = false;
 const num = value => Number(value || 0).toLocaleString('en-US');
 const mediaName = { note:'Private note', photo:'Exclusive photo', video:'Exclusive film', voice:'Voice message', music:'Unreleased audio' };
 const ORDER_STATUS = { PAID: 'Paid', COMPLETED: 'Completed', CANCEL_PENDING: 'Cancellation in progress', CANCELLED: 'Cancelled' };
-const returnHere = () => location.pathname.split('/').pop() + location.search + location.hash;
-const joinLink = () => 'signup.html?return=' + encodeURIComponent(returnHere());
-const profileLink = () => 'edit-profile.html' + (view==='profile' ? location.search : '?return='+encodeURIComponent(returnHere()));
+const returnHere = () => location.pathname + location.search + location.hash;
+const joinLink = () => '/signup?return=' + encodeURIComponent(returnHere());
+const profileLink = () => '/edit-profile' + (view==='profile' ? location.search : '?return='+encodeURIComponent(returnHere()));
+
+/** The nav's current item follows the view (rendered in place, see go()). */
+function setNav() {
+  document.querySelectorAll('.club-nav a').forEach(a => {
+    const on = viewOf(a.href) === view;
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    a.querySelector('.club-nav-marker')?.remove();
+    if (on) a.insertAdjacentHTML('beforeend', '<span class="club-nav-marker" aria-hidden="true"></span>');
+  });
+}
+
+/**
+ * Moves to another club page in place — no new document, so no "Opening your club…": the view
+ * changes, the URL follows (history), the data comes from the tab's snapshot (state.js) and is
+ * refreshed in the background.
+ */
+async function go(href, { push = true } = {}) {
+  const next = viewOf(href);
+  if (!next) return location.assign(href);
+  document.querySelectorAll('dialog[open]').forEach(d => d.close());
+  profileCleanup?.(); profileCleanup = null;
+  auctionCleanup?.(); auctionCleanup = null;
+  memberMetalCleanup?.(); memberMetalCleanup = null;
+  view = next;
+  document.documentElement.dataset.clubView = next;
+  document.title = TITLES[next];
+  if (push) history.pushState({ club: true }, '', href);
+  setNav();
+  await state.hydrate(['member', 'cart', ...(PARTS[view] ?? [])]);
+  await render(true);
+  const url = new URL(location.href);
+  if (url.hash) document.getElementById(url.hash.slice(1))?.scrollIntoView();
+  else scrollTo({ top: 0 });
+  if (view === 'rewards' && url.searchParams.get('reward')) openReward(url.searchParams.get('reward'));
+}
 
 function mountHeader() {
-  const routes = [['home','fan-club.html','Fan Club'],['rewards','rewards.html','Rewards'],['shop','shop.html','Shop'],['auction','auction.html','Auction'],['leaderboard','leaderboard.html','Leaderboard']];
+  const routes = [['home','/fan-club','Fan Club'],['rewards','/rewards','Rewards'],['shop','/shop','Shop'],['auction','/auction','Auction'],['leaderboard','/leaderboard','Leaderboard']];
   // lloud.club's header: a RUNWAY button, the account icon (your account, or sign-in when signed out) and the bag.
-  document.querySelector('[data-slot="header"]').outerHTML = `<header class="club-header"><div class="club-header-top"><a class="club-brand" href="./" aria-label="Back to LLOUD runway"><img src="assets/brand/brand-logo.svg" alt="LLOUD"><span>Fan Club</span></a><div class="club-header-actions"><a class="club-runway-link" href="./">RUNWAY</a><a class="club-account" href="account.html" data-member-link aria-label="Account" title="Account">${ICONS.account}</a><button type="button" class="club-bag" aria-label="Shopping bag" aria-haspopup="dialog">${ICONS.bag}<span data-bag-count aria-hidden="true"></span></button></div></div><nav class="club-nav" aria-label="Fan Club">${routes.map(([id,url,label]) => `<a href="${url}" ${id === view ? 'aria-current="page"' : ''}>${label}${id === view ? '<span class="club-nav-marker" aria-hidden="true"></span>' : ''}</a>`).join('')}</nav></header>`;
+  document.querySelector('[data-slot="header"]').outerHTML = `<header class="club-header"><div class="club-header-top"><a class="club-brand" href="/" aria-label="Back to LLOUD runway"><img src="assets/brand/brand-logo.svg" alt="LLOUD"><span>Fan Club</span></a><div class="club-header-actions"><a class="club-runway-link" href="/">RUNWAY</a><a class="club-account" href="/account" data-member-link aria-label="Account" title="Account">${ICONS.account}</a><button type="button" class="club-bag" aria-label="Shopping bag" aria-haspopup="dialog">${ICONS.bag}<span data-bag-count aria-hidden="true"></span></button></div></div><nav class="club-nav" aria-label="Fan Club">${routes.map(([,url,label]) => `<a href="${url}">${label}</a>`).join('')}</nav></header>`;
+  setNav();
   document.querySelector('.club-header-top').insertBefore(document.querySelector('.club-nav'),document.querySelector('.club-header-actions'));
-  if (view === 'home') {
+  {
     const header = document.querySelector('.club-header');
     const mobileHeader = matchMedia('(max-width:700px)');
     let scrollAnchor = Math.max(0, scrollY);
     const syncHeader = () => {
       const y = Math.max(0, Math.min(scrollY, document.documentElement.scrollHeight - innerHeight));
-      if (!mobileHeader.matches || y <= header.offsetHeight) {
+      if (view !== 'home' || !mobileHeader.matches || y <= header.offsetHeight) {
         header.classList.remove('is-scroll-hidden');
         scrollAnchor = y;
         return;
@@ -76,7 +113,7 @@ function pass(who) {
 }
 function productCard(p) {
   const tag = p.soldOut ? 'Sold out' : p.flag;
-  return `<a class="club-product" href="product.html?id=${encodeURIComponent(p.slug)}" data-reveal><div class="club-product-image">${tag ? `<span class="club-access-tag">${esc(tag)}</span>` : ''}${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" width="480" height="600">` : ''}</div><div class="club-product-meta"><div><h3>${esc(p.name)}</h3><p>${esc(p.category)}</p></div><span>${priceOf(p.price, p.currency)}${p.maxPrice > p.price ? '+' : ''}</span></div></a>`;
+  return `<a class="club-product" href="/product?id=${encodeURIComponent(p.slug)}" data-reveal><div class="club-product-image">${tag ? `<span class="club-access-tag">${esc(tag)}</span>` : ''}${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" width="480" height="600">` : ''}</div><div class="club-product-meta"><div><h3>${esc(p.name)}</h3><p>${esc(p.category)}</p></div><span>${priceOf(p.price, p.currency)}${p.maxPrice > p.price ? '+' : ''}</span></div></a>`;
 }
 function levelProgress(who) {
   if(!who.id) return '';
@@ -90,10 +127,10 @@ function home() {
   const ready = rewardCatalog().filter(r => r.published && rewardIsReady(r) && rewardStatus(r.id).unlocked && !who.claimed.includes(r.id));
   const picks = state.products().slice(0, 3);
   const unlocked = rewardCatalog().filter(r => rewardStatus(r.id).unlocked).length;
-  return `<section class="club-hero club-hero--membership"><div class="club-hero-copy" data-reveal><span class="club-kicker">More than a fan.</span><h1>Your place in LLOUD.</h1><p class="club-lead">Your loyalty. Your unlocks. Your next little discovery.</p>${nextMission(who)}<div class="club-actions">${action(who.id ? 'Explore your rewards' : 'Join the club', who.id ? 'rewards.html' : joinLink())}<button class="club-button is-secondary" data-earn-points>How to earn points<span aria-hidden="true">↗</span></button></div>${who.id ? '' : '<p class="club-quiet" style="margin-top:18px">Free to join. Your loyalty opens doors.</p>'}</div><div class="club-membership">${pass(who)}${who.id ? `${levelProgress(who)}<div class="club-stats"><div class="club-stat"><strong>${who.rank ? '#'+num(who.rank) : '—'}</strong><span>Your creator rank</span></div><div class="club-stat"><strong>${num(who.lifetime)}</strong><span>Lifetime points<small>Decide your rank & level</small></span></div><div class="club-stat"><strong>${num(unlocked)}</strong><span>Rewards unlocked<small>Yours to keep</small></span></div></div>` : ''}</div></section>
-  <section class="club-feature" data-reveal><div class="club-feature-art"><div class="club-envelope"><img src="assets/brand/brand-logo.svg" alt="Sealed LLOUD reward"></div></div><div class="club-feature-copy"><span class="club-kicker">Your secret rewards</span><h2>${ready.length ? 'Something is waiting for you.' : 'A little closer. A little more yours.'}</h2><p>${ready.length ? `${ready.length} ${ready.length === 1 ? 'reward is' : 'rewards are'} ready to open. Exclusive moments, earned by being here.` : 'Exclusive films. Private messages. Unreleased sounds. Follow a mission and unlock something special.'}</p>${action(ready.length ? 'Open your rewards' : 'See the missions','rewards.html',true)}</div></section>
-  ${picks.length ? `<section class="club-section"><div class="club-section-head"><h2>Wear your world.</h2><a class="club-text-link" href="shop.html">Explore the shop ↗</a></div><div class="club-grid club-products-grid">${picks.map(productCard).join('')}</div></section>` : ''}
-  <section class="club-section" id="membership"><div class="club-section-head"><h2>Closer, in your own way.</h2><a class="club-text-link" href="leaderboard.html">Your place in the circle ↗</a></div><p class="club-lead">Your level follows your rank among the artist’s fans, by the points you earn with them. Levels are refreshed every week; moving up happens the moment you pass the line.</p><div class="club-tier-rows">${TIERS.map(t => `<div class="club-tier-row"><strong>${esc(t.name)}${who.id && who.tier === t.id ? ' <span class="club-you-badge">You</span>' : ''}</strong><p>${esc(t.benefit)}</p><small>${esc(t.band)}</small></div>`).join('')}</div><p class="club-quiet" style="margin-top:18px">Levels are based on community rank, not a fixed points target. Rewards you have earned stay yours when your level changes.</p></section>`;
+  return `<section class="club-hero club-hero--membership"><div class="club-hero-copy" data-reveal><span class="club-kicker">More than a fan.</span><h1>Your place in LLOUD.</h1><p class="club-lead">Your loyalty. Your unlocks. Your next little discovery.</p>${nextMission(who)}<div class="club-actions">${action(who.id ? 'Explore your rewards' : 'Join the club', who.id ? '/rewards' : joinLink())}<button class="club-button is-secondary" data-earn-points>How to earn points<span aria-hidden="true">↗</span></button></div>${who.id ? '' : '<p class="club-quiet" style="margin-top:18px">Free to join. Your loyalty opens doors.</p>'}</div><div class="club-membership">${pass(who)}${who.id ? `${levelProgress(who)}<div class="club-stats"><div class="club-stat"><strong>${who.rank ? '#'+num(who.rank) : '—'}</strong><span>Your creator rank</span></div><div class="club-stat"><strong>${num(who.lifetime)}</strong><span>Lifetime points<small>Decide your rank & level</small></span></div><div class="club-stat"><strong>${num(unlocked)}</strong><span>Rewards unlocked<small>Yours to keep</small></span></div></div>` : ''}</div></section>
+  <section class="club-feature" data-reveal><div class="club-feature-art"><div class="club-envelope"><img src="assets/brand/brand-logo.svg" alt="Sealed LLOUD reward"></div></div><div class="club-feature-copy"><span class="club-kicker">Your secret rewards</span><h2>${ready.length ? 'Something is waiting for you.' : 'A little closer. A little more yours.'}</h2><p>${ready.length ? `${ready.length} ${ready.length === 1 ? 'reward is' : 'rewards are'} ready to open. Exclusive moments, earned by being here.` : 'Exclusive films. Private messages. Unreleased sounds. Follow a mission and unlock something special.'}</p>${action(ready.length ? 'Open your rewards' : 'See the missions','/rewards',true)}</div></section>
+  ${picks.length ? `<section class="club-section"><div class="club-section-head"><h2>Wear your world.</h2><a class="club-text-link" href="/shop">Explore the shop ↗</a></div><div class="club-grid club-products-grid">${picks.map(productCard).join('')}</div></section>` : ''}
+  <section class="club-section" id="membership"><div class="club-section-head"><h2>Closer, in your own way.</h2><a class="club-text-link" href="/leaderboard">Your place in the circle ↗</a></div><p class="club-lead">Your level follows your rank among the artist’s fans, by the points you earn with them. Levels are refreshed every week; moving up happens the moment you pass the line.</p><div class="club-tier-rows">${TIERS.map(t => `<div class="club-tier-row"><strong>${esc(t.name)}${who.id && who.tier === t.id ? ' <span class="club-you-badge">You</span>' : ''}</strong><p>${esc(t.benefit)}</p><small>${esc(t.band)}</small></div>`).join('')}</div><p class="club-quiet" style="margin-top:18px">Levels are based on community rank, not a fixed points target. Rewards you have earned stay yours when your level changes.</p></section>`;
 }
 function nextMission(who) {
   const catalog=rewardCatalog().filter(r=>r.published);
@@ -104,7 +141,7 @@ function nextMission(who) {
   const condition=reward.conditions.find((c,i)=>!status.conditions[i]?.met);
   const cta=status.unlocked ? `<button class="club-text-link" data-open-reward="${esc(reward.id)}">Open your reward ↗</button>`
     : !who.id ? action('Join to start',joinLink(),true)
-    : condition?.type==='product' ? action('Shop this piece','product.html?id='+encodeURIComponent(condition.value),true)
+    : condition?.type==='product' ? action('Shop this piece','/product?id='+encodeURIComponent(condition.value),true)
     : '<button class="club-text-link" data-earn-points>How to earn points ↗</button>';
   return `<aside class="club-next-mission" aria-label="Your next mission"><img src="${esc(rewardCover(reward))}" alt="Reward cover" width="84" height="108"><div><span class="club-kicker">${status.unlocked?'Ready to open':'Your next unlock'}</span><h3>${esc(reward.title)}</h3><p>${status.unlocked?'Earned by you. Ready whenever you are.':(condition?`${missing.length} ${missing.length===1?'step':'steps'} left · ${esc(conditionLabel(condition))}`:'Free for every member. Join to open it.')}</p>${cta}</div></aside>`;
 }
@@ -128,7 +165,7 @@ function rewards() {
 }
 function shareInvite() {
   // ponytail: preview only. The ref parameter is not counted anywhere yet; wire to the real invite service later.
-  const link=new URL('signup.html?ref='+encodeURIComponent(member().id||'friend'),location.href).href;
+  const link=new URL('/signup?ref='+encodeURIComponent(member().id||'friend'),location.href).href;
   if(!navigator.clipboard) return notify(link);
   navigator.clipboard.writeText(link).then(()=>notify('Invite link copied. Send it to a friend.'),()=>notify(link));
 }
@@ -182,18 +219,18 @@ function shop() {
 function leaderboard() {
   const who = member();
   const rows = leaderboardRows(who);
-  return `<div class="club-hero"><div data-reveal><span class="club-kicker">Everyone adds something.</span><h1>All together. A little closer.</h1><p class="club-lead">Your support writes the story. See your place among the artist’s fans.</p>${action('How membership works','fan-club.html#membership',true)}</div>${pass(who)}</div><div class="club-section-head"><h2>The circle, right now.</h2><span class="club-quiet">Lifetime points</span></div>${rows.length ? `<table class="club-rank-table"><caption class="club-sr-only">The artist’s fan leaderboard</caption><thead><tr><th scope="col">Rank</th><th scope="col">Member</th><th scope="col" class="rank-tier">Level</th><th scope="col">Points</th></tr></thead><tbody>${rows.map(r => `<tr class="${r.you?'is-you':''}"><td>#${num(r.rank)}</td><td><div class="rank-person"><span class="rank-initial" aria-hidden="true">${esc(r.name.slice(0,1))}</span>${esc(r.name)}${r.you?' · You':''}</div></td><td class="rank-tier">${esc(r.tier)}</td><td>${num(r.points)}</td></tr>`).join('')}</tbody></table>` : `<div class="club-empty"><h3>The circle is just forming.</h3><p>Shop, back a co-creation or like the artist’s posts on Ztor to be the first on the board.</p></div>`}<p class="club-quiet" style="margin-top:20px">Ranked by the points fans earn with this artist. Your rank sets your level, refreshed every week.</p>`;
+  return `<div class="club-hero"><div data-reveal><span class="club-kicker">Everyone adds something.</span><h1>All together. A little closer.</h1><p class="club-lead">Your support writes the story. See your place among the artist’s fans.</p>${action('How membership works','/fan-club#membership',true)}</div>${pass(who)}</div><div class="club-section-head"><h2>The circle, right now.</h2><span class="club-quiet">Lifetime points</span></div>${rows.length ? `<table class="club-rank-table"><caption class="club-sr-only">The artist’s fan leaderboard</caption><thead><tr><th scope="col">Rank</th><th scope="col">Member</th><th scope="col" class="rank-tier">Level</th><th scope="col">Points</th></tr></thead><tbody>${rows.map(r => `<tr class="${r.you?'is-you':''}"><td>#${num(r.rank)}</td><td><div class="rank-person"><span class="rank-initial" aria-hidden="true">${esc(r.name.slice(0,1))}</span>${esc(r.name)}${r.you?' · You':''}</div></td><td class="rank-tier">${esc(r.tier)}</td><td>${num(r.points)}</td></tr>`).join('')}</tbody></table>` : `<div class="club-empty"><h3>The circle is just forming.</h3><p>Shop, back a co-creation or like the artist’s posts on Ztor to be the first on the board.</p></div>`}<p class="club-quiet" style="margin-top:20px">Ranked by the points fans earn with this artist. Your rank sets your level, refreshed every week.</p>`;
 }
 function account() {
   const who = member();
   if (!who.id) return `<div class="club-empty"><span class="club-kicker">Your own little corner.</span><h1>Make yourself at home.</h1><p>Join to keep your membership, orders and unlocked moments together.</p>${action('Join / sign in',joinLink())}</div>`;
   const orders = accountOrders();
-  return `<div class="club-hero"><div data-reveal><span class="club-kicker">My account</span><h1>Hello, ${esc(who.name)}.</h1><p class="club-lead">Your membership. Your pieces. Your little discoveries.</p><div class="club-actions"><a class="club-button is-secondary" href="${esc(profileLink())}">Edit profile</a><button class="club-text-link" data-signout>Sign out</button></div></div>${pass(who)}</div><section id="orders"><div class="club-section-head"><h2>Your orders.</h2><a class="club-text-link" href="shop.html">Explore the shop ↗</a></div>${orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="product.html?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','shop.html')}</div>`}</section><section class="club-section"><div class="club-section-head"><h2>Your story so far.</h2><a class="club-text-link" href="rewards.html">Your rewards ↗</a></div><div class="club-rule-list"><div><strong>Lifetime points</strong><span>${num(who.lifetime)} points</span></div><div><strong>Your level</strong><span>${esc(tierOf(who.tier).name)}${who.rank ? ` · #${num(who.rank)} of ${num(who.population)}` : ''}</span></div><div><strong>Unlocked rewards</strong><span>${rewardCatalog().filter(r=>r.published&&rewardStatus(r.id).unlocked).length} rewards</span></div></div></section>`;
+  return `<div class="club-hero"><div data-reveal><span class="club-kicker">My account</span><h1>Hello, ${esc(who.name)}.</h1><p class="club-lead">Your membership. Your pieces. Your little discoveries.</p><div class="club-actions"><a class="club-button is-secondary" href="${esc(profileLink())}">Edit profile</a><button class="club-text-link" data-signout>Sign out</button></div></div>${pass(who)}</div><section id="orders"><div class="club-section-head"><h2>Your orders.</h2><a class="club-text-link" href="/shop">Explore the shop ↗</a></div>${orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="/product?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','/shop')}</div>`}</section><section class="club-section"><div class="club-section-head"><h2>Your story so far.</h2><a class="club-text-link" href="/rewards">Your rewards ↗</a></div><div class="club-rule-list"><div><strong>Lifetime points</strong><span>${num(who.lifetime)} points</span></div><div><strong>Your level</strong><span>${esc(tierOf(who.tier).name)}${who.rank ? ` · #${num(who.rank)} of ${num(who.population)}` : ''}</span></div><div><strong>Unlocked rewards</strong><span>${rewardCatalog().filter(r=>r.published&&rewardStatus(r.id).unlocked).length} rewards</span></div></div></section>`;
 }
 /** The fan's orders from the artist's store (the account page's Orders section). */
 function ordersList() {
   const orders = accountOrders();
-  return orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="product.html?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','shop.html')}</div>`;
+  return orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="/product?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','/shop')}</div>`;
 }
 function signup() {
   const back = safeReturn(new URLSearchParams(location.search).get('return'));
@@ -230,13 +267,13 @@ async function render(animate=false) {
   const who = member();
   const accountLink=document.querySelector('[data-member-link]');
   const accountLabel=who.id?'Your account':'Join / sign in';
-  accountLink.setAttribute('aria-label',accountLabel); accountLink.title=accountLabel; accountLink.href=who.id?'account.html':joinLink();
+  accountLink.setAttribute('aria-label',accountLabel); accountLink.title=accountLabel; accountLink.href=who.id?'/account':joinLink();
   if(view==='profile' || view==='account') {
     if(!profileCleanup && !profileLoading) {
       profileLoading=true;
       // lloud.club's account page: personal details, addresses, payment methods, orders, security.
       try { const {mountAccountPage}=await import('./account-page.js'); profileCleanup=mountAccountPage(root,{renderOrders:ordersList}); }
-      catch { root.innerHTML='<div class="club-empty" role="alert"><h1>Your profile could not open.</h1><p>Your saved details are still in this browser.</p><a class="club-button" href="edit-profile.html">Try again</a></div>'; }
+      catch { root.innerHTML='<div class="club-empty" role="alert"><h1>Your profile could not open.</h1><p>Your saved details are still in this browser.</p><a class="club-button" href="/edit-profile">Try again</a></div>'; }
       finally {profileLoading=false;}
     }
     return;
@@ -245,7 +282,7 @@ async function render(animate=false) {
     if(!auctionCleanup && !auctionLoading) {
       auctionLoading=true;
       try { const {mountAuctionPage}=await import('./auction-page.js'); auctionCleanup=mountAuctionPage(root); }
-      catch { root.innerHTML='<div class="club-empty" role="alert"><h1>A moment to reconnect.</h1><p>The auction could not load. Your saved preview bids are kept in this browser.</p><a class="club-button" href="auction.html">Try again</a></div>'; }
+      catch { root.innerHTML='<div class="club-empty" role="alert"><h1>A moment to reconnect.</h1><p>The auction could not load. Your saved preview bids are kept in this browser.</p><a class="club-button" href="/auction">Try again</a></div>'; }
       finally {auctionLoading=false;}
     }
     return;
@@ -265,7 +302,7 @@ root.addEventListener('click',e=>{
   if(target.hasAttribute('data-signout'))dialog('Sign out?',`<p>You’ll be signed out of LLOUD on this device. Your Ztor account, points and rewards stay as they are.</p><button class="club-button" data-confirm-signout>Sign out</button>`,node=>node.querySelector('[data-confirm-signout]').addEventListener('click',()=>signOut('/')));
 });
 mountHeader();
-document.body.insertAdjacentHTML('beforeend','<footer class="club-footer"><span>LLOUD · A little closer, together.</span><span>Powered by Ztor · <a href="account.html">Your account</a> · <a href="./">Back to runway</a></span></footer>');
+document.body.insertAdjacentHTML('beforeend','<footer class="club-footer"><span>LLOUD · A little closer, together.</span><span>Powered by Ztor · <a href="/account">Your account</a> · <a href="/">Back to runway</a></span></footer>');
 document.documentElement.classList.add('is-site-ready');
 let shownMember=member();
 document.addEventListener('member:change',async event=>{
@@ -296,3 +333,16 @@ await render(true);
 const resume=new URLSearchParams(location.search);
 if(view==='rewards' && resume.get('reward'))openReward(resume.get('reward'));
 if(location.hash && view!=='auction')requestAnimationFrame(()=>document.getElementById(location.hash.slice(1))?.scrollIntoView());
+// In-place navigation between the club's pages. On window, so a page's own link handling (the
+// profile's "discard changes?") runs first and can keep the fan where they are.
+window.addEventListener('click', e => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest?.('a[href]');
+  if (!a || a.target === '_blank' || a.hasAttribute('download') || !viewOf(a.href)) return;
+  e.preventDefault();
+  void go(a.href);
+});
+addEventListener('popstate', () => void go(location.href, { push: false }));
+addEventListener('club:navigate', e => void go(e.detail));
+// The snapshot was refreshed in the background: show what's new (not under a profile being edited).
+document.addEventListener('ztor:refresh', () => { if (view !== 'profile' && !(view === 'account' && (new URLSearchParams(location.search).get('section') || 'profile') === 'profile')) void render(); });

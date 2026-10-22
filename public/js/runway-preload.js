@@ -102,7 +102,7 @@ async function visible() {
 
 async function warmPages(state) {
   const { COLLECTIONS, PRODUCTS } = await import('./data.js');
-  const queue = ['shop.html', 'product.html', 'fan-club.html', 'rewards.html', 'auction.html', 'leaderboard.html', 'loyalty.html', 'edit-profile.html', 'account.html', 'signup.html', 'checkout.html',
+  const queue = ['/shop', '/product', '/fan-club', '/rewards', '/auction', '/leaderboard', '/loyalty', '/edit-profile', '/account', '/signup', '/checkout',
     ...COLLECTIONS.map(c => c.heroImage), ...PRODUCTS.map(p => p.image), ...['apple.png', 'google.png', 'meta.png', 'line.png', 'ztor.svg'].map(file => `assets/providers/${file}`)];
   const seen = new Set();
   const add = (path, parent = base) => {

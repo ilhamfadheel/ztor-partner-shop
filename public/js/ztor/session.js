@@ -34,6 +34,8 @@ function save(session) {
 
 export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
+  // What the pages kept for this fan (state.js SNAPSHOT_KEY) goes with the sign-in.
+  try { sessionStorage.removeItem('lloud_state_v1'); } catch { /* storage off */ }
   window.dispatchEvent(new Event('ztor-session'));
 }
 
