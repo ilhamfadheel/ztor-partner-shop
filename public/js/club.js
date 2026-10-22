@@ -15,7 +15,7 @@ import { signInHref, signOut, signInEmbed, rememberReturnTo } from './ztor/sessi
 const root = document.getElementById('club-main');
 const view = document.documentElement.dataset.clubView || 'home';
 // What each view reads from Ztor, loaded before the first render (member + bag on every page).
-const PARTS = { home: ['vault', 'products'], rewards: ['vault', 'products'], leaderboard: ['board'], shop: ['products'], account: ['vault', 'orders'] };
+const PARTS = { home: ['vault', 'products'], rewards: ['vault', 'products'], leaderboard: ['board'], shop: ['products'], account: ['vault', 'orders'], profile: ['orders'] };
 await state.hydrate(['member', 'cart', ...(PARTS[view] ?? [])]);
 let rewardFilter = 'all';
 let shopFilter = 'all';
@@ -32,8 +32,9 @@ const joinLink = () => 'signup.html?return=' + encodeURIComponent(returnHere());
 const profileLink = () => 'edit-profile.html' + (view==='profile' ? location.search : '?return='+encodeURIComponent(returnHere()));
 
 function mountHeader() {
-  const routes = [['home','fan-club.html','Fan Club'],['rewards','rewards.html','Rewards'],['auction','auction.html','Auction'],['leaderboard','leaderboard.html','Leaderboard']];
-  document.querySelector('[data-slot="header"]').outerHTML = `<header class="club-header"><div class="club-header-top"><a class="club-brand" href="./" aria-label="Back to LLOUD runway"><img src="assets/brand/brand-logo.svg" alt="LLOUD"><span>Fan Club</span></a><div class="club-header-actions"><a class="club-runway-link" href="./">Back to runway</a><a href="edit-profile.html" data-member-link>Edit profile</a><button type="button" class="club-bag" aria-label="Shopping bag" aria-haspopup="dialog">${ICONS.bag}<span data-bag-count aria-hidden="true"></span></button></div></div><nav class="club-nav" aria-label="Fan Club">${routes.map(([id,url,label]) => `<a href="${url}" ${id === view ? 'aria-current="page"' : ''}>${label}</a>`).join('')}</nav></header>`;
+  const routes = [['home','fan-club.html','Fan Club'],['rewards','rewards.html','Rewards'],['shop','shop.html','Shop'],['auction','auction.html','Auction'],['leaderboard','leaderboard.html','Leaderboard']];
+  // lloud.club's header: a RUNWAY button, the account icon (your account, or sign-in when signed out) and the bag.
+  document.querySelector('[data-slot="header"]').outerHTML = `<header class="club-header"><div class="club-header-top"><a class="club-brand" href="./" aria-label="Back to LLOUD runway"><img src="assets/brand/brand-logo.svg" alt="LLOUD"><span>Fan Club</span></a><div class="club-header-actions"><a class="club-runway-link" href="./">RUNWAY</a><a class="club-account" href="account.html" data-member-link aria-label="Account" title="Account">${ICONS.account}</a><button type="button" class="club-bag" aria-label="Shopping bag" aria-haspopup="dialog">${ICONS.bag}<span data-bag-count aria-hidden="true"></span></button></div></div><nav class="club-nav" aria-label="Fan Club">${routes.map(([id,url,label]) => `<a href="${url}" ${id === view ? 'aria-current="page"' : ''}>${label}${id === view ? '<span class="club-nav-marker" aria-hidden="true"></span>' : ''}</a>`).join('')}</nav></header>`;
   document.querySelector('.club-header-top').insertBefore(document.querySelector('.club-nav'),document.querySelector('.club-header-actions'));
   if (view === 'home') {
     const header = document.querySelector('.club-header');
@@ -54,7 +55,6 @@ function mountHeader() {
     mobileHeader.addEventListener('change', syncHeader);
     header.addEventListener('focusin', () => header.classList.remove('is-scroll-hidden'));
   }
-  document.querySelector('[data-member-link]').addEventListener('click',event=>{if(member().id)event.currentTarget.href=profileLink();});
   mountDrawer();
   const bag = document.querySelector('.club-bag');
   bag.addEventListener('click', () => openDrawer(bag));
@@ -190,6 +190,11 @@ function account() {
   const orders = accountOrders();
   return `<div class="club-hero"><div data-reveal><span class="club-kicker">My account</span><h1>Hello, ${esc(who.name)}.</h1><p class="club-lead">Your membership. Your pieces. Your little discoveries.</p><div class="club-actions"><a class="club-button is-secondary" href="${esc(profileLink())}">Edit profile</a><button class="club-text-link" data-signout>Sign out</button></div></div>${pass(who)}</div><section id="orders"><div class="club-section-head"><h2>Your orders.</h2><a class="club-text-link" href="shop.html">Explore the shop ↗</a></div>${orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="product.html?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','shop.html')}</div>`}</section><section class="club-section"><div class="club-section-head"><h2>Your story so far.</h2><a class="club-text-link" href="rewards.html">Your rewards ↗</a></div><div class="club-rule-list"><div><strong>Lifetime points</strong><span>${num(who.lifetime)} points</span></div><div><strong>Your level</strong><span>${esc(tierOf(who.tier).name)}${who.rank ? ` · #${num(who.rank)} of ${num(who.population)}` : ''}</span></div><div><strong>Unlocked rewards</strong><span>${rewardCatalog().filter(r=>r.published&&rewardStatus(r.id).unlocked).length} rewards</span></div></div></section>`;
 }
+/** The fan's orders from the artist's store (the account page's Orders section). */
+function ordersList() {
+  const orders = accountOrders();
+  return orders.length ? orders.map(o => `<article class="club-order"><div class="club-order-head"><strong>${esc(o.orderNo)}</strong><span>${priceOf(o.payableAmount, o.currency)} · ${esc(ORDER_STATUS[o.displayStatus] ?? String(o.displayStatus).toLowerCase())}</span></div><div class="club-order-items">${o.items.map(p => `<a href="product.html?id=${encodeURIComponent(p.productId || '')}">${p.coverUrl ? `<img src="${esc(mediaUrl(p.coverUrl))}" alt="${esc(p.title || '')}" loading="lazy">` : ''}</a>`).join('')}</div><a class="club-text-link" href="/orders/${encodeURIComponent(o.orderId)}">View order details ↗</a></article>`).join('') : `<div class="club-empty"><h3>Your first piece is waiting.</h3><p>Your orders will appear here.</p>${action('Find something you love','shop.html')}</div>`;
+}
 function signup() {
   const back = safeReturn(new URLSearchParams(location.search).get('return'));
   const { attributes } = signInEmbed();
@@ -224,11 +229,13 @@ function accountOrders() {
 async function render(animate=false) {
   const who = member();
   const accountLink=document.querySelector('[data-member-link]');
-  accountLink.textContent=who.id?'Edit profile':'Join / sign in'; accountLink.href=who.id?profileLink():joinLink();
-  if(view==='profile') {
+  const accountLabel=who.id?'Your account':'Join / sign in';
+  accountLink.setAttribute('aria-label',accountLabel); accountLink.title=accountLabel; accountLink.href=who.id?'account.html':joinLink();
+  if(view==='profile' || view==='account') {
     if(!profileCleanup && !profileLoading) {
       profileLoading=true;
-      try { const {mountProfilePage}=await import('./profile-page.js'); profileCleanup=mountProfilePage(root); }
+      // lloud.club's account page: personal details, addresses, payment methods, orders, security.
+      try { const {mountAccountPage}=await import('./account-page.js'); profileCleanup=mountAccountPage(root,{renderOrders:ordersList}); }
       catch { root.innerHTML='<div class="club-empty" role="alert"><h1>Your profile could not open.</h1><p>Your saved details are still in this browser.</p><a class="club-button" href="edit-profile.html">Try again</a></div>'; }
       finally {profileLoading=false;}
     }

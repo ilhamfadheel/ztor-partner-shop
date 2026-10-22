@@ -1,0 +1,50 @@
+/* Typography source of truth. Change roles here, never append component fixes.
+   Body/support may not exceed actions. Pass artwork is an intentional exception.
+   The upstream shell and collection display art retain their original typesetting. */
+:root{
+  --type-scroll-cue:16px;
+  --weight-scroll-cue:300;
+  --font-ui-variable:'Satoshi Header',Satoshi,system-ui,sans-serif;
+  --weight-light:360;
+  --weight-support:var(--weight-light);
+  --weight-nav:435.6;
+  --weight-collection-nav:348.48;
+  --weight-action-motion:396;
+  --leading-body:1.5;
+  --leading-caption:1.4;
+  --leading-title:1.25;
+  --type-action:14px;
+  --type-body:var(--type-action);
+  --type-support:var(--type-body);
+  --type-nav:var(--type-action);
+  --type-label:var(--type-action);
+  --type-caption:12px;
+  --type-input:16px;
+  --type-title-xs:18px;
+  --type-title-sm:20px;
+  --type-title:24px;
+  --type-title-lg:28px;
+  --type-section:32px;
+  --type-section-lg:36px;
+  --type-page:42px;
+  --type-hero-compact:48px;
+  --type-metric-lg:60px;
+  --type-metric-display:72px;
+  --type-hero:clamp(44px,5.4vw,76px);
+  --type-section-fluid:clamp(28px,2.6vw,36px);
+  --type-page-fluid:clamp(40px,4.8vw,64px);
+  --type-feature-fluid:clamp(32px,3.4vw,46px);
+
+  /* Membership pass artwork: independent from product UI type. */
+  --type-pass-band-preview:10px;
+  --type-pass-band:11px;
+  --type-pass-meta:10px;
+  --type-pass-meta-preview-small:7px;
+  --type-pass-meta-preview:8px;
+  --type-pass-title-preview-short:20px;
+  --type-pass-title-preview-small:22px;
+  --type-pass-title-preview:24px;
+  --type-pass-title-offer:28px;
+  --type-pass-title-mobile:34px;
+  --type-pass-title:clamp(26px,3.1vw,42px);
+}
