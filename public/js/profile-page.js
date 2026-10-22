@@ -6,16 +6,22 @@ import { esc, dialog, action } from './club-ui.js';
 
 // Saves to the fan's Ztor account (name, bio, photo): the same profile every Ztor site shows.
 const dataUrlBlob = dataUrl => fetch(dataUrl).then(r => r.blob());
-export function mountProfilePage(root) {
-  let baseline=profileOf(member()), avatar=baseline.avatar;
+/** The languages a fan can pick as their Ztor default (lib/account.ts PROFILE_LANGUAGES). */
+export const LANGUAGES = [['en-us','English'],['zh-hk','繁體中文（香港）'],['zh-cn','简体中文']];
+/** The site follows the account's language: the cookie the React pages and the API calls read (lib/i18n.ts). */
+const storeLang = lang => { document.cookie = `ztor_lang=${lang}; path=/; max-age=31536000; samesite=lax`; };
+
+export function mountProfilePage(root, { embedded = false } = {}) {
+  const languageOf = () => ztor.account()?.language || '';
+  let baseline=profileOf(member()), avatar=baseline.avatar, language=languageOf();
   let busy=false, saving=false, conflicted=false, uploadVersion=0, leaveDialog=null;
   const requested=safeReturn(new URLSearchParams(location.search).get('return'));
   const returnTo=new URL(requested,location.href).pathname.endsWith('/edit-profile.html') ? 'fan-club.html' : requested;
   const returnFile=new URL(returnTo,location.href).pathname.split('/').pop();
   const backLabel=({'auction.html':'Back to auctions','rewards.html':'Back to rewards','account.html':'Back to account','leaderboard.html':'Back to leaderboard','shop.html':'Back to shop'})[returnFile] || 'Back to Fan Club';
   const find=selector=>root.querySelector(selector);
-  const draft=()=>({name:find('[name="name"]')?.value || '',bio:find('[name="bio"]')?.value || '',avatar});
-  const dirty=()=>Boolean(find('[data-profile-form]')) && (busy || ['name','bio','avatar'].some(key=>draft()[key]!==baseline[key]));
+  const draft=()=>({name:find('[name="name"]')?.value || '',bio:find('[name="bio"]')?.value || '',avatar,language:find('[name="language"]')?.value || ''});
+  const dirty=()=>Boolean(find('[data-profile-form]')) && (busy || ['name','bio','avatar'].some(key=>draft()[key]!==baseline[key]) || draft().language!==language);
 
   function paintPreview() {
     const value=draft();
@@ -50,29 +56,29 @@ export function mountProfilePage(root) {
   }
   function render() {
     uploadVersion++; busy=false; conflicted=false;
-    baseline=profileOf(member()); avatar=baseline.avatar;
+    baseline=profileOf(member()); avatar=baseline.avatar; language=languageOf();
     if(!baseline.id) {
       root.innerHTML=`<section class="profile-page club-empty"><h1>Your profile, your place.</h1><p>Join or sign in to add your photo, name and bio.</p>${action('Join / sign in',signInHref(location.pathname+location.search))}<p><a class="profile-back" href="fan-club.html">Back to Fan Club</a></p></section>`;
       return;
     }
     root.innerHTML=`<section class="profile-page">
-      <a class="profile-back" href="${esc(returnTo)}"><span aria-hidden="true">←</span>${esc(backLabel)}</a>
-      <header class="profile-title"><h1>Edit profile.</h1><p>A little more you.</p></header>
+      ${embedded?'':`<a class="profile-back" href="${esc(returnTo)}"><span aria-hidden="true">←</span>${esc(backLabel)}</a><header class="profile-title"><h1>Edit profile.</h1><p>A little more you.</p></header>`}
       <div class="profile-layout">
         <aside aria-label="Profile preview">
           <div class="profile-preview"><button type="button" class="profile-avatar" data-profile-avatar data-profile-upload aria-label="Change profile photo" aria-describedby="profile-photo-help profile-avatar-error" title="Change profile photo"></button><h2 data-profile-name></h2><p class="profile-preview-bio" data-profile-bio></p><span class="profile-tier" data-profile-tier></span></div>
           <input type="file" data-profile-file accept="image/jpeg,image/png,image/webp" aria-label="Choose profile photo" hidden>
           <span class="club-sr-only" id="profile-photo-help">JPG, PNG or WebP. Up to 5 MB.</span>
           <p class="profile-error" id="profile-avatar-error" data-profile-error="avatar" role="alert"></p>
-          <div class="profile-preview-tools"><p class="profile-preview-note">Your profile preview</p><button type="button" class="profile-remove" data-profile-remove>Remove photo</button></div>
-          <a class="profile-account-link" href="account.html">Orders &amp; account <span aria-hidden="true">↗</span></a>
+          <div class="profile-preview-tools"><p class="profile-preview-note">Profile photo · JPG, PNG or WebP · Up to 5 MB</p><button type="button" class="profile-remove" data-profile-remove>Remove photo</button></div>
         </aside>
         <form class="profile-form" data-profile-form novalidate>
           <div class="profile-conflict" data-profile-conflict role="alert" hidden><p>Your profile changed in another window. Your edits are still here; load the latest version before saving.</p><button type="button" data-profile-reload>Load latest profile</button></div>
           <label class="club-field" for="profile-name">Display name<input id="profile-name" name="name" value="${esc(baseline.name)}" autocomplete="nickname" maxlength="40" required aria-describedby="profile-name-help profile-name-error"></label>
           <p class="profile-help" id="profile-name-help">The name on your fan pass and the leaderboard.</p><p class="profile-error" id="profile-name-error" data-profile-error="name" role="alert"></p>
-          <label class="club-field" for="profile-bio"><span class="profile-label-row"><span>About you <span class="profile-optional">Optional</span></span><span class="profile-counter" data-profile-count></span></span><textarea id="profile-bio" name="bio" rows="3" maxlength="150" placeholder="What brings you to LLOUD?" aria-describedby="profile-bio-error">${esc(baseline.bio)}</textarea></label>
-          <p class="profile-error" id="profile-bio-error" data-profile-error="bio" role="alert"></p>
+          <details class="profile-about" ${baseline.bio?'open':''}><summary>About you · Optional</summary><label class="club-field" for="profile-bio"><span class="profile-label-row"><span>About you <span class="profile-optional">Optional</span></span><span class="profile-counter" data-profile-count></span></span><textarea id="profile-bio" name="bio" rows="3" maxlength="150" placeholder="What brings you to LLOUD?" aria-describedby="profile-bio-error">${esc(baseline.bio)}</textarea></label>
+          <p class="profile-error" id="profile-bio-error" data-profile-error="bio" role="alert"></p></details>
+          <label class="club-field" for="profile-language">Default language<select id="profile-language" name="language" aria-describedby="profile-language-help">${language?'':'<option value="">Not set</option>'}${LANGUAGES.map(([code,label])=>`<option value="${code}" ${code===language?'selected':''}>${label}</option>`).join('')}</select></label>
+          <p class="profile-help" id="profile-language-help">The language Ztor uses for you on every site you sign in with your Ztor account: product names and details, order emails and Ztor’s own pages.</p>
           <p class="profile-error" data-profile-error="save" role="alert"></p>
           <div class="profile-save-row"><p class="profile-status" data-profile-status role="status" aria-live="polite"></p><div class="club-actions"><button type="button" class="club-button is-secondary" data-profile-cancel>Cancel</button><button type="submit" class="club-button" data-profile-save>Save changes</button></div></div>
         </form>
@@ -90,10 +96,12 @@ export function mountProfilePage(root) {
         if(result.values.name!==baseline.name)patch.name=result.values.name;
         if(result.values.bio!==baseline.bio)patch.bio=result.values.bio||null;
         if(avatar!==baseline.avatar && !avatar)patch.avatarUrl=null;
+        if(draft().language && draft().language!==language)patch.language=draft().language;
         if(avatar && avatar.startsWith('data:'))await ztor.saveAvatar(new File([await dataUrlBlob(avatar)],'avatar.jpg',{type:'image/jpeg'}));
         if(Object.keys(patch).length)await ztor.saveProfile(patch);
         busy=false;
-        baseline=profileOf(member()); avatar=baseline.avatar;
+        baseline=profileOf(member()); avatar=baseline.avatar; language=languageOf();
+        if(language)storeLang(language);
         find('[name="name"]').value=baseline.name; find('[name="bio"]').value=baseline.bio;
         state('Changes saved');
       } catch(error) { busy=false; errors({save:error.message}); state('Not saved'); }

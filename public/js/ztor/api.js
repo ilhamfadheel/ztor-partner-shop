@@ -69,6 +69,8 @@ export const api = {
   // Checkout (fan).
   pickupContacts: () => creator('/pickup-contacts', { auth: 'required' }).then(d => d?.items ?? []),
   addPickupContact: (name, phone) => creator('/pickup-contacts', { method: 'POST', auth: 'required', body: { name, phone } }),
+  updatePickupContact: (contactId, name, phone) => creator(`/pickup-contacts/${id(contactId)}`, { method: 'PUT', auth: 'required', body: { name, phone } }),
+  deletePickupContact: contactId => creator(`/pickup-contacts/${id(contactId)}`, { method: 'DELETE', auth: 'required' }),
   paymentMethods: () => creator('/checkout/payment-methods', { auth: 'required' }).then(d => d?.methods ?? []),
   quote: cartItemIds => creator('/checkout/quote', { method: 'POST', auth: 'required', body: { cart_item_ids: cartItemIds } }),
   checkout: (body, idempotencyKey) => creator('/checkout', { method: 'POST', auth: 'required', body, idempotencyKey }),

@@ -1,0 +1,63 @@
+/* Account uses the shared type, colour and motion tokens. */
+.account-page{max-width:1120px;margin:0 auto}
+.account-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin:0 0 44px}
+.account-heading h1{font-size:var(--type-page-fluid);margin:12px 0 0}
+.account-heading p{color:var(--club-muted);margin:0 0 8px}
+.account-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:clamp(32px,6vw,88px)}
+.account-nav{display:grid;border-top:1px solid var(--club-line)}
+.account-nav a{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-bottom:1px solid var(--club-line);text-decoration:none;color:var(--club-muted);font-size:var(--type-action);transition:color var(--l-d1),background-color var(--l-d1)}
+.account-nav a[aria-current]{color:var(--club-ink);background:var(--l-surface-2,#e8e5de);border-left:2px solid var(--club-ink);padding-left:10px}
+.account-nav a:hover{color:var(--club-ink)}
+.account-signout{margin-top:24px;min-height:44px}
+.account-content{min-width:0}.account-content>h2{font-size:var(--type-title-lg);margin:0 0 28px;outline-offset:5px}
+.account-content h3{font-size:var(--type-title-xs);margin:0 0 8px;font-weight:var(--weight-light)}
+.account-content p{font-size:var(--type-body);line-height:var(--leading-body);overflow-wrap:anywhere}
+.account-content .club-button{justify-content:center;min-height:48px}
+.account-content .club-field,.account-contact .club-field{margin:20px 0}
+.account-content input,.account-content select{max-width:100%}
+.account-row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 0;border-bottom:1px solid var(--club-line);margin-bottom:24px}
+.account-row>div{min-width:0}.account-row .club-actions{flex-wrap:wrap}.account-row .club-button{flex-shrink:0}
+.account-address{padding:24px 0;border-top:1px solid var(--club-line)}
+.account-address .club-actions{flex-wrap:wrap;gap:12px}
+.account-empty{padding:32px 0;color:var(--club-muted)}
+.account-demo-note{border-left:2px solid var(--club-line);padding-left:16px;color:var(--club-muted)}
+.account-options{margin:24px 0;border:0;padding:0;display:grid}
+.account-option{display:flex;gap:14px;align-items:center;padding:16px 0;min-height:48px;border-bottom:1px solid var(--club-line);cursor:pointer}
+.account-option input{width:18px;height:18px;accent-color:var(--club-ink);flex:none}.account-option small{display:block;color:var(--club-muted);font-size:var(--type-support);margin-top:4px}
+.account-product{object-fit:contain;flex:none}
+.account-contact{margin-top:40px;padding-top:28px;border-top:1px solid var(--club-line)}
+.account-content .profile-layout{display:flex;flex-direction:column;gap:28px}.account-content .profile-layout>aside,.account-content .profile-form{width:100%}
+.account-content .profile-preview{padding:0;min-height:0;background:transparent;color:var(--club-ink);display:grid;grid-template-columns:80px minmax(0,1fr);gap:4px 20px;align-items:center}
+.account-content .profile-preview button.profile-avatar{width:80px;height:80px;grid-row:1/3}
+.account-content .profile-preview h2{font-size:var(--type-title-sm);margin:0;letter-spacing:0}
+.account-content .profile-preview-bio{display:none}.account-content .profile-tier{padding:0;border:0;margin:0;grid-column:2;color:var(--club-muted)}
+.account-content .profile-preview-tools{margin:12px 0 0;gap:16px}.account-content .profile-preview-note{font-size:var(--type-caption)}
+.account-content .club-section{margin-top:32px}.account-content .club-section-head h2{font-size:var(--type-title)}
+.account-mobile-nav{display:none}.profile-crop{display:block;width:min(100%,280px);height:auto;aspect-ratio:1;border-radius:50%;margin:0 auto 24px;background:var(--club-line)}
+@media(max-width:760px){.account-heading{display:block;margin-bottom:28px}.account-heading p{margin-top:12px}.account-layout{grid-template-columns:1fr;gap:28px}.account-nav{display:none}.account-mobile-nav{display:grid;margin:0}.account-signout{display:none}.account-row{align-items:flex-start;flex-wrap:wrap}.account-content .profile-preview-tools{align-items:flex-start}.account-content .fan-two{grid-template-columns:1fr}.account-content .club-section-head{flex-wrap:wrap}.account-content .profile-save-row .club-actions{grid-template-columns:1fr 1fr}}
+
+.profile-about{margin-top:24px;border-top:1px solid var(--club-line)}.profile-about summary{min-height:44px;padding:12px 0;cursor:pointer;font-size:var(--type-body)}
+
+/* Activity: one item, one status and one next action. */
+.activity-intro{color:var(--club-muted);margin:-12px 0 32px}
+.activity-section{margin:0 0 32px}
+.activity-section>header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+.activity-section>header h3{font-size:var(--type-title-xs);margin:0}
+.activity-ticket{display:grid;grid-template-columns:100px minmax(0,1fr);border:1px solid var(--club-line);background:var(--l-surface);overflow:hidden}
+.activity-ticket-mark{grid-row:1/3;background:var(--club-ink);color:var(--club-paper);padding:24px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.activity-ticket-mark img{width:36px;filter:invert(1)}.activity-ticket-mark span{font-size:var(--type-caption);letter-spacing:.15em;line-height:1.6}
+.activity-ticket-main{padding:24px 24px 0}.account-content .activity-ticket-main h3{font-size:var(--type-section);margin:12px 0 6px;letter-spacing:-.035em}
+.activity-ticket-action{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px 24px}.activity-ticket-action>span{font-size:var(--type-caption);color:var(--club-muted);font-variant-numeric:tabular-nums}
+.activity-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;font-size:var(--type-caption);color:var(--club-muted)}
+.activity-status{display:inline-flex;align-items:center;min-height:26px;padding:3px 8px;border:1px solid var(--club-line);color:var(--club-ink);font-size:var(--type-caption)}
+.activity-status.is-actionable{background:var(--club-ink);color:var(--club-paper);border-color:var(--club-ink)}
+.activity-item{display:grid;grid-template-columns:96px minmax(0,1fr);gap:24px;padding:24px;border:1px solid var(--club-line);margin-top:12px}
+.activity-product{width:96px;height:120px;object-fit:contain;background:var(--l-bg-2)}
+.activity-item-main{min-width:0}.account-content .activity-item-main h3{font-size:var(--type-title-sm);margin:12px 0 6px}.activity-item p,.activity-ticket p{margin:6px 0}
+.account-content .activity-note{color:var(--club-muted);font-size:var(--type-support);margin-top:10px}
+.activity-item-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.activity-empty{border-top:1px solid var(--club-line);padding:18px 0}.activity-empty p{margin:0 0 4px}.activity-empty>span{font-size:var(--type-support);color:var(--club-muted)}
+.activity-empty.is-compact{display:flex;justify-content:space-between;align-items:center;gap:16px}.activity-empty a{display:inline-flex;align-items:center;min-height:44px;font-size:var(--type-action);text-underline-offset:4px}
+.activity-history{border-top:1px solid var(--club-line)}.activity-history>summary{cursor:pointer;min-height:56px;padding:16px 0;font-size:var(--type-title-xs)}.activity-history>summary span{font-size:var(--type-caption);color:var(--club-muted);margin-left:12px}
+.activity-history .activity-ticket{margin-top:12px}
+@media(max-width:600px){.activity-ticket{grid-template-columns:64px minmax(0,1fr)}.activity-ticket-mark{padding:20px 12px}.activity-ticket-mark img{width:30px}.activity-ticket-main{padding:20px 16px 0}.activity-ticket-action{padding:16px;align-items:flex-start;flex-direction:column}.activity-item{padding:16px;gap:16px;grid-template-columns:64px minmax(0,1fr)}.activity-product{width:64px;height:80px}.activity-item-actions{grid-column:1/-1}.activity-meta{align-items:flex-start;flex-direction:column}.activity-empty.is-compact{align-items:flex-start;flex-direction:column;gap:4px}}
