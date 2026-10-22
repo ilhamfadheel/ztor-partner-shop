@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Header } from "@/components/Header";
-import { Icon } from "@/components/Icon";
 import { LangProvider } from "@/components/LangProvider";
-import { docsUrl } from "@/lib/config";
 import { dict, htmlLang } from "@/lib/i18n";
 import { resolveLang } from "@/lib/lang";
 import "./globals.css";
@@ -22,33 +20,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const lang = await resolveLang();
   const t = dict(lang);
   return (
-    <html lang={htmlLang(lang)} className={satoshi.variable}>
+    // data-page="club": LLOUD's header and footer (public/css/club.css) read their colours from it,
+    // exactly as on the LLOUD pages.
+    <html lang={htmlLang(lang)} className={satoshi.variable} data-page="club">
+      <head>
+        {/* LLOUD's own stylesheets for the header and footer: its fonts and club.css (classes only, no resets). */}
+        <link rel="stylesheet" href="/css/fonts.css" />
+        <link rel="stylesheet" href="/css/club.css" />
+      </head>
       <body>
         <LangProvider lang={lang}>
           <a href="#main" className="skip-link">{t.layout.skipToContent}</a>
           <Header />
           <main id="main" className="container">{children}</main>
-          <footer className="footer">
-            <div className="footer-bar">
-              <div>
-                <p>{t.layout.poweredByBefore}<span className="ztor-mark">Ztor</span>{t.layout.poweredByAfter}</p>
-                <p className="footer-note">
-                  {t.layout.demoBefore}
-                  <a href={docsUrl()} className="link" target="_blank" rel="noreferrer">{t.layout.demoLink}</a>
-                  {t.layout.demoAfter}
-                </p>
-              </div>
-              <div className="footer-links">
-                <a href={docsUrl()} className="footer-link" target="_blank" rel="noreferrer">
-                  <Icon name="arrow-up-right" />
-                  {t.layout.docs}
-                </a>
-                <a href="https://github.com/ilhamfadheel/ztor-partner-shop" className="footer-link">
-                  <Icon name="github" />
-                  {t.layout.source}
-                </a>
-              </div>
-            </div>
+          {/* lloud.club's footer, as on the LLOUD pages (public/js/club.js). */}
+          <footer className="club-footer">
+            <span>LLOUD · A little closer, together.</span>
+            <span>
+              Powered by Ztor · <a href="/account">Your account</a> · <a href="/">Back to runway</a>
+            </span>
           </footer>
         </LangProvider>
       </body>

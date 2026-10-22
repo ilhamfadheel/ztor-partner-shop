@@ -68,7 +68,7 @@ async function go(href, { push = true } = {}) {
 }
 
 function mountHeader() {
-  const routes = [['home','/fan-club','Fan Club'],['rewards','/rewards','Rewards'],['shop','/shop','Shop'],['auction','/auction','Auction'],['leaderboard','/leaderboard','Leaderboard']];
+  const routes = [['home','/fan-club','Fan Club'],['rewards','/rewards','Missions'],['shop','/shop','Shop'],['auction','/auction','Auction'],['leaderboard','/leaderboard','Leaderboard']];
   // lloud.club's header: a RUNWAY button, the account icon (your account, or sign-in when signed out) and the bag.
   document.querySelector('[data-slot="header"]').outerHTML = `<header class="club-header"><div class="club-header-top"><a class="club-brand" href="/" aria-label="Back to LLOUD runway"><img src="assets/brand/brand-logo.svg" alt="LLOUD"><span>Fan Club</span></a><div class="club-header-actions"><a class="club-runway-link" href="/">RUNWAY</a><a class="club-account" href="/account" data-member-link aria-label="Account" title="Account">${ICONS.account}</a><button type="button" class="club-bag" aria-label="Shopping bag" aria-haspopup="dialog">${ICONS.bag}<span data-bag-count aria-hidden="true"></span></button></div></div><nav class="club-nav" aria-label="Fan Club">${routes.map(([,url,label]) => `<a href="${url}">${label}</a>`).join('')}</nav></header>`;
   setNav();
