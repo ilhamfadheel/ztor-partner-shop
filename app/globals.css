@@ -680,3 +680,10 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .pickup-zoom-qr svg { display: block; width: min(240px, 60vw); height: auto; }
 .pickup-zoom-code strong { font-size: var(--text-lg); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .order-status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+
+/* What LLOUD's header and footer (public/css/club.css) read from LLOUD's tokens.css / style.css,
+   which the React pages don't load (they carry global resets). Same values as there. */
+:root{--ease:cubic-bezier(.23,1,.32,1);--l-font:'Satoshi',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}
+/* …and the typography LLOUD's pages set on their body (.club-page in club.css, body in tokens.css),
+   scoped to the header and footer so they render exactly as there. */
+.club-header,.club-footer{font-family:var(--l-font);font-weight:300;line-height:1.5;-webkit-font-smoothing:antialiased}

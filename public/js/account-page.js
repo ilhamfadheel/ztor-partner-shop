@@ -14,6 +14,8 @@ import { contactErrors, savedPayment, savePayment } from './ztor/commerce.js';
 import { signInHref, signOut } from './ztor/session.js';
 
 const SECTIONS = [['profile', 'Personal details'], ['addresses', 'Addresses'], ['payments', 'Payment methods'], ['orders', 'Orders & returns'], ['security', 'Security & privacy']];
+/** Pages of their own in the side nav: the fan's order notifications (the React page). */
+const LINKS = [['/notifications', 'Notifications']];
 const button = (label, attrs = '', secondary = true) => `<button type="button" class="club-button${secondary ? ' is-secondary' : ''}" ${attrs}>${label}</button>`;
 const empty = text => `<p class="account-empty">${text}</p>`;
 /** Ztor's own account settings (the console, on the issuer's origin): email, password, 2FA, sign-ins, deletion. */
@@ -32,7 +34,7 @@ export function mountAccountPage(root, { renderOrders }) {
     }
     section = SECTIONS.some(([id]) => id === initial()) ? initial() : 'profile';
     const label = SECTIONS.find(([id]) => id === section)[1];
-    root.innerHTML = `<section class="account-page"><header class="account-heading"><div><a class="profile-back" href="/shop">← Back to shop</a><h1>Your account.</h1></div><p>${esc(who.name)} · ${esc(tierOf().name)}</p></header><div class="account-layout"><aside><label class="club-field account-mobile-nav">Account section<select data-account-select>${SECTIONS.map(([id, title]) => `<option value="${id}" ${id === section ? 'selected' : ''}>${title}</option>`).join('')}</select></label><nav class="account-nav" aria-label="Your account">${SECTIONS.map(([id, title]) => `<a href="/account?section=${id}" ${id === section ? 'aria-current="page"' : ''}>${title}</a>`).join('')}</nav><button class="club-text-link account-signout" data-signout>Sign out</button></aside><div class="account-content"><h2 tabindex="-1" data-account-title>${label}</h2><div data-account-content></div></div></div></section>`;
+    root.innerHTML = `<section class="account-page"><header class="account-heading"><div><a class="profile-back" href="/shop">← Back to shop</a><h1>Your account.</h1></div><p>${esc(who.name)} · ${esc(tierOf().name)}</p></header><div class="account-layout"><aside><label class="club-field account-mobile-nav">Account section<select data-account-select>${SECTIONS.map(([id, title]) => `<option value="${id}" ${id === section ? 'selected' : ''}>${title}</option>`).join('')}</select></label><nav class="account-nav" aria-label="Your account">${SECTIONS.map(([id, title]) => `<a href="/account?section=${id}" ${id === section ? 'aria-current="page"' : ''}>${title}</a>`).join('')}${LINKS.map(([href, title]) => `<a href="${href}">${title}</a>`).join('')}</nav><button class="club-text-link account-signout" data-signout>Sign out</button></aside><div class="account-content"><h2 tabindex="-1" data-account-title>${label}</h2><div data-account-content></div></div></div></section>`;
     const content = root.querySelector('[data-account-content]');
     if (section === 'profile') {
       const me = state.account();

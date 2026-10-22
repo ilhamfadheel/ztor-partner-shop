@@ -90,7 +90,8 @@ export function recordOrder() {}
 export function safeReturn(value, fallback = '/fan-club') {
   try {
     const url = new URL(value || fallback, location.href);
-    const allowed = /^\/(?:|index|fan-club|loyalty|rewards|auction|leaderboard|account|edit-profile|shop|product|checkout)(?:\.html)?$/;
+    // LLOUD's pages and the shop's own (orders, an order, notifications, the payment result).
+    const allowed = /^\/(?:(?:|index|fan-club|loyalty|rewards|auction|leaderboard|account|edit-profile|shop|product|checkout)(?:\.html)?|orders(?:\/[\w-]+)?|notifications|checkout\/done)$/;
     if (url.origin !== location.origin || !allowed.test(url.pathname)) return fallback;
     return url.pathname + url.search + url.hash;
   } catch { return fallback; }

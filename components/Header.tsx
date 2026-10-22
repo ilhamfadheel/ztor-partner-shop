@@ -1,13 +1,7 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { currentSession, REFRESH_EARLY_MS, type Session } from "@/lib/oidc";
-import { loginHref } from "@/lib/login-href";
 import { shop } from "@/lib/shop";
-import { Icon } from "./Icon";
-import { useT } from "./LangProvider";
-import { Logo } from "./Logo";
 
 /**
  * Reads the browser session; re-renders on sign-in/out (same tab via our event, other tabs via
@@ -42,86 +36,76 @@ export function useSession(): Session | null | undefined {
   return session;
 }
 
-/** How often an open page asks for new notifications; also on coming back to the tab, and after reading some. */
-const NOTIFICATIONS_POLL_MS = 60_000;
+/** lloud.club's sections, the same five the LLOUD pages' header shows (public/js/club.js mountHeader). */
+const SECTIONS = [
+  ["/fan-club", "Fan Club"],
+  ["/rewards", "Missions"],
+  ["/shop", "Shop"],
+  ["/auction", "Auction"],
+  ["/leaderboard", "Leaderboard"],
+] as const;
 
-/** The fan's unread notifications on this site (the bell's badge); null signed out or unknown. */
-function useUnread(session: Session | null | undefined): number | null {
-  const [unread, setUnread] = useState<number | null>(null);
-  useEffect(() => {
-    if (!session) return setUnread(null);
-    const read = () =>
-      void shop
-        .notifications(session.accessToken, 1, 1)
-        .then((page) => setUnread(page.unread))
-        .catch(() => {});
-    const onVisible = () => document.visibilityState === "visible" && read();
-    read();
-    const timer = setInterval(read, NOTIFICATIONS_POLL_MS);
-    window.addEventListener("ztor-notifications", read);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("ztor-notifications", read);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [session]);
-  return unread;
-}
+/** lloud.club's icons (public/js/util.js ICONS). */
+const ACCOUNT_ICON = (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20v-2a7 7 0 0 1 14 0v2" />
+  </svg>
+);
+const BAG_ICON = (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 8h12l-1 12H7L6 8z" />
+    <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+  </svg>
+);
 
 /**
- * The lloud.club fan-club header: mark + FAN CLUB on the left, the sections in the middle (a row of
- * their own on phones), account, notifications and bag on the right. All three always show; signed out they
- * lead to the sign-in page, which brings the fan back to where they were going.
+ * The LLOUD pages' header on the React pages too (orders, notifications, sign-in, payment
+ * return): the same markup and classes as public/js/club.js mountHeader, styled by LLOUD's own
+ * public/css/club.css (loaded by the layout) — logo + FAN CLUB, the five sections, RUNWAY, the
+ * account (sign-up when signed out) and the bag (opens on the shop page).
  */
 export function Header() {
-  const t = useT();
   const session = useSession();
-  const pathname = usePathname();
-  const [cartCount, setCartCount] = useState<number | null>(null);
-  const unread = useUnread(session);
+  const [bag, setBag] = useState(0);
+  // Where sign-up brings the fan back to: this page (read after mount; the layout is static).
+  const [here, setHere] = useState("/");
   useEffect(() => {
-    if (!session) return setCartCount(null);
-    const read = () => shop.cart(session.accessToken).then((cart) => setCartCount(cart.shopGroups.reduce((n, g) => n + g.items.length, 0))).catch(() => {});
+    // On the sign-in page itself, the way back is where that page was going to send the fan.
+    const onLogin = location.pathname === "/login";
+    setHere(onLogin ? new URLSearchParams(location.search).get("return_to") || "/fan-club" : location.pathname + location.search);
+  }, []);
+  useEffect(() => {
+    if (!session) return setBag(0);
+    // The bag's count as the LLOUD header counts it: pieces, not lines.
+    const read = () => shop.cart(session.accessToken).then((cart) => setBag(cart.shopGroups.reduce((n, g) => n + g.items.reduce((m, i) => m + i.quantity, 0), 0))).catch(() => {});
     read();
     window.addEventListener("ztor-cart", read);
     return () => window.removeEventListener("ztor-cart", read);
   }, [session]);
 
-  const current = (active: boolean) => (active ? ("page" as const) : undefined);
-  const gated = (path: string) => (session === null ? loginHref(path) : path);
-  const who = session ? session.user.name || session.user.email || "" : "";
+  const account = session ? "/account" : `/signup?return=${encodeURIComponent(here)}`;
+  const accountLabel = session ? "Your account" : "Join / sign in";
+  const bagLabel = bag ? `Shopping bag, ${bag} ${bag === 1 ? "item" : "items"}` : "Shopping bag";
+  // Plain links: the LLOUD pages are static files (public/), so these are full page loads.
   return (
-    <header className="header">
-      <div className="header-bar">
-        <a href="/" className="brand">
-          <Logo />
-          <span className="brand-name">{t.layout.siteName}</span>
+    <header className="club-header">
+      <div className="club-header-top">
+        <a className="club-brand" href="/" aria-label="Back to LLOUD runway">
+          <img src="/assets/brand/brand-logo.svg" alt="LLOUD" />
+          <span>Fan Club</span>
         </a>
-        <nav className="nav" aria-label={t.header.mainNav}>
-          {/* The LLOUD pages are static files (public/): plain links, full page loads. */}
-          <a href="/shop" className="nav-link">{t.header.shop}</a>
-          <a href="/fan-club" className="nav-link">{t.header.fanClub}</a>
-          <Link href={gated("/orders")} className="nav-link" aria-current={current(pathname.startsWith("/orders"))}>{t.header.orders}</Link>
+        <nav className="club-nav" aria-label="Fan Club">
+          {SECTIONS.map(([href, label]) => (
+            <a key={href} href={href}>{label}</a>
+          ))}
         </nav>
-        <div className="header-actions">
-          <a href="/account" className="icon-link">
-            <Icon name="user" />
-            <span className="sr-only">{session ? t.header.yourAccount(who) : t.common.signIn}</span>
-          </a>
-          <Link href={gated("/notifications")} className="icon-link" aria-current={current(pathname === "/notifications")}>
-            <span className="nav-icon">
-              <Icon name="bell" />
-              {unread ? <span className="badge" aria-hidden="true">{unread > 99 ? "99+" : unread}</span> : null}
-            </span>
-            <span className="sr-only">{t.header.notifications}{unread ? t.header.unreadSuffix(unread) : ""}</span>
-          </Link>
-          <a href="/shop?view=bag" className="icon-link">
-            <span className="nav-icon">
-              <Icon name="bag" />
-              {cartCount ? <span className="badge" aria-hidden="true">{cartCount > 99 ? "99+" : cartCount}</span> : null}
-            </span>
-            <span className="sr-only">{t.header.bag}{cartCount ? t.header.bagCount(cartCount) : ""}</span>
+        <div className="club-header-actions">
+          <a className="club-runway-link" href="/">RUNWAY</a>
+          <a className="club-account" href={account} aria-label={accountLabel} title={accountLabel}>{ACCOUNT_ICON}</a>
+          <a className="club-bag" href="/shop?view=bag" aria-label={bagLabel}>
+            {BAG_ICON}
+            <span data-bag-count aria-hidden="true">{bag ? (bag > 99 ? "99+" : String(bag)) : ""}</span>
           </a>
         </div>
       </div>
