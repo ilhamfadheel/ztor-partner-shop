@@ -34,6 +34,10 @@ test("the gap to the next tier comes from the board's cut-offs", () => {
   assert.deepEqual([m.nextTierProgress(early).nextTierId, m.nextTierProgress(early).available], ["ranked", false]);
 });
 
+test("a fan with no public name is worded on the site, as the API leaves it empty", () => {
+  assert.equal(m.boardRows([{ rank: 3, name: null, avatarUrl: null, points: 5, tier: "fan", me: false }])[0].name, "Fan");
+});
+
 test("the leaderboard rows are LLOUD's, with tier names and the caller marked", () => {
   assert.deepEqual(m.boardRows([{ rank: 1, name: "Rival", avatarUrl: null, points: 9000, tier: "inner_circle", me: false }, { rank: 2, name: "Fanny", avatarUrl: "x", points: 15, tier: "fan", me: true }]), [
     { name: "Rival", rank: 1, points: 9000, tier: "Inner Circle", avatar: null },

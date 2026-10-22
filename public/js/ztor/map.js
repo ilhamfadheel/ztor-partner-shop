@@ -58,7 +58,7 @@ export function nextTierProgress(who) {
 }
 
 /** The creator's board as LLOUD's leaderboard rows (public names only). */
-export const boardRows = items => items.map(r => ({ name: r.name, rank: r.rank, points: r.points, tier: LABEL[tierId(r.tier)], avatar: r.avatarUrl ?? null, ...(r.me ? { you: true } : {}) }));
+export const boardRows = items => items.map(r => ({ name: r.name || 'Fan', rank: r.rank, points: r.points, tier: LABEL[tierId(r.tier)], avatar: r.avatarUrl ?? null, ...(r.me ? { you: true } : {}) }));
 
 const KIND = { photo: 'photo', video: 'video', audio: 'music' };
 const CONDITION = {
