@@ -2,21 +2,22 @@ import {AUCTION_LOTS,auctionLot} from './auction-catalog.js';
 import {auctionSnapshot} from './auction-session.js';
 import {member} from './member-store.js';
 import {esc,motionOK} from './club-ui.js';
+import {t} from './i18n.js';
 
 const closedStages=new Set(['settled','no-sale','review']);
-const stages={announced:'Coming soon',open:'Public bidding',sealed:'Sealed round',tie:'Tiebreak',settled:'Finished','no-sale':'Closed',review:'Under review'};
+const stages={announced:t('Coming soon'),open:t('Public bidding'),sealed:t('Sealed round'),tie:t('Tiebreak'),settled:t('Finished'),'no-sale':t('Closed'),review:t('Under review')};
 const clock=v=>{
-  if(closedStages.has(v.stage))return 'Closed';
+  if(closedStages.has(v.stage))return t('Closed');
   const seconds=Math.max(0,Math.ceil(((v.stage==='announced'?v.opensAt:v.deadline)-v.now)/1000));
   return [Math.floor(seconds/3600),Math.floor(seconds/60)%60,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
 };
 function bidStatus(v) {
   if(v.stage==='open'){
     const highest=(v.publicBids||[]).reduce((top,b)=>!top||b.amount>top.amount?b:top,null);
-    return highest?.userId===member().id?['You’re leading','leading']:['Outbid','outbid'];
+    return highest?.userId===member().id?[t('You’re leading'),'leading']:[t('Outbid'),'outbid'];
   }
-  if(['sealed','tie'].includes(v.stage))return v.ownBid?['Sealed & received','received']:[stages[v.stage],'private'];
-  if(v.stage==='settled')return v.winner?.userId===member().id?['You won','leading']:['Finished','closed'];
+  if(['sealed','tie'].includes(v.stage))return v.ownBid?[t('Sealed & received'),'received']:[stages[v.stage],'private'];
+  if(v.stage==='settled')return v.winner?.userId===member().id?[t('You won'),'leading']:[t('Finished'),'closed'];
   return [stages[v.stage],'closed'];
 }
 
@@ -82,7 +83,7 @@ export function mountAuctionWorkspace(root,{mountList,mountLot}) {
     sheet=document.createElement('dialog');
     sheet.className='auction-workspace';
     sheet.setAttribute('aria-labelledby','auction-sheet-title');
-    sheet.innerHTML='<div class="auction-sheet-surface"><header class="auction-sheet-head"><button type="button" class="auction-sheet-back" data-auction-sheet-close>← All auctions</button><h2 id="auction-sheet-title" tabindex="-1"></h2><button type="button" class="auction-my-bids" data-auction-sheet-bids>My bids <span data-bids-count></span></button></header><div class="auction-sheet-body"></div></div>';
+    sheet.innerHTML='<div class="auction-sheet-surface"><header class="auction-sheet-head"><button type="button" class="auction-sheet-back" data-auction-sheet-close>← '+t('All auctions')+'</button><h2 id="auction-sheet-title" tabindex="-1"></h2><button type="button" class="auction-my-bids" data-auction-sheet-bids>'+t('My bids')+' <span data-bids-count></span></button></header><div class="auction-sheet-body"></div></div>';
     document.body.append(sheet);body=sheet.querySelector('.auction-sheet-body');
     sheet.addEventListener('cancel',event=>{event.preventDefault();requestClose(true);});
     sheet.addEventListener('click',event=>{
@@ -109,7 +110,7 @@ export function mountAuctionWorkspace(root,{mountList,mountLot}) {
     const focusId=document.activeElement?.dataset.quickLot;
     list.innerHTML=participating().map(lot=>{
       const v=auctionSnapshot(lot.id),[label,state]=bidStatus(v);
-      return `<button type="button" class="auction-quick-tab" data-quick-lot="${lot.id}" aria-pressed="${lot.id===selected}"><img src="${esc(lot.image)}" alt="" width="48" height="56"><span class="auction-quick-tab-copy"><strong>${esc(lot.title)}</strong><span class="auction-bid-state is-${state}">${label}</span></span><span class="auction-quick-clock"><span>${closedStages.has(v.stage)?'Bidding':'Ends in'}</span><strong data-quick-clock="${lot.id}">${clock(v)}</strong></span></button>`;
+      return `<button type="button" class="auction-quick-tab" data-quick-lot="${lot.id}" aria-pressed="${lot.id===selected}"><img src="${esc(lot.image)}" alt="" width="48" height="56"><span class="auction-quick-tab-copy"><strong>${esc(lot.title)}</strong><span class="auction-bid-state is-${state}">${label}</span></span><span class="auction-quick-clock"><span>${closedStages.has(v.stage)?t('Bidding'):t('Ends in')}</span><strong data-quick-clock="${lot.id}">${clock(v)}</strong></span></button>`;
     }).join('');
     if(focusId)list.querySelector(`[data-quick-lot="${focusId}"]`)?.focus({preventScroll:true});
   }
@@ -125,16 +126,16 @@ export function mountAuctionWorkspace(root,{mountList,mountLot}) {
     const unchanged=mode===next.mode&&selected===(lot?.id||null)&&!!lotCleanup;
     mode=next.mode;selected=lot?.id||null;
     sheet.classList.toggle('is-quick-bids',mode==='bids');
-    sheet.querySelector('#auction-sheet-title').textContent=mode==='bids'?'My bids':lot?.title||'Auction not found';
+    sheet.querySelector('#auction-sheet-title').textContent=mode==='bids'?t('My bids'):lot?.title||t('Auction not found');
     sheet.querySelector('[data-auction-sheet-bids]').hidden=mode==='bids';
     sheet.querySelector('[data-bids-count]').textContent=rows.length;
     if(unchanged){quickList();return;}
     lotCleanup?.();lotCleanup=null;
     body.scrollTop=0;
     if(!lot){
-      body.innerHTML=`<div class="auction-sheet-empty"><h3>${mode==='bids'?(member().id?'Your next move starts here.':'Sign in to see your bids.'):'This auction is not available.'}</h3><p>${mode==='bids'?'Pieces you have bid on appear here, with their own countdown and bidding status.':'Return to the catalogue to explore the available pieces.'}</p><button type="button" class="club-button" data-browse-auctions>Browse auctions ↗</button></div>`;
+      body.innerHTML=`<div class="auction-sheet-empty"><h3>${mode==='bids'?(member().id?t('Your next move starts here.'):t('Sign in to see your bids.')):t('This auction is not available.')}</h3><p>${mode==='bids'?t('Pieces you have bid on appear here, with their own countdown and bidding status.'):t('Return to the catalogue to explore the available pieces.')}</p><button type="button" class="club-button" data-browse-auctions>${t('Browse auctions')} ↗</button></div>`;
     }else{
-      body.innerHTML=mode==='bids'?'<p class="auction-quick-intro">Your pieces, in one place. Select a piece to review or raise your bid.</p><div class="auction-quick-list" data-quick-list role="group" aria-label="Your auction items"></div><div data-auction-lot-content class="auction-quick-content"></div>':'<div data-auction-lot-content class="auction-full-content"></div>';
+      body.innerHTML=mode==='bids'?`<p class="auction-quick-intro">${t('Your pieces, in one place. Select a piece to review or raise your bid.')}</p><div class="auction-quick-list" data-quick-list role="group" aria-label="${t('Your auction items')}"></div><div data-auction-lot-content class="auction-quick-content"></div>`:'<div data-auction-lot-content class="auction-full-content"></div>';
       quickList();
       lotCleanup=mountLot(body.querySelector('[data-auction-lot-content]'),lot,{compact:mode==='bids',drafts});
     }

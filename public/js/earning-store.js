@@ -2,15 +2,16 @@
 // Proof, credited points and idempotency receipt share one atomic member-record write.
 import { member, updateMember, MEMBER_KEY } from './member-store.js';
 import { readJSON, writeJSON } from './util.js';
+import { t } from './i18n.js';
 export const EARNING_CONFIG_KEY='lloud_earning_config_preview_v1';
 export const MISSION_STORAGE_KEY=MEMBER_KEY;
 export const DEFAULT_EARNING_MISSIONS=[{id:'instagram-share',title:'Share your LLOUD moment',description:'Sample mission · 80 preview points after approval.',points:80,instructions:['Share your LLOUD moment on Instagram.','Submit the post link or image details for preview review.'],platformUrl:'https://www.instagram.com/',kind:'proof',published:true}];
 const fail=message=>{throw new Error(message);};
 const text=(v,max)=>typeof v==='string'&&v.trim().length>0&&v.length<=max;
 function https(value,instagram=false){
- if(!text(value,2048)||/[\u0000-\u0020\\]/.test(value))fail('Invalid HTTPS URL');
- let u;try{u=new URL(value);}catch{fail('Invalid HTTPS URL');}
- if(u.protocol!=='https:'||u.username||u.password||instagram&&!(u.hostname==='instagram.com'||u.hostname.endsWith('.instagram.com')))fail('Use a valid HTTPS Instagram URL');
+ if(!text(value,2048)||/[\u0000-\u0020\\]/.test(value))fail(t('Invalid HTTPS URL'));
+ let u;try{u=new URL(value);}catch{fail(t('Invalid HTTPS URL'));}
+ if(u.protocol!=='https:'||u.username||u.password||instagram&&!(u.hostname==='instagram.com'||u.hostname.endsWith('.instagram.com')))fail(t('Use a valid HTTPS Instagram URL'));
  return u.href;
 }
 export function validateEarningCatalog(list){
@@ -30,7 +31,7 @@ export function validateEarningCatalog(list){
 export function earningCatalog(){return [];}
 export function saveEarningCatalog(list){const next=validateEarningCatalog(list);if(!writeJSON(EARNING_CONFIG_KEY,next))fail('Mission configuration could not be saved');document.dispatchEvent(new CustomEvent('earnings:config'));return next;}
 const mission=id=>earningCatalog().find(m=>m.id===id&&m.published);
-function account(who){const current=member();if(!current.id||current.guest||!who?.id||who.id!==current.id)fail('Sign in to submit or review preview proof');return current;}
+function account(who){const current=member();if(!current.id||current.guest||!who?.id||who.id!==current.id)fail(t('Sign in to submit or review preview proof'));return current;}
 const records=who=>Array.isArray(who.missionProofs)?who.missionProofs.filter(p=>p&&p.userId===who.id&&text(p.missionId,64)&&['pending','approved','rejected'].includes(p.status)):[];
 export function missionState(id,who=member()){
  const m=mission(id);
@@ -39,15 +40,15 @@ export function missionState(id,who=member()){
  return {id,status:p?.status||(m?'not-submitted':'unavailable'),points:p?.points??m?.points??0,proof:p?{...p}:null};
 }
 export function submitMissionProof(id,input={},who=member()){
- const current=account(who),m=mission(id);if(!m)fail('Mission is unavailable');
- const old=records(current).find(p=>p.missionId===id);if(old&&['pending','approved'].includes(old.status))fail('Proof already pending or approved');
+ const current=account(who),m=mission(id);if(!m)fail(t('Mission is unavailable'));
+ const old=records(current).find(p=>p.missionId===id);if(old&&['pending','approved'].includes(old.status))fail(t('Proof already pending or approved'));
  let url=null,fileName=null,fileSize=null,fileType=null;
  if(input.url)url=https(input.url,true);
  if(input.fileName||input.fileSize||input.fileType){
-  if(!text(input.fileName,180)||/[\u0000-\u001f]/.test(input.fileName)||!['image/jpeg','image/png','image/webp'].includes(input.fileType)||!Number.isSafeInteger(input.fileSize)||input.fileSize<=0||input.fileSize>5*1024*1024)fail('Use JPEG, PNG or WebP image metadata up to 5 MB');
+  if(!text(input.fileName,180)||/[\u0000-\u001f]/.test(input.fileName)||!['image/jpeg','image/png','image/webp'].includes(input.fileType)||!Number.isSafeInteger(input.fileSize)||input.fileSize<=0||input.fileSize>5*1024*1024)fail(t('Use JPEG, PNG or WebP image metadata up to 5 MB'));
   ({fileName,fileSize,fileType}=input);
  }
- if(!url&&!fileName)fail('Provide an Instagram URL or image metadata');
+ if(!url&&!fileName)fail(t('Provide an Instagram URL or image metadata'));
  const proof={missionId:id,userId:current.id,status:'pending',points:m.points,url,fileName,fileSize,fileType,submittedAt:Date.now(),reviewedAt:null};
  const saved=updateMember({missionProofs:[...records(current).filter(p=>p.missionId!==id),proof]});return missionState(id,saved);
 }

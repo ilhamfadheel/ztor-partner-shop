@@ -18,6 +18,7 @@ import { signInHref } from './ztor/session.js';
 import { money } from './ztor/map.js';
 import { lineStatusText } from './ztor/commerce.js';
 import { escapeHtml, el, qsa, focusables, trapTab, reflow, prefersReducedMotion, readString, writeString, ICONS } from './util.js';
+import { t } from './i18n.js';
 
 const COLLAPSE_KEY = 'lisa_cart_wishlist_collapsed';
 const CHIP_TTL = 4000;
@@ -54,12 +55,12 @@ function wishProduct(slug) {
 function shellHtml() {
   return '<div class="ztor-cart" data-view="cart" aria-hidden="true" hidden>' +
     '<div class="ztor-cart__overlay" data-cart-close></div>' +
-    '<div class="ztor-cart__panel" role="dialog" aria-modal="true" aria-label="Bag">' +
+    '<div class="ztor-cart__panel" role="dialog" aria-modal="true" aria-label="' + escapeHtml(t('Bag')) + '">' +
       '<div class="ztor-cart__stage">' +
         '<section class="ztor-cart__view" data-view-cart>' +
           '<header class="ztor-cart__head">' +
-            '<h2 class="ztor-cart__title">Bag<span class="ztor-cart__title-count" data-cart-count></span></h2>' +
-            '<button class="ztor-cart__close" type="button" aria-label="Close" data-cart-close>' +
+            '<h2 class="ztor-cart__title">' + escapeHtml(t('Bag')) + '<span class="ztor-cart__title-count" data-cart-count></span></h2>' +
+            '<button class="ztor-cart__close" type="button" aria-label="' + escapeHtml(t('Close')) + '" data-cart-close>' +
               '<span class="ztor-cart__close-icon" aria-hidden="true">' + ICONS.close + '</span>' +
             '</button>' +
           '</header>' +
@@ -74,10 +75,10 @@ function shellHtml() {
 function sheetHtml() {
   return '<div class="ds-drawer ds-drawer--overcart" data-ds-drawer="cart-wishlist" data-ds-drawer-self-managed aria-hidden="true" hidden>' +
     '<div class="ds-drawer__scrim" data-sheet-close></div>' +
-    '<aside class="ds-drawer__panel" role="dialog" aria-modal="true" aria-label="Wishlist" tabindex="-1">' +
+    '<aside class="ds-drawer__panel" role="dialog" aria-modal="true" aria-label="' + escapeHtml(t('Wishlist')) + '" tabindex="-1">' +
       '<header class="ds-drawer__head">' +
-        '<h2 class="zcw-sheet__title">Wishlist<span class="zcw-sheet__title-count" data-sheet-count></span></h2>' +
-        '<button class="ds-drawer__close" type="button" aria-label="Close" data-sheet-close>' + ICONS.close + '</button>' +
+        '<h2 class="zcw-sheet__title">' + escapeHtml(t('Wishlist')) + '<span class="zcw-sheet__title-count" data-sheet-count></span></h2>' +
+        '<button class="ds-drawer__close" type="button" aria-label="' + escapeHtml(t('Close')) + '" data-sheet-close>' + ICONS.close + '</button>' +
       '</header>' +
       '<div class="ds-drawer__body"><div class="zcw-sheet__list" data-sheet-list></div></div>' +
     '</aside>' +
@@ -95,13 +96,13 @@ function lineHtml(it) {
       '<h3 class="ztor-cart-line__title">' + escapeHtml(it.title + (it.size ? ' (' + it.size + ')' : '')) + '</h3>' +
       '<span class="ztor-cart-line__price">' + escapeHtml(money(it.price, it.currency)) + (status ? ' · ' + escapeHtml(status) : '') + '</span>' +
       '<span class="ztor-cart-line__stepper">' +
-        '<button class="ztor-cart-step" type="button" data-dec aria-label="Decrease quantity"' + off + '>' + ICONS.minus + '</button>' +
-        '<span class="ztor-cart-line__qty" aria-label="Quantity">' + it.qty + '</span>' +
-        '<button class="ztor-cart-step" type="button" data-inc aria-label="Increase quantity"' + (busy || atMax ? ' disabled' : '') + '>' + ICONS.plus + '</button>' +
+        '<button class="ztor-cart-step" type="button" data-dec aria-label="' + escapeHtml(t('Decrease quantity')) + '"' + off + '>' + ICONS.minus + '</button>' +
+        '<span class="ztor-cart-line__qty" aria-label="' + escapeHtml(t('Quantity')) + '">' + it.qty + '</span>' +
+        '<button class="ztor-cart-step" type="button" data-inc aria-label="' + escapeHtml(t('Increase quantity')) + '"' + (busy || atMax ? ' disabled' : '') + '>' + ICONS.plus + '</button>' +
       '</span>' +
     '</div>' +
     '<div class="ztor-cart-line__aside">' +
-      '<button class="ztor-cart-line__remove" type="button" data-rm aria-label="Remove"' + off + '>' + ICONS.trash + '</button>' +
+      '<button class="ztor-cart-line__remove" type="button" data-rm aria-label="' + escapeHtml(t('Remove')) + '"' + off + '>' + ICONS.trash + '</button>' +
       '<span class="ztor-cart-line__line-total">' + (status ? '' : escapeHtml(money(it.price * it.qty, it.currency))) + '</span>' +
     '</div>' +
   '</div>';
@@ -114,9 +115,9 @@ function failureHtml() {
 function emptyHtml() {
   return '<div class="ztor-cart__empty">' +
     '<span class="ztor-cart__empty-icon" aria-hidden="true">' + ICONS.bagEmpty + '</span>' +
-    '<span class="ztor-cart__empty-title">Your bag is empty</span>' +
-    '<span class="ztor-cart__empty-desc">Add the pieces you want from this season and they will wait for you here.</span>' +
-    '<a class="ztor-cart__empty-cta" href="/shop">Explore the shop</a>' +
+    '<span class="ztor-cart__empty-title">' + escapeHtml(t('Your bag is empty')) + '</span>' +
+    '<span class="ztor-cart__empty-desc">' + escapeHtml(t('Add the pieces you want from this season and they will wait for you here.')) + '</span>' +
+    '<a class="ztor-cart__empty-cta" href="/shop">' + escapeHtml(t('Explore the shop')) + '</a>' +
   '</div>';
 }
 
@@ -138,21 +139,21 @@ function wishRowHtml(slug, { inSheet = false } = {}) {
   const rowCls = added ? ' zcw-row--added' : removed ? ' zcw-row--removed' : '';
   let inner;
   if (added || removed) {
-    inner = '<div class="zcw-chip"><span class="zcw-chip__label">' + (added ? 'Added' : 'Removed') + '</span>' +
-      '<button type="button" class="zcw-chip__undo" data-zcw-undo aria-label="Undo">Undo</button></div>';
+    inner = '<div class="zcw-chip"><span class="zcw-chip__label">' + escapeHtml(added ? t('Added') : t('Removed')) + '</span>' +
+      '<button type="button" class="zcw-chip__undo" data-zcw-undo aria-label="' + escapeHtml(t('Undo')) + '">' + escapeHtml(t('Undo')) + '</button></div>';
   } else {
     // a Ztor product's options are picked on its page; the runway's pieces are not sold here, the shop is
     const addCtl = inBag
-      ? '<span class="zcw-row__incart">In bag</span>'
+      ? '<span class="zcw-row__incart">' + escapeHtml(t('In bag')) + '</span>'
       : p.ztor
-        ? '<a class="zcw-row__add" href="/product?id=' + encodeURIComponent(slug) + '" data-zcw-pick>Add to bag</a>'
-        : '<a class="zcw-row__add" href="/shop" data-zcw-pick>Shop</a>';
+        ? '<a class="zcw-row__add" href="/product?id=' + encodeURIComponent(slug) + '" data-zcw-pick>' + escapeHtml(t('Add to bag')) + '</a>'
+        : '<a class="zcw-row__add" href="/shop" data-zcw-pick>' + escapeHtml(t('Shop')) + '</a>';
     inner = '<span class="zcw-row__media"><img src="' + escapeHtml(p.image) + '" alt="" loading="lazy" decoding="async"></span>' +
       '<span class="zcw-row__info">' +
         '<span class="zcw-row__name">' + escapeHtml(p.name) + '</span>' +
         '<span class="zcw-row__price">' + escapeHtml(money(p.price, p.currency)) + '</span>' +
       '</span>' +
-      (inSheet ? '<button class="zcw-row__heart is-on" type="button" aria-pressed="true" aria-label="Remove from wishlist" data-zcw-unheart>' + ICONS.heartSmall + '</button>' : '') +
+      (inSheet ? '<button class="zcw-row__heart is-on" type="button" aria-pressed="true" aria-label="' + escapeHtml(t('Remove from wishlist')) + '" data-zcw-unheart>' + ICONS.heartSmall + '</button>' : '') +
       addCtl;
   }
   return '<div class="zcw-row' + rowCls + '" data-zcw="' + escapeHtml(slug) + '">' + inner + '</div>';
@@ -165,13 +166,13 @@ function wishSectionHtml(hasLines) {
   const collapsed = readString(COLLAPSE_KEY) === '1';
   return '<div class="zcw-sec' + (hasLines ? ' zcw-sec--filled' : '') + (collapsed ? ' zcw-sec--collapsed' : '') + '" data-zcw-sec>' +
     '<div class="zcw-sec__header">' +
-      '<button class="zcw-sec__toggle" type="button" aria-expanded="' + (!collapsed) + '" aria-label="' + (collapsed ? 'Expand' : 'Collapse') + ' wishlist" data-zcw-toggle>' +
+      '<button class="zcw-sec__toggle" type="button" aria-expanded="' + (!collapsed) + '" aria-label="' + escapeHtml(collapsed ? t('Expand wishlist') : t('Collapse wishlist')) + '" data-zcw-toggle>' +
         '<span class="zcw-sec__header-icon" aria-hidden="true">' + ICONS.heartSmall + '</span>' +
-        '<span class="zcw-sec__header-title">Wishlist</span>' +
+        '<span class="zcw-sec__header-title">' + escapeHtml(t('Wishlist')) + '</span>' +
         '<span class="zcw-sec__header-count" aria-hidden="true"> · <span class="zcw-sec__count">' + n + '</span></span>' +
         '<span class="zcw-sec__chevron" aria-hidden="true">' + ICONS.chevronDown + '</span>' +
       '</button>' +
-      '<button class="zcw-sec__see-all" type="button" aria-label="See all wishlist items" data-zcw-see-all><span>See all</span> · <span class="zcw-sec__see-all-count">' + n + '</span></button>' +
+      '<button class="zcw-sec__see-all" type="button" aria-label="' + escapeHtml(t('See all wishlist items')) + '" data-zcw-see-all><span>' + escapeHtml(t('See all')) + '</span> · <span class="zcw-sec__see-all-count">' + n + '</span></button>' +
     '</div>' +
     '<div class="zcw-sec__list">' + rows.slice(0, MAX_ROWS).map(s => wishRowHtml(s)).join('') + '</div>' +
   '</div>';
@@ -179,12 +180,12 @@ function wishSectionHtml(hasLines) {
 
 function footHtml() {
   if (!cart.lineCount()) return '';
-  const t = cart.totals();
+  const tot = cart.totals();
   return '<div class="ztor-cart__summary">' +
-    '<div class="ztor-cart__sum-row ztor-cart__sum-row--total"><span>Subtotal</span><span>' + escapeHtml(money(t.subtotal, t.currency)) + '</span></div>' +
+    '<div class="ztor-cart__sum-row ztor-cart__sum-row--total"><span>' + escapeHtml(t('Subtotal')) + '</span><span>' + escapeHtml(money(tot.subtotal, tot.currency)) + '</span></div>' +
   '</div>' +
-  '<a class="ztor-cart__cta" href="/checkout" data-cart-checkout>Checkout</a>' +
-  '<p class="ztor-cart__foot-note">' + escapeHtml(t.note) + '</p>';
+  '<a class="ztor-cart__cta" href="/checkout" data-cart-checkout>' + escapeHtml(t('Checkout')) + '</a>' +
+  '<p class="ztor-cart__foot-note">' + escapeHtml(tot.note) + '</p>';
 }
 
 // ── render ───────────────────────────────────────────────────────────────────
@@ -227,7 +228,7 @@ function renderSheet() {
   sheetCount.textContent = ' (' + wishlist.count() + ')';
   sheetList.innerHTML = rows.length
     ? rows.map(s => wishRowHtml(s, { inSheet: true })).join('')
-    : '<p class="ztor-cart__empty-desc">Nothing saved yet.</p>';
+    : '<p class="ztor-cart__empty-desc">' + escapeHtml(t('Nothing saved yet.')) + '</p>';
 }
 
 // ── remove: animate first, mutate after (cart.js:920-929) ─────────────────────
@@ -241,7 +242,7 @@ function change(run) {
     .then(run)
     .catch(error => {
       if (error instanceof ApiError && error.status === 401) { location.assign(signInHref()); return false; }
-      failure = (error && error.message) || 'Your bag could not be changed. Try again.';
+      failure = (error && error.message) || t('Your bag could not be changed. Try again.');
       return false;
     })
     .finally(() => { busy = false; renderDrawer(); });

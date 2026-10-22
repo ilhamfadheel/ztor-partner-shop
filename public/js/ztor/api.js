@@ -3,6 +3,7 @@
 // call, the fan's access token where the route needs one. Request fields are snake_case.
 import config from '/lloud-config.js';
 import { currentSession } from './session.js';
+import { t } from '../i18n.js';
 
 export class ApiError extends Error {
   constructor(status, code, message) {
@@ -22,7 +23,7 @@ async function bearer(auth) {
   if (!auth) return null;
   const session = await currentSession();
   if (session) return 'Bearer ' + session.accessToken;
-  if (auth === 'required') throw new ApiError(401, 'SIGNED_OUT', 'Sign in to continue.');
+  if (auth === 'required') throw new ApiError(401, 'SIGNED_OUT', t('Sign in to continue.'));
   return null;
 }
 
@@ -38,8 +39,8 @@ async function creator(path, { method = 'GET', body, auth, idempotencyKey } = {}
   if (res.status === 204) return undefined;
   const envelope = await res.json().catch(() => null);
   // Not the facade's envelope: the route isn't there (yet) on this gateway.
-  if (!envelope || typeof envelope.success !== 'boolean') throw new ApiError(res.status, 'UNAVAILABLE', `This isn't available right now (HTTP ${res.status}).`);
-  if (!res.ok || !envelope.success) throw new ApiError(res.status, envelope.code, envelope.msg || 'The shop refused the request.');
+  if (!envelope || typeof envelope.success !== 'boolean') throw new ApiError(res.status, 'UNAVAILABLE', t("This isn't available right now (HTTP {status}).", { status: res.status }));
+  if (!res.ok || !envelope.success) throw new ApiError(res.status, envelope.code, envelope.msg || t('The shop refused the request.'));
   return envelope.data;
 }
 
@@ -50,8 +51,8 @@ async function account(path, { method = 'GET', body } = {}) {
   const envelope = await res.json().catch(() => null);
   if (envelope && envelope.code === 200) return envelope.data;
   const data = envelope?.data && !Array.isArray(envelope.data) ? envelope.data : null;
-  if (!data?.reason) throw new ApiError(res.status, 'UNAVAILABLE', `Your Ztor account isn't available here right now (HTTP ${res.status}).`);
-  throw new ApiError(res.status, data.reason, data.message || envelope.msg || 'Your account refused the change.');
+  if (!data?.reason) throw new ApiError(res.status, 'UNAVAILABLE', t("Your Ztor account isn't available here right now (HTTP {status}).", { status: res.status }));
+  throw new ApiError(res.status, data.reason, data.message || envelope.msg || t('Your account refused the change.'));
 }
 
 const id = value => encodeURIComponent(String(value));
@@ -90,11 +91,11 @@ export const api = {
   account: () => account(''),
   updateAccount: patch => account('', { method: 'PATCH', body: patch }),
   async uploadAvatar(file) {
-    if (!['image/jpeg', 'image/png'].includes(file.type)) throw new ApiError(400, 'VALIDATION', 'Use a JPG or PNG picture.');
-    if (file.size > 5 * 1024 * 1024) throw new ApiError(400, 'VALIDATION', 'Use a picture up to 5 MB.');
+    if (!['image/jpeg', 'image/png'].includes(file.type)) throw new ApiError(400, 'VALIDATION', t('Use a JPG or PNG picture.'));
+    if (file.size > 5 * 1024 * 1024) throw new ApiError(400, 'VALIDATION', t('Use a picture up to 5 MB.'));
     const upload = await account('/avatar/upload-url', { method: 'POST', body: { contentType: file.type } });
     const put = await fetch(upload.uploadUrl, { method: upload.method ?? 'PUT', headers: upload.headers ?? { 'Content-Type': file.type }, body: file });
-    if (!put.ok) throw new ApiError(put.status, 'UPLOAD_FAILED', `The picture didn't upload (HTTP ${put.status}). Try again.`);
+    if (!put.ok) throw new ApiError(put.status, 'UPLOAD_FAILED', t("The picture didn't upload (HTTP {status}). Try again.", { status: put.status }));
     return this.updateAccount({ avatarUrl: upload.publicUrl });
   },
 };

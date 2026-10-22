@@ -6,6 +6,10 @@ import { EntryScreen } from './entry-screen.js?v=20260909-native-media';
 import { IntentPlayback } from './intent-playback.js?v=20260910-mobile-recovery';
 import { CursorLight } from './cursor-light.js';
 import { COLLECTIONS, COLLECTION_IDS } from './data.js';
+import { t, translateDocument } from './i18n.js';
+
+// The runway page has no site.js: its static copy is translated here, before the entry screen splits it into letters.
+translateDocument();
 
 // Scroll Craft is the sole source of scroll progress. This adapter never consumes
 // wheel/touch deltas or seek films per scroll tick. Passive input only requests
@@ -307,7 +311,7 @@ function paintStage(progress) {
   activeIndex = visibleIndex;
   const cueCaption = scrollCue.querySelector('.scroll-cue-copy > span');
   const cueFilm = films[visibleIndex];
-  const cueText = cueFilm.definition.video && !cueFilm.failed && cueFilm.mode === 'waiting' ? 'to start the runway' : 'to explore the collections';
+  const cueText = cueFilm.definition.video && !cueFilm.failed && cueFilm.mode === 'waiting' ? t('to start the runway') : t('to explore the collections');
   if (cueCaption.textContent !== cueText) cueCaption.textContent = cueText;
   if (!sceneCovered) document.documentElement.dataset.collection = keys[visibleIndex];
   const light = lightWorlds.has(keys[visibleIndex]);
@@ -367,7 +371,7 @@ function paintStage(progress) {
     const ownsCharge = i === chargeIndex && !navJourney;
     const targetIndex = i + (side === 'previous' ? -1 : 1);
     const target = targetIndex >= keys.length ? 'lineup' : keys[targetIndex];
-    const label = target === 'lineup' ? 'View all collections' : side === 'previous' ? 'Previous collection' : 'Next collection';
+    const label = target === 'lineup' ? t('View all collections') : side === 'previous' ? t('Previous collection') : t('Next collection');
     buttons[i].update(ownsCharge ? charge : 0, ownsCharge ? target : null, label, onScreen && !below && !sceneCovered && !entryLocked && !document.hidden, reduce.matches);
     if (onScreen) signatures.push(`${i}:${flip.toFixed(3)}:${localDepth.toFixed(2)}:${films[i].paintedTime.toFixed(2)}`);
   });

@@ -1,11 +1,12 @@
 import {mountMemberMetal} from './member-metal.js';
+import {t} from './i18n.js';
 
 const seenWins=new Set();
 let keyboardInput=false;
 document.addEventListener('keydown',()=>{keyboardInput=true;},{capture:true});
 document.addEventListener('pointerdown',()=>{keyboardInput=false;},{capture:true,passive:true});
 
-export const winStamp=()=>`<div class="auction-win-stamp" data-tier="inner" data-pass-motion="still" role="img" aria-label="You won this auction"><div class="auction-win-stamp-inner" aria-hidden="true"></div><div class="auction-win-stamp-band" aria-hidden="true"><span class="auction-win-stamp-word" data-word="YOU WON">YOU WON</span></div></div>`;
+export const winStamp=()=>`<div class="auction-win-stamp" data-tier="inner" data-pass-motion="still" role="img" aria-label="${t('You won this auction')}"><div class="auction-win-stamp-inner" aria-hidden="true"></div><div class="auction-win-stamp-band" aria-hidden="true"><span class="auction-win-stamp-word" data-word="${t('YOU WON')}">${t('YOU WON')}</span></div></div>`;
 
 export function mountWinStamp(stamp,awardKey) {
   if(!stamp)return ()=>{};

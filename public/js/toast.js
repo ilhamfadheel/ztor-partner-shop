@@ -5,6 +5,7 @@
 
 import { el, reflow, prefersReducedMotion, ICONS } from './util.js';
 import { openDrawer, isDrawerOpen } from './drawer.js';
+import { t } from './i18n.js';
 
 let node = null;
 let timer = 0;
@@ -41,25 +42,25 @@ function ensure() {
   return node;
 }
 
-export function showToast(message, { link = 'View bag', onLink = null, duration = 2600 } = {}) {
+export function showToast(message, { link = t('View bag'), onLink = null, duration = 2600 } = {}) {
   if (MOBILE.matches && isDrawerOpen()) { hideToast(); return null; }
-  const t = ensure();
+  const toast = ensure();
   clearTimeout(timer);
   clearTimeout(hideTimer);
-  t.hidden = false;
-  t.querySelector('.ds-toast__msg').textContent = String(message ?? '');
-  const btn = t.querySelector('.ds-toast__link');
+  toast.hidden = false;
+  toast.querySelector('.ds-toast__msg').textContent = String(message ?? '');
+  const btn = toast.querySelector('.ds-toast__link');
   if (link) { btn.hidden = false; btn.textContent = link; } else { btn.hidden = true; }
   linkHandler = onLink;
   // re-run the tick animation and the entry transition
-  const dot = t.querySelector('.ds-toast__dot');
+  const dot = toast.querySelector('.ds-toast__dot');
   dot.classList.remove('ds-success-tick');
-  t.classList.remove('is-shown');
-  reflow(t);
+  toast.classList.remove('is-shown');
+  reflow(toast);
   dot.classList.add('ds-success-tick');
-  t.classList.add('is-shown');
+  toast.classList.add('is-shown');
   if (duration > 0) timer = setTimeout(hideToast, duration);
-  return t;
+  return toast;
 }
 
 export function hideToast() {
@@ -78,5 +79,5 @@ export function hideToast() {
 // the kit's list-page toast shape: 「NAME」已加入購物車 + 去結帳 → “NAME” added to bag + View bag
 // (message goes through textContent, so the raw name is passed — no escaping)
 export function toastAdded(name, opts = {}) {
-  return showToast('“' + String(name ?? '') + '” added to bag', { link: 'View bag', duration: 3400, ...opts });
+  return showToast(t('“{name}” added to bag', { name: String(name ?? '') }), { link: t('View bag'), duration: 3400, ...opts });
 }

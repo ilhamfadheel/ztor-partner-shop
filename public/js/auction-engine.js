@@ -8,6 +8,8 @@
  * This state is PRIVATE: only publicView may feed the fan-facing UI. A browser demo
  * cannot provide server-side confidentiality, authorization or real settlement.
  */
+import { t } from './i18n.js';
+
 const fail = (message) => { throw new Error(message); };
 const integer = (value, label, minimum = 0) => {
   if (!Number.isSafeInteger(value) || value < minimum) fail(`Invalid ${label}`);
@@ -24,10 +26,10 @@ const freeze = value => {
 const highest = bids => bids.reduce((max, bid) => Math.max(max, bid.amount), 0);
 const atTime = (s, now) => {
   integer(now, 'time');
-  if (now < s.lastActionAt) fail('Time precedes the last action');
+  if (now < s.lastActionAt) fail(t('Time precedes the last action'));
 };
 const authorized = (s, userId) => {
-  if (!identity(userId) || !s.eligibleIds.includes(userId)) fail('Inner Circle eligibility required');
+  if (!identity(userId) || !s.eligibleIds.includes(userId)) fail(t('Inner Circle eligibility required'));
 };
 const deadline = (now, duration) => integer(now + duration, 'round deadline');
 
@@ -48,10 +50,10 @@ export function createAuction({ id, opensAt, openEndsAt, sealedDurationMs, openi
 
 export function placeOpenBid(s, { userId, amount, now }) {
   atTime(s, now); authorized(s, userId); integer(amount, 'amount', 1);
-  if (!['announced', 'open'].includes(s.stage) || now < s.opensAt || now >= s.openEndsAt) fail('Open round is not accepting bids');
+  if (!['announced', 'open'].includes(s.stage) || now < s.opensAt || now >= s.openEndsAt) fail(t('Open round is not accepting bids'));
   const minimum = s.openBids.length ? highest(s.openBids) + s.increment : s.openingPrice;
   integer(minimum, 'minimum bid', 1);
-  if (amount < minimum) fail('Bid is below the open minimum');
+  if (amount < minimum) fail(t('Bid is below the open minimum'));
   return freeze({ ...s, stage: 'open', openBids: [...s.openBids, { userId, amount, at: now }], lastActionAt: now });
 }
 
@@ -59,7 +61,7 @@ export function closeOpenRound(s, { now }) {
   integer(now, 'time');
   if (!['announced', 'open'].includes(s.stage)) return s;
   atTime(s, now);
-  if (now < s.openEndsAt) fail('Open round has not ended');
+  if (now < s.openEndsAt) fail(t('Open round has not ended'));
   const best = new Map();
   for (const bid of s.openBids) {
     if (!best.has(bid.userId) || best.get(bid.userId).amount < bid.amount) best.set(bid.userId, bid);
@@ -77,9 +79,9 @@ export function closeOpenRound(s, { now }) {
 
 export function placeSealedBid(s, { userId, amount, now }) {
   atTime(s, now); authorized(s, userId); integer(amount, 'amount', 1);
-  if (!['sealed', 'tie'].includes(s.stage) || now < s.roundStartsAt || now >= s.roundEndsAt) fail('Hidden round is not accepting bids');
-  if (!s.participantIds.includes(userId)) fail('Not qualified for this round');
-  if (amount < s.floor) fail('Bid is below the hidden-round floor');
+  if (!['sealed', 'tie'].includes(s.stage) || now < s.roundStartsAt || now >= s.roundEndsAt) fail(t('Hidden round is not accepting bids'));
+  if (!s.participantIds.includes(userId)) fail(t('Not qualified for this round'));
+  if (amount < s.floor) fail(t('Bid is below the hidden-round floor'));
   const previous = s.sealedBids.find(b => b.userId === userId);
   const next = { userId, amount, at: now, revision: previous ? (previous.revision || 1) + 1 : 1 };
   // Backfill only the current round's known receipts for older saved demo states.
@@ -93,11 +95,11 @@ export function placeSealedBid(s, { userId, amount, now }) {
 export function closeSealedRound(s, { now }) {
   integer(now, 'time');
   if (['settled', 'no-sale', 'review'].includes(s.stage)) return s;
-  if (!['sealed', 'tie'].includes(s.stage)) fail('No hidden round to close');
+  if (!['sealed', 'tie'].includes(s.stage)) fail(t('No hidden round to close'));
   // Retrying the same transition must not immediately close its newly opened round.
   if (s.lastClosedAt === now) return s;
   atTime(s, now);
-  if (now < s.roundEndsAt) fail('Hidden round has not ended');
+  if (now < s.roundEndsAt) fail(t('Hidden round has not ended'));
   const common = { ...s, lastActionAt: now, lastClosedAt: now };
   if (!s.sealedBids.length) return freeze({ ...common, stage: 'no-sale', reason: 'no-sealed-bids' });
   const max = highest(s.sealedBids);

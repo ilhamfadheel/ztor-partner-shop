@@ -5,16 +5,18 @@
 import * as state from './ztor/state.js';
 import * as map from './ztor/map.js';
 import { signInHref, signOut } from './ztor/session.js';
+import { t } from './i18n.js';
 
 export const MEMBER_KEY = 'ztor_session';
 export const DORMANT_MEMBER_KEY = 'lloud_member_dormant_preview_v1';
 export const RETAIL_ORDERS_KEY = 'lisa_orders_v1';
 
+// Getters: the words are read in the page's language when they are shown.
 export const TIERS = [
-  { id: 'fan', name: 'Fan', level: 0, band: 'Everyone starts here', benefit: 'The collections. The community. Your first rewards.' },
-  { id: 'ranked', name: 'Ranked Fan', level: 1, band: 'Next 30% of fans', benefit: 'More members-only pieces and gifts.' },
-  { id: 'super', name: 'Super Fan', level: 2, band: 'Next 10% of fans', benefit: 'Rare releases and more to discover.' },
-  { id: 'inner', name: 'Inner Circle', level: 3, band: 'Top 1% of fans', benefit: 'The closest circle. Exclusive auction access.' }
+  { id: 'fan', get name() { return t('Fan'); }, level: 0, get band() { return t('Everyone starts here'); }, get benefit() { return t('The collections. The community. Your first rewards.'); } },
+  { id: 'ranked', get name() { return t('Ranked Fan'); }, level: 1, get band() { return t('Next 30% of fans'); }, get benefit() { return t('More members-only pieces and gifts.'); } },
+  { id: 'super', get name() { return t('Super Fan'); }, level: 2, get band() { return t('Next 10% of fans'); }, get benefit() { return t('Rare releases and more to discover.'); } },
+  { id: 'inner', get name() { return t('Inner Circle'); }, level: 3, get band() { return t('Top 1% of fans'); }, get benefit() { return t('The closest circle. Exclusive auction access.'); } }
 ];
 
 /** UI-only notes a page keeps for the fan in this browser (auction reminders): not points, not access. */
@@ -67,7 +69,7 @@ export function previewTier() { return member(); }
 export const PRODUCT_ACCESS = {};
 export function accessFor() {
   const required = TIERS[0];
-  return { allowed: true, required, label: 'Open to everyone' };
+  return { allowed: true, required, label: t('Open to everyone') };
 }
 export function canAuction(who = member()) { return !!who.id && who.tier === 'inner'; }
 

@@ -9,6 +9,7 @@ import { isDrawerOpen } from './drawer.js';
 
 
 import { money, escapeHtml, qs, qsa, bump, trapTab, prefersReducedMotion, readJSON, writeJSON, ICONS } from './util.js';
+import { t } from './i18n.js';
 
 const PANEL_MS = 520;    // --l-d2: the sheet's slide
 const FILTER_ALL = 'All';
@@ -33,7 +34,7 @@ let lastDrawerClose = -Infinity; // only an actual drawer close may suppress the
 // ── hero copy ────────────────────────────────────────────────────────────────
 // the slide-over wears the active collection (the cards carry their own copy, painted once below)
 function paintWorld(col) {
-  noteEl.textContent = col.preview ? 'Presale interest · Preview only' : col.pieces + ' pieces · ' + col.window;
+  noteEl.textContent = col.preview ? t('Presale interest · Preview only') : t('{count} pieces · {window}', { count: col.pieces, window: col.window });
   filterBar.hidden = Boolean(col.preview);
   sheet.querySelector('#m-sheet-title').textContent = col.name;
 }
@@ -42,7 +43,7 @@ function paintWorld(col) {
 function sizeChipHtml(s) {
   const oos = s.inStock === false;
   return '<button class="pdp-size-chip' + (oos ? ' is-oos' : '') + '" type="button" role="radio" aria-checked="false" data-vval="' + escapeHtml(s.label) + '"' +
-    (oos ? ' disabled aria-label="' + escapeHtml(s.label) + ', out of stock"' : '') + '>' +
+    (oos ? ' disabled aria-label="' + escapeHtml(t('{size}, out of stock', { size: s.label })) + '"' : '') + '>' +
     '<span class="pdp-size-chip__label">' + escapeHtml(s.label) + '</span>' +
     '<span class="pdp-size-chip__oos"' + (oos ? '' : ' hidden') + ' aria-hidden="true"></span>' +
   '</button>';
@@ -54,21 +55,21 @@ function cardHtml(p, col) {
   return '<a class="shop-card" href="/shop" data-id="' + escapeHtml(p.slug) + '" data-cat="' + escapeHtml(p.category) + '" data-name="' + escapeHtml(p.name) + '">' +
     '<div class="shop-card__media">' +
       '<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" width="600" height="600" loading="lazy" decoding="async">' +
-      '<span class="rf-flag rf-flag--neutral">MEMBER −10%</span>' +
-      '<button class="rf-wish" type="button" aria-pressed="' + wished + '" aria-label="' + (wished ? 'Remove from wishlist' : 'Add to wishlist') + '" data-wish>' + ICONS.heart + '</button>' +
+      '<span class="rf-flag rf-flag--neutral">' + escapeHtml(t('MEMBER −10%')) + '</span>' +
+      '<button class="rf-wish" type="button" aria-pressed="' + wished + '" aria-label="' + escapeHtml(wished ? t('Remove from wishlist') : t('Add to wishlist')) + '" data-wish>' + ICONS.heart + '</button>' +
     '</div>' +
     '<div class="shop-card__body">' +
-      '<span class="shop-card__cat">' + escapeHtml(p.category) + '</span>' +
+      '<span class="shop-card__cat">' + escapeHtml(t(p.category)) + '</span>' +
       '<h3 class="shop-card__title"><span class="l-token">' + escapeHtml(col.token) + '</span> ' + escapeHtml(p.name) + '</h3>' +
       '<div class="shop-card__foot">' +
         '<span class="shop-card__price">' + escapeHtml(money(p.price)) + '</span>' +
-        '<button class="shop-card__qa" type="button" data-add aria-label="Shop LLOUD pieces">' +
+        '<button class="shop-card__qa" type="button" data-add aria-label="' + escapeHtml(t('Shop LLOUD pieces')) + '">' +
           '<span class="shop-card__qa-icon" aria-hidden="true">' + ICONS.bagSmall + '</span>' +
         '</button>' +
       '</div>' +
     '</div>' +
     (p.sized
-      ? '<div class="shop-card__sizes" hidden><div class="pdp-variant__opts pdp-variant__opts--sizes" role="radiogroup" aria-label="Size">' + p.sizes.map(sizeChipHtml).join('') + '</div></div>'
+      ? '<div class="shop-card__sizes" hidden><div class="pdp-variant__opts pdp-variant__opts--sizes" role="radiogroup" aria-label="' + escapeHtml(t('Size')) + '">' + p.sizes.map(sizeChipHtml).join('') + '</div></div>'
       : '') +
   '</a>';
 }
@@ -76,8 +77,8 @@ function cardHtml(p, col) {
 function emptyHtml() {
   return '<div class="rf-empty">' +
     '<span class="rf-empty__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="6"></circle><path d="M15.6 15.6L20 20"></path></svg></span>' +
-    '<span class="rf-empty__title">Nothing in this filter yet</span>' +
-    '<span class="rf-empty__desc">Try another category, or come back later.</span>' +
+    '<span class="rf-empty__title">' + escapeHtml(t('Nothing in this filter yet')) + '</span>' +
+    '<span class="rf-empty__desc">' + escapeHtml(t('Try another category, or come back later.')) + '</span>' +
   '</div>';
 }
 
@@ -98,14 +99,14 @@ function presaleHtml(col) {
   const saved = readJSON('lisa.presale-interest.' + col.id, null);
   const email = typeof saved?.email === 'string' ? saved.email : '';
   return `<div class="collection-presale">
-    <button class="btn btn--primary btn--lg" type="button" data-presale-open aria-expanded="false" aria-controls="presale-form"><span data-presale-label>${email ? 'Edit presale interest' : 'Join presale'}</span><span aria-hidden="true">↗</span></button>
+    <button class="btn btn--primary btn--lg" type="button" data-presale-open aria-expanded="false" aria-controls="presale-form"><span data-presale-label>${escapeHtml(email ? t('Edit presale interest') : t('Join presale'))}</span><span aria-hidden="true">↗</span></button>
     <form id="presale-form" data-presale-form data-collection="${escapeHtml(col.id)}" hidden>
-      <p id="presale-help">Preview only. Your email stays in this browser. No reservation, payment or email is sent.</p>
-      <label class="cc-field" for="presale-email"><span class="cc-field__label">Email address</span><input class="cc-field__input" id="presale-email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="presale-help presale-error" value="${escapeHtml(email)}"></label>
+      <p id="presale-help">${escapeHtml(t('Preview only. Your email stays in this browser. No reservation, payment or email is sent.'))}</p>
+      <label class="cc-field" for="presale-email"><span class="cc-field__label">${escapeHtml(t('Email address'))}</span><input class="cc-field__input" id="presale-email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="presale-help presale-error" value="${escapeHtml(email)}"></label>
       <p id="presale-error" data-presale-error role="alert"></p>
-      <div class="collection-presale-actions"><button class="btn btn--primary btn--md" type="submit">Save interest</button><button class="btn btn--ghost btn--md" type="button" data-presale-cancel>Cancel</button></div>
+      <div class="collection-presale-actions"><button class="btn btn--primary btn--md" type="submit">${escapeHtml(t('Save interest'))}</button><button class="btn btn--ghost btn--md" type="button" data-presale-cancel>${escapeHtml(t('Cancel'))}</button></div>
     </form>
-    <p data-presale-status role="status">${email ? 'Interest saved in this browser only.' : ''}</p>
+    <p data-presale-status role="status">${email ? escapeHtml(t('Interest saved in this browser only.')) : ''}</p>
   </div>`;
 }
 
@@ -128,7 +129,7 @@ function renderGrid() {
   const col = collectionData();
   const items = visibleProducts();
   sizing = null;
-  grid.innerHTML = col.preview ? '<article class="collection-preview"><div class="collection-preview-image"><img src="' + escapeHtml(col.heroImage) + '" width="941" height="1671" alt="Black wrap maxi dress and 9 cm heels" /></div><div class="collection-preview-copy"><p class="collection-preview-eyebrow">COLLECTION 04 · FIRST LOOK</p><h3>' + escapeHtml(col.name) + '</h3><p class="collection-preview-manifesto">' + escapeHtml(col.manifesto) + '</p><dl><div><dt>The silhouette</dt><dd>Black wrap maxi dress</dd></div><div><dt>The finishing touch</dt><dd>Black 9 cm heels</dd></div></dl>' + presaleHtml(col) + '</div></article>' : items.length ? items.map(p => cardHtml(p, col)).join('') : emptyHtml();
+  grid.innerHTML = col.preview ? '<article class="collection-preview"><div class="collection-preview-image"><img src="' + escapeHtml(col.heroImage) + '" width="941" height="1671" alt="' + escapeHtml(t('Black wrap maxi dress and 9 cm heels')) + '" /></div><div class="collection-preview-copy"><p class="collection-preview-eyebrow">' + escapeHtml(t('COLLECTION 04 · FIRST LOOK')) + '</p><h3>' + escapeHtml(col.name) + '</h3><p class="collection-preview-manifesto">' + escapeHtml(col.manifesto) + '</p><dl><div><dt>' + escapeHtml(t('The silhouette')) + '</dt><dd>' + escapeHtml(t('Black wrap maxi dress')) + '</dd></div><div><dt>' + escapeHtml(t('The finishing touch')) + '</dt><dd>' + escapeHtml(t('Black 9 cm heels')) + '</dd></div></dl>' + presaleHtml(col) + '</div></article>' : items.length ? items.map(p => cardHtml(p, col)).join('') : emptyHtml();
   syncFilter();
 }
 
@@ -167,7 +168,7 @@ function quickAdd() {
 function toggleWish(card, btn) {
   const on = wishlist.toggle(card.dataset.id);
   btn.setAttribute('aria-pressed', String(on));
-  btn.setAttribute('aria-label', on ? 'Remove from wishlist' : 'Add to wishlist');
+  btn.setAttribute('aria-label', on ? t('Remove from wishlist') : t('Add to wishlist'));
   bump(btn, 'rf-wish--pop');
 }
 
@@ -177,7 +178,7 @@ function syncHearts() {
     if (!b) return;
     const on = wishlist.has(card.dataset.id);
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'Remove from wishlist' : 'Add to wishlist');
+    b.setAttribute('aria-label', on ? t('Remove from wishlist') : t('Add to wishlist'));
   });
 }
 
@@ -316,13 +317,13 @@ grid.addEventListener('submit', e => {
   input.value = input.value.trim();
   if (!form.reportValidity()) return;
   if (!writeJSON('lisa.presale-interest.' + col.id, { email: input.value })) {
-    qs('[data-presale-error]', form).textContent = 'Not saved. Browser storage is unavailable. Please try again.';
+    qs('[data-presale-error]', form).textContent = t('Not saved. Browser storage is unavailable. Please try again.');
     form.scrollIntoView({ block: 'nearest' });
     return;
   }
-  qs('[data-presale-label]', grid).textContent = 'Edit presale interest';
+  qs('[data-presale-label]', grid).textContent = t('Edit presale interest');
   setPresaleOpen(false);
-  qs('[data-presale-status]', grid).textContent = 'Interest saved in this browser only.';
+  qs('[data-presale-status]', grid).textContent = t('Interest saved in this browser only.');
 });
 
 // arrow keys walk the size radios

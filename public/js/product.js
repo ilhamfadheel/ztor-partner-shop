@@ -20,6 +20,7 @@ import { wishlist, onWishlistChange } from './wishlist.js';
 import { openDrawer } from './drawer.js';
 import { toastAdded } from './toast.js';
 import { escapeHtml, el, qs, qsa, bump, reflow, prefersReducedMotion, ICONS } from './util.js';
+import { t } from './i18n.js';
 
 // ── icons that are the PDP's own (Product.dc.html), not in util.ICONS ─────────
 const SVG = {
@@ -64,8 +65,8 @@ function cardImg(p) {
 }
 
 function crumbsHtml(d) {
-  return '<nav class="page-head__crumbs" aria-label="Breadcrumb">' +
-    '<a href="/shop">Shop</a><span class="page-head__crumb-sep" aria-hidden="true">›</span>' +
+  return '<nav class="page-head__crumbs" aria-label="' + escapeHtml(t('Breadcrumb')) + '">' +
+    '<a href="/shop">' + escapeHtml(t('Shop')) + '</a><span class="page-head__crumb-sep" aria-hidden="true">›</span>' +
     (d.mainCategoryName ? '<span>' + escapeHtml(d.mainCategoryName) + '</span><span class="page-head__crumb-sep" aria-hidden="true">›</span>' : '') +
     '<span class="page-head__crumb-cur" aria-current="page">' + escapeHtml(d.title) + '</span>' +
   '</nav>';
@@ -75,18 +76,18 @@ function galleryHtml() {
   const items = view.gallery;
   const many = items.length > 1;
   const thumbs = items.map((item, i) =>
-    '<button class="pdp-gallery__thumb' + (i === view.view ? ' is-active' : '') + '" type="button" data-thumb="' + i + '" aria-label="View ' + (i + 1) + (item.type === 'VIDEO' ? ' — video' : '') + '" aria-pressed="' + (i === view.view) + '">' +
+    '<button class="pdp-gallery__thumb' + (i === view.view ? ' is-active' : '') + '" type="button" data-thumb="' + i + '" aria-label="' + escapeHtml(item.type === 'VIDEO' ? t('View {n} — video', { n: i + 1 }) : t('View {n}', { n: i + 1 })) + '" aria-pressed="' + (i === view.view) + '">' +
       mediaHtml(item, '', false) +
     '</button>').join('');
   return '<div class="pdp-gallery l-reveal" data-pdp-gallery style="--i:0">' +
-    '<div class="pdp-gallery__strip" role="group" aria-label="Product images">' + (many ? thumbs : '') + '</div>' +
+    '<div class="pdp-gallery__strip" role="group" aria-label="' + escapeHtml(t('Product images')) + '">' + (many ? thumbs : '') + '</div>' +
     '<div class="pdp-gallery__stage">' +
-      '<button class="pdp-gallery__frame" type="button" aria-label="Next view" data-hero-frame>' +
+      '<button class="pdp-gallery__frame" type="button" aria-label="' + escapeHtml(t('Next view')) + '" data-hero-frame>' +
         heroHtml() +
       '</button>' +
       (many
-        ? '<button class="pdp-gallery__arrow pdp-gallery__arrow--prev" type="button" data-hero-prev aria-label="Previous view">' + SVG.prev + '</button>' +
-          '<button class="pdp-gallery__arrow pdp-gallery__arrow--next" type="button" data-hero-next aria-label="Next view">' + SVG.next + '</button>'
+        ? '<button class="pdp-gallery__arrow pdp-gallery__arrow--prev" type="button" data-hero-prev aria-label="' + escapeHtml(t('Previous view')) + '">' + SVG.prev + '</button>' +
+          '<button class="pdp-gallery__arrow pdp-gallery__arrow--next" type="button" data-hero-next aria-label="' + escapeHtml(t('Next view')) + '">' + SVG.next + '</button>'
         : '') +
     '</div>' +
   '</div>';
@@ -101,13 +102,13 @@ const isColour = o => o.optionType === 'COLOR' || (o.values.length > 0 && o.valu
 function optionHtml(o) {
   const d = view.detail;
   const current = o.values.find(v => v.optionValueId === view.picked[o.optionId]);
-  const header = '<div class="pdp-variant__header"><span class="pdp-variant__label">' + escapeHtml(o.optionName) +
+  const header = '<div class="pdp-variant__header"><span class="pdp-variant__label">' + escapeHtml(t(o.optionName)) +
     (isColour(o) && current ? ' · <span class="pdp-variant__colour-name">' + escapeHtml(current.valueName) + '</span>' : '') + '</span></div>';
   const values = o.values.map(v => {
     const on = view.picked[o.optionId] === v.optionValueId;
     const oos = !valueAvailable(d, view.picked, o.optionId, v.optionValueId);
     const data = ' data-opt="' + escapeHtml(o.optionId) + '" data-val="' + escapeHtml(v.optionValueId) + '"';
-    const label = escapeHtml(v.valueName) + (oos ? ' — not available' : '');
+    const label = oos ? escapeHtml(t('{name} — not available', { name: v.valueName })) : escapeHtml(v.valueName);
     if (isColour(o)) {
       return '<button class="pdp-swatch' + (on ? ' is-selected' : '') + (oos ? ' is-oos' : '') + '" type="button" role="radio" aria-checked="' + on + '"' + data +
         (oos ? ' aria-disabled="true"' : '') + ' title="' + escapeHtml(v.valueName) + '" aria-label="' + label + '" style="--swatch-bg:' + escapeHtml(v.colorCode || '') + '">' +
@@ -121,23 +122,23 @@ function optionHtml(o) {
     '</button>';
   }).join('');
   return '<div class="pdp-variant" data-variant="' + escapeHtml(o.optionId) + '">' + header +
-    '<div class="pdp-variant__opts pdp-variant__opts--' + (isColour(o) ? 'swatches' : 'sizes') + '" role="radiogroup" aria-label="' + escapeHtml(o.optionName) + '">' + values + '</div>' +
+    '<div class="pdp-variant__opts pdp-variant__opts--' + (isColour(o) ? 'swatches' : 'sizes') + '" role="radiogroup" aria-label="' + escapeHtml(t(o.optionName)) + '">' + values + '</div>' +
   '</div>';
 }
 
 function priceHtml() {
   const price = priceOf(view.detail, sku());
-  const sub = soldOut() ? 'Sold out' : '';
+  const sub = soldOut() ? escapeHtml(t('Sold out')) : '';
   return '<span class="pdp-price__now">' + escapeHtml(price.now) + '</span>' +
     (price.was ? '<span class="pdp-price__sub"><s>' + escapeHtml(price.was) + '</s></span>' : '') +
     (sub ? '<span class="pdp-price__sub">' + sub + '</span>' : '');
 }
 
 function addLabel() {
-  if (bundle()) return 'Not available here';
-  if (soldOut()) return 'Sold out';
-  if (view.busy) return 'Adding…';
-  return 'Add to bag';
+  if (bundle()) return t('Not available here');
+  if (soldOut()) return t('Sold out');
+  if (view.busy) return t('Adding…');
+  return t('Add to bag');
 }
 
 function buyHtml(d) {
@@ -153,15 +154,15 @@ function buyHtml(d) {
     '<p class="pdp-buy__guard cc-callout cc-callout--error" data-guard role="alert" hidden></p>' +
     '<div class="pdp-buy__actions">' +
       '<div class="pdp-qty" data-qty>' +
-        '<button class="pdp-qty__btn" type="button" data-qty-dec aria-label="Decrease quantity">' + SVG.minus + '</button>' +
-        '<span class="pdp-qty__val" data-qty-val aria-live="polite" aria-label="Quantity">' + view.qty + '</span>' +
-        '<button class="pdp-qty__btn" type="button" data-qty-inc aria-label="Increase quantity">' + SVG.plus + '</button>' +
+        '<button class="pdp-qty__btn" type="button" data-qty-dec aria-label="' + escapeHtml(t('Decrease quantity')) + '">' + SVG.minus + '</button>' +
+        '<span class="pdp-qty__val" data-qty-val aria-live="polite" aria-label="' + escapeHtml(t('Quantity')) + '">' + view.qty + '</span>' +
+        '<button class="pdp-qty__btn" type="button" data-qty-inc aria-label="' + escapeHtml(t('Increase quantity')) + '">' + SVG.plus + '</button>' +
       '</div>' +
       '<button class="btn btn--primary btn--lg pdp-buy__add" type="button" data-pdp-add>' +
         '<span class="pdp-buy__add-glyph" aria-hidden="true">' + ICONS.bagSmall + '</span>' +
-        '<span data-add-label>' + addLabel() + '</span>' +
+        '<span data-add-label>' + escapeHtml(addLabel()) + '</span>' +
       '</button>' +
-      '<button class="pdp-buy__heart" type="button" data-pdp-wish aria-pressed="' + wished + '" aria-label="' + (wished ? 'Remove from wishlist' : 'Add to wishlist') + '">' + SVG.heart + '</button>' +
+      '<button class="pdp-buy__heart" type="button" data-pdp-wish aria-pressed="' + wished + '" aria-label="' + escapeHtml(wished ? t('Remove from wishlist') : t('Add to wishlist')) + '">' + SVG.heart + '</button>' +
     '</div>' +
     (fulfil
       ? '<div class="pdp-delivery">' +
@@ -182,15 +183,15 @@ function detailsHtml(d) {
   const note = d.pickupReturnNote;
   const sessions = d.fulfillmentType === 'QR_PICKUP' ? (d.pickup?.sessions ?? []) : [];
   if (!d.description && !attrs.length && !fulfil && !note) return '';
-  return '<section class="pdp-details l-reveal" aria-label="Product details" style="--i:2">' +
+  return '<section class="pdp-details l-reveal" aria-label="' + escapeHtml(t('Product details')) + '" style="--i:2">' +
     '<div class="pdp-details__inner container container--wide">' +
-      '<h2 class="pdp-details__heading">Details</h2>' +
+      '<h2 class="pdp-details__heading">' + escapeHtml(t('Details')) + '</h2>' +
       (d.description ? paragraphs(d.description, 'pdp-details__lead') : '') +
       '<div class="pdp-details__cols">' +
         '<div class="pdp-details__left">' +
           (attrs.length
             ? '<div class="pdp-details__specs-block">' +
-                '<h3 class="pdp-details__sub-heading">Specification</h3>' +
+                '<h3 class="pdp-details__sub-heading">' + escapeHtml(t('Specification')) + '</h3>' +
                 '<dl class="pdp-specs">' +
                   attrs.map(a => '<div class="pdp-specs__row"><dt>' + escapeHtml(a.name) + '</dt><dd>' + escapeHtml(a.value) + '</dd></div>').join('') +
                 '</dl>' +
@@ -200,7 +201,7 @@ function detailsHtml(d) {
         '<div class="pdp-details__right">' +
           (fulfil || note
             ? '<div class="pdp-details__shipping-block">' +
-                '<h3 class="pdp-details__sub-heading">' + (d.fulfillmentType === 'QR_PICKUP' ? 'Pickup &amp; returns' : 'Shipping &amp; returns') + '</h3>' +
+                '<h3 class="pdp-details__sub-heading">' + escapeHtml(d.fulfillmentType === 'QR_PICKUP' ? t('Pickup & returns') : t('Shipping & returns')) + '</h3>' +
                 (fulfil ? '<p class="pdp-details__shipping-text">' + escapeHtml(fulfil) + '</p>' : '') +
                 sessions.filter(s => s.instruction).slice(0, 3).map(s => '<p class="pdp-details__shipping-text">' + escapeHtml(s.instruction) + '</p>').join('') +
                 (note ? paragraphs(note, 'pdp-details__shipping-text') : '') +
@@ -214,9 +215,9 @@ function detailsHtml(d) {
 
 function recsHtml(related) {
   if (!related.length) return '';
-  return '<section class="pdp-recs l-reveal" aria-label="You may also like" style="--i:3">' +
+  return '<section class="pdp-recs l-reveal" aria-label="' + escapeHtml(t('You may also like')) + '" style="--i:3">' +
     '<div class="pdp-recs__inner container container--wide">' +
-      '<h2 class="pdp-recs__heading">You may also like</h2>' +
+      '<h2 class="pdp-recs__heading">' + escapeHtml(t('You may also like')) + '</h2>' +
       '<div class="pdp-recs__rail">' +
         related.map(r =>
           '<a class="pdp-rec-card" href="/product?id=' + encodeURIComponent(r.slug) + '" data-rec="' + escapeHtml(r.slug) + '">' +
@@ -234,7 +235,7 @@ function recsHtml(related) {
 
 function pageHtml(d) {
   return '<div class="pdp__page">' +
-    '<div class="pdp-return container container--wide"><a class="collection-back" href="/shop">' + SVG.prev + '<span>Back to shop</span></a></div>' +
+    '<div class="pdp-return container container--wide"><a class="collection-back" href="/shop">' + SVG.prev + '<span>' + escapeHtml(t('Back to shop')) + '</span></a></div>' +
     '<div class="container container--wide">' +
       crumbsHtml(d) +
       '<div class="pdp__grid">' + galleryHtml() + buyHtml(d) + '</div>' +
@@ -253,7 +254,7 @@ function buybarHtml(d) {
       '<span class="shop-buybar__price" data-buybar-price>' + escapeHtml(priceOf(d, sku()).now) + '</span>' +
     '</div>' +
     '<button class="btn btn--primary btn--md pdp-buy__add shop-buybar__add" type="button" data-buybar-add>' +
-      '<span class="pdp-buy__add-glyph" aria-hidden="true">' + ICONS.bagSmall + '</span><span>' + addLabel() + '</span>' +
+      '<span class="pdp-buy__add-glyph" aria-hidden="true">' + ICONS.bagSmall + '</span><span>' + escapeHtml(addLabel()) + '</span>' +
     '</button>' +
   '</div>';
 }
@@ -261,8 +262,8 @@ function buybarHtml(d) {
 function unavailableHtml(title, text, retry) {
   return '<div class="container container--wide" style="padding-block:120px"><h1>' + escapeHtml(title) + '</h1>' +
     '<p class="rf-empty__desc">' + escapeHtml(text) + '</p>' +
-    (retry ? '<a class="btn btn--ghost" href="' + escapeHtml(location.href) + '">Try again</a> ' : '') +
-    '<a class="btn btn--primary" href="/shop">Explore the shop</a></div>';
+    (retry ? '<a class="btn btn--ghost" href="' + escapeHtml(location.href) + '">' + escapeHtml(t('Try again')) + '</a> ' : '') +
+    '<a class="btn btn--primary" href="/shop">' + escapeHtml(t('Explore the shop')) + '</a></div>';
 }
 
 // ── gallery ───────────────────────────────────────────────────────────────────
@@ -319,7 +320,7 @@ function paintBuy() {
     button.disabled = blocked;
     button.setAttribute('aria-busy', String(view.busy));
     const label = button.querySelector('[data-add-label]') || button.lastElementChild;
-    if (label && label.textContent !== 'Added ✓') label.textContent = addLabel();
+    if (label && label.textContent !== t('Added ✓')) label.textContent = addLabel();
   });
   const barPrice = qs('[data-buybar-price]');
   if (barPrice) barPrice.textContent = priceOf(d, sku()).now;
@@ -349,7 +350,7 @@ async function addToBag(fromEl) {
   if (!chosen) {
     const missing = firstMissing(d, view.picked);
     const option = d.options.find(o => o.optionId === missing);
-    setGuard('Please choose a ' + (option ? option.optionName.toLowerCase() : 'option'), missing);
+    setGuard(t('Please choose a {option}', { option: option ? t(option.optionName).toLowerCase() : t('option') }), missing);
     const row = missing && qs('[data-variant="' + CSS.escape(missing) + '"]', root);
     if (row && fromEl && fromEl.closest('[data-buybar]')) row.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     const first = row && qs('[data-opt]:not(.is-oos)', row);
@@ -367,14 +368,14 @@ async function addToBag(fromEl) {
     paintBuy();
     const label = fromEl?.querySelector('[data-add-label]') || fromEl?.lastElementChild;
     if (label) {
-      clearTimeout(label._addedTimer); label.textContent = 'Added ✓'; fromEl.classList.remove('is-added'); reflow(fromEl); fromEl.classList.add('is-added');
-      label._addedTimer = setTimeout(() => { if (label.isConnected && label.textContent === 'Added ✓') { fromEl.classList.remove('is-added'); label.textContent = addLabel(); } }, 1200);
+      clearTimeout(label._addedTimer); label.textContent = t('Added ✓'); fromEl.classList.remove('is-added'); reflow(fromEl); fromEl.classList.add('is-added');
+      label._addedTimer = setTimeout(() => { if (label.isConnected && label.textContent === t('Added ✓')) { fromEl.classList.remove('is-added'); label.textContent = addLabel(); } }, 1200);
     }
-    toastAdded(d.title, { link: 'Checkout', onLink: () => location.assign('/checkout') });
+    toastAdded(d.title, { link: t('Checkout'), onLink: () => location.assign('/checkout') });
     openDrawer(fromEl || qs('[data-pdp-add]', root));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) { location.assign(signInHref()); return; }
-    setGuard((error && error.message) || 'This could not be added to your bag. Try again.');
+    setGuard((error && error.message) || t('This could not be added to your bag. Try again.'));
   } finally {
     view.busy = false;
     paintBuy();
@@ -385,7 +386,7 @@ function paintHeart() {
   const on = wishlist.has(view.detail.productId);
   qsa('[data-pdp-wish]', root).forEach(b => {
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'Remove from wishlist' : 'Add to wishlist');
+    b.setAttribute('aria-label', on ? t('Remove from wishlist') : t('Add to wishlist'));
   });
 }
 
@@ -469,16 +470,16 @@ async function mount() {
   const ids = new URLSearchParams(location.search).getAll('id');
   const id = ids.length === 1 && ids[0].trim() ? ids[0].trim() : null;
   const done = html => { root.innerHTML = html; root.setAttribute('aria-busy', 'false'); };
-  if (!id) { done(unavailableHtml('This piece is unavailable.', 'It may have moved, or the link may be out of date.')); return; }
+  if (!id) { done(unavailableHtml(t('This piece is unavailable.'), t('It may have moved, or the link may be out of date.'))); return; }
   let d;
   try {
     d = await load(id);
   } catch (error) {
     const missing = error instanceof ApiError && (error.status === 404 || error.status === 400);
-    document.title = (missing ? 'Product unavailable' : 'Product') + ' | LLOUD';
+    document.title = (missing ? t('Product unavailable') : t('Product')) + ' | LLOUD';
     done(missing
-      ? unavailableHtml('This piece is unavailable.', 'It may have moved, or the link may be out of date.')
-      : unavailableHtml('This piece could not load.', (error && error.message) || 'The shop did not answer. Try again in a moment.', true));
+      ? unavailableHtml(t('This piece is unavailable.'), t('It may have moved, or the link may be out of date.'))
+      : unavailableHtml(t('This piece could not load.'), (error && error.message) || t('The shop did not answer. Try again in a moment.'), true));
     return;
   }
 

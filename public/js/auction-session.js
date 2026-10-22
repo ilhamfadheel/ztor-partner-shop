@@ -3,6 +3,7 @@
 import { createAuction, placeOpenBid, closeOpenRound, placeSealedBid, closeSealedRound, publicView } from './auction-engine.js';
 import { member, canAuction } from './member-store.js';
 import { AUCTION_LOTS, auctionLot, currentAuctionLot } from './auction-catalog.js';
+import { t } from './i18n.js';
 
 const KEY = 'lloud_auction_preview_v1';
 const MINUTE = 60_000;
@@ -67,7 +68,7 @@ function load(lotId) {
 function save(value, lotId) {
   // Commit memory only after durable write succeeds; callers never get false success.
   try { localStorage.setItem(storageKey(lotId), JSON.stringify(value)); }
-  catch { throw new Error('Preview could not be saved'); }
+  catch { throw new Error(t('Preview could not be saved')); }
   sessions.set(lotId, value);
   emit(lotId);
   return auctionSnapshot(lotId);
@@ -88,14 +89,14 @@ export function auctionSnapshot(lotId = currentAuctionLot().id) {
 
 export function submitAuctionBid(amount, lotId = currentAuctionLot().id, reviewed = null) {
   const who = member();
-  if (!canAuction(who)) throw new Error('Inner Circle eligibility required');
+  if (!canAuction(who)) throw new Error(t('Inner Circle eligibility required'));
   const current = tickAuction(lotId);
   // Check AFTER ticking: a deadline can advance to a new tie round during review.
   // The amount must never accidentally become a bid in that different round.
   if (reviewed && (reviewed.userId !== who.id || reviewed.stage !== current.stage ||
     reviewed.round !== current.round || reviewed.floor !== current.floor ||
     reviewed.revision !== (current.ownBid?.revision || 0))) {
-    throw new Error('The bid or round changed. Close this review and confirm the current details.');
+    throw new Error(t('The bid or round changed. Close this review and confirm the current details.'));
   }
   const value = load(lotId);
   const now = clock(value);

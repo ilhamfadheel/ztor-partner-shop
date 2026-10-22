@@ -8,6 +8,8 @@
 .profile-preview{padding:32px;background:var(--club-ink);color:var(--club-paper);min-height:312px;display:flex;flex-direction:column;align-items:flex-start;overflow-wrap:anywhere}
 .profile-preview button.profile-avatar{position:relative;display:grid;place-items:center;width:88px;height:88px;flex:none;border:0;padding:0;border-radius:50%;background:#e4e1da;color:var(--club-ink);font-size:var(--type-section);font-weight:var(--weight-light);letter-spacing:-1px;overflow:hidden}
 button.profile-avatar:after{content:'Edit';position:absolute;inset:auto 0 0;background:#181818cc;color:#fff;padding:3px 0 5px;font-size:var(--type-action);font-weight:var(--weight-light);letter-spacing:.02em;line-height:1.2;pointer-events:none}
+:root:lang(zh-HK) button.profile-avatar:after{content:'編輯'}
+:root:lang(zh-CN) button.profile-avatar:after{content:'编辑'}
 .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .profile-preview h2{font-size:var(--type-section);letter-spacing:-1px;margin:24px 0 8px;line-height:1.15}
 .profile-preview-bio{color:#c6c3bc;font-size:var(--type-body);line-height:1.6;white-space:pre-wrap;margin:0 0 24px}

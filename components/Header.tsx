@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { currentSession, REFRESH_EARLY_MS, type Session } from "@/lib/oidc";
 import { shop } from "@/lib/shop";
+import { useT } from "@/components/LangProvider";
+import type { Messages } from "@/lib/i18n";
 
 /**
  * Reads the browser session; re-renders on sign-in/out (same tab via our event, other tabs via
@@ -38,11 +40,11 @@ export function useSession(): Session | null | undefined {
 
 /** lloud.club's sections, the same five the LLOUD pages' header shows (public/js/club.js mountHeader). */
 const SECTIONS = [
-  ["/fan-club", "Fan Club"],
-  ["/rewards", "Missions"],
-  ["/shop", "Shop"],
-  ["/auction", "Auction"],
-  ["/leaderboard", "Leaderboard"],
+  ["/fan-club", (t: Messages) => t.header.fanClub],
+  ["/rewards", (t: Messages) => t.header.missions],
+  ["/shop", (t: Messages) => t.header.shop],
+  ["/auction", (t: Messages) => t.header.auction],
+  ["/leaderboard", (t: Messages) => t.header.leaderboard],
 ] as const;
 
 /** lloud.club's icons (public/js/util.js ICONS). */
@@ -66,6 +68,7 @@ const BAG_ICON = (
  * account (sign-up when signed out) and the bag (opens on the shop page).
  */
 export function Header() {
+  const t = useT();
   const session = useSession();
   const [bag, setBag] = useState(0);
   // Where sign-up brings the fan back to: this page (read after mount; the layout is static).
@@ -85,23 +88,23 @@ export function Header() {
   }, [session]);
 
   const account = session ? "/account" : `/signup?return=${encodeURIComponent(here)}`;
-  const accountLabel = session ? "Your account" : "Join / sign in";
-  const bagLabel = bag ? `Shopping bag, ${bag} ${bag === 1 ? "item" : "items"}` : "Shopping bag";
+  const accountLabel = session ? t.header.accountLink : t.header.joinOrSignIn;
+  const bagLabel = bag ? t.header.shoppingBagCount(bag) : t.header.shoppingBag;
   // Plain links: the LLOUD pages are static files (public/), so these are full page loads.
   return (
     <header className="club-header">
       <div className="club-header-top">
-        <a className="club-brand" href="/" aria-label="Back to LLOUD runway">
+        <a className="club-brand" href="/" aria-label={t.header.backToLloudRunway}>
           <img src="/assets/brand/brand-logo.svg" alt="LLOUD" />
-          <span>Fan Club</span>
+          <span>{t.header.fanClub}</span>
         </a>
-        <nav className="club-nav" aria-label="Fan Club">
+        <nav className="club-nav" aria-label={t.header.fanClub}>
           {SECTIONS.map(([href, label]) => (
-            <a key={href} href={href}>{label}</a>
+            <a key={href} href={href}>{label(t)}</a>
           ))}
         </nav>
         <div className="club-header-actions">
-          <a className="club-runway-link" href="/">RUNWAY</a>
+          <a className="club-runway-link" href="/">{t.header.runway}</a>
           <a className="club-account" href={account} aria-label={accountLabel} title={accountLabel}>{ACCOUNT_ICON}</a>
           <a className="club-bag" href="/shop?view=bag" aria-label={bagLabel}>
             {BAG_ICON}

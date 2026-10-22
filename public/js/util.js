@@ -1,4 +1,5 @@
 // js/util.js — small shared helpers. No DOM assumptions beyond `document`.
+import { locale } from './i18n.js';
 
 // Touch focus restoration must not paint a keyboard ring; Tab restores it.
 if (typeof matchMedia === 'function') {
@@ -13,7 +14,7 @@ if (typeof matchMedia === 'function') {
 
 // money format (cart.js:35,42): the space after the symbol is part of the format → "HK$ 2,880"
 export function money(n, currency = 'HK$') {
-  return currency + ' ' + Number(n || 0).toLocaleString('en-US');
+  return currency + ' ' + Number(n || 0).toLocaleString(locale());
 }
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

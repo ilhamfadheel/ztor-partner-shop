@@ -1,5 +1,6 @@
 import { CubeTransition } from './cube-transition.js';
 import { runwayPreload } from './runway-preload.js?v=20260912-native-buffer';
+import { t } from './i18n.js';
 
 const gsap = window.gsap;
 const MINIMUM = 3000;
@@ -95,17 +96,17 @@ export class EntryScreen {
     const { startupBuffered: buffered, startupDuration: duration } = progress;
     // 100% means entry preparation, not all movie bytes or permanent buffering.
     const ratio = this.ready ? 1 : duration ? Math.min(.99, buffered / duration) : 0;
-    this.value.textContent = progress.skipped || stillPreview ? (this.prepared ? 'READY' : '—') : duration ? `${Math.floor(ratio * 100)}%` : '—';
+    this.value.textContent = progress.skipped || stillPreview ? (this.prepared ? t('READY') : '—') : duration ? `${Math.floor(ratio * 100)}%` : '—';
     this.fill.style.transform = `scaleX(${ratio})`;
-    this.bar.setAttribute('aria-label', 'First two runway entrances preparation');
+    this.bar.setAttribute('aria-label', t('First two runway entrances preparation'));
     if (this.ready || duration || this.reduced) this.bar.setAttribute('aria-valuenow', String(Math.floor(ratio * 100)));
     else this.bar.removeAttribute('aria-valuenow');
-    const text = this.ready ? (progress.skipped ? 'Your collections are ready · extra preloading skipped' : 'Your runway is ready') : failed ? 'Could not finish loading. You can continue with stills.' : this.reduced ? 'Preparing the collections' : progress.startupReady ? 'Preparing the first frame, type and images' : elapsed >= 8000 ? 'Still preparing the entrances. You can continue while they load.' : 'Preparing the first two runway entrances';
+    const text = this.ready ? (progress.skipped ? t('Your collections are ready · extra preloading skipped') : t('Your runway is ready')) : failed ? t('Could not finish loading. You can continue with stills.') : this.reduced ? t('Preparing the collections') : progress.startupReady ? t('Preparing the first frame, type and images') : elapsed >= 8000 ? t('Still preparing the entrances. You can continue while they load.') : t('Preparing the first two runway entrances');
     if (this.status.textContent !== text) this.status.textContent = text;
     this.status.classList.toggle('entry-sr', this.ready || (!failed && elapsed < 8000));
     const mayEnter = elapsed >= MINIMUM && (this.ready || failed || elapsed >= 8000);
     this.button.hidden = !mayEnter;
-    this.button.textContent = this.ready ? 'Enter LLOUD ↗' : 'Continue with stills ↗';
+    this.button.textContent = this.ready ? t('Enter LLOUD ↗') : t('Continue with stills ↗');
     if (elapsed >= (this.reduced ? MINIMUM : STORY) && this.ready) this.enter('ready');
   }
   enter(outcome) {

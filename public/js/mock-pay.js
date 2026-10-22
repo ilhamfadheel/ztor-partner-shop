@@ -8,38 +8,40 @@
 //   demoOnly: hide unsupported wallet/card-saving controls and use explicit simulation copy.
 
 import { money, escapeHtml } from './util.js';
+import { t } from './i18n.js';
 
 export const SAVED_LAST4 = '4242';
 
+// Getters: each label is read in the page's language when it is shown.
 export const STRINGS = {
-  methodLabel: 'Payment method',
-  amountDue: 'Amount due',
-  verifyAmount: 'Verification amount (not charged unless you win)',
-  savedBrand: 'Card',
-  useAnother: 'Use another card',
-  savedSecure: 'Using your saved payment method (demo)',
+  get methodLabel() { return t('Payment method'); },
+  get amountDue() { return t('Amount due'); },
+  get verifyAmount() { return t('Verification amount (not charged unless you win)'); },
+  get savedBrand() { return t('Card'); },
+  get useAnother() { return t('Use another card'); },
+  get savedSecure() { return t('Using your saved payment method (demo)'); },
   applePay: 'Apple Pay',
   googlePay: 'Google Pay',
-  or: 'Or pay by credit / debit card',
-  nameOnCard: 'Name on card',
-  cardNumber: 'Card number',
-  expiry: 'Expiry (MM/YY)',
-  cvc: 'Security code',
-  saveCard: 'Save this card for next time',
-  secure: 'Secure payment · card details are encrypted (demo)',
-  confirmCharge: 'Save and use this card',
-  confirmVerify: 'Verify card',
-  back: 'Back',
-  scaCallout: 'Your bank asks for one more step. Complete verification to confirm this payment (demo).',
-  scaBank: 'Lisa Bank · 3-D Secure',
-  scaRow: 'A one-time code has been sent to •••• 8888',
-  scaOk: 'Complete verification',
-  scaCancel: 'Cancel',
-  errFields: 'Please complete every field.',
-  errCard: 'Please enter a valid card number.',
-  errExp: 'Expiry must read MM/YY.',
-  errCvc: 'That security code is not right.',
-  errDeclined: 'Card declined. Try another card (test: card ending 0002).'
+  get or() { return t('Or pay by credit / debit card'); },
+  get nameOnCard() { return t('Name on card'); },
+  get cardNumber() { return t('Card number'); },
+  get expiry() { return t('Expiry (MM/YY)'); },
+  get cvc() { return t('Security code'); },
+  get saveCard() { return t('Save this card for next time'); },
+  get secure() { return t('Secure payment · card details are encrypted (demo)'); },
+  get confirmCharge() { return t('Save and use this card'); },
+  get confirmVerify() { return t('Verify card'); },
+  get back() { return t('Back'); },
+  get scaCallout() { return t('Your bank asks for one more step. Complete verification to confirm this payment (demo).'); },
+  get scaBank() { return t('Lisa Bank · 3-D Secure'); },
+  get scaRow() { return t('A one-time code has been sent to •••• 8888'); },
+  get scaOk() { return t('Complete verification'); },
+  get scaCancel() { return t('Cancel'); },
+  get errFields() { return t('Please complete every field.'); },
+  get errCard() { return t('Please enter a valid card number.'); },
+  get errExp() { return t('Expiry must read MM/YY.'); },
+  get errCvc() { return t('That security code is not right.'); },
+  get errDeclined() { return t('Card declined. Try another card (test: card ending 0002).'); }
 };
 
 const digits = s => String(s ?? '').replace(/[^0-9]/g, '');
@@ -91,18 +93,18 @@ function formHtml(o) {
     '<div class="cc-pay__or"><span>' + STRINGS.or + '</span></div>') +
     '<div class="cc-pay__form">' +
       '<label class="cc-field"><span class="cc-field__label">' + STRINGS.nameOnCard + '</span>' +
-        '<input class="cc-field__input" type="text" name="name" placeholder="[NAME ON CARD]" autocomplete="off" data-req></label>' +
+        '<input class="cc-field__input" type="text" name="name" placeholder="' + escapeHtml(t('[NAME ON CARD]')) + '" autocomplete="off" data-req></label>' +
       '<label class="cc-field"><span class="cc-field__label">' + STRINGS.cardNumber + '</span>' +
-        '<input class="cc-field__input" type="text" name="card" inputmode="numeric" placeholder="[CARD NUMBER]" autocomplete="off" data-req></label>' +
+        '<input class="cc-field__input" type="text" name="card" inputmode="numeric" placeholder="' + escapeHtml(t('[CARD NUMBER]')) + '" autocomplete="off" data-req></label>' +
       '<div class="cc-pay__grid2">' +
         '<label class="cc-field"><span class="cc-field__label">' + STRINGS.expiry + '</span>' +
-          '<input class="cc-field__input" type="text" name="exp" inputmode="numeric" placeholder="[MM/YY]" autocomplete="off" data-req></label>' +
+          '<input class="cc-field__input" type="text" name="exp" inputmode="numeric" placeholder="' + escapeHtml(t('[MM/YY]')) + '" autocomplete="off" data-req></label>' +
         '<label class="cc-field"><span class="cc-field__label">' + STRINGS.cvc + '</span>' +
-          '<input class="cc-field__input" type="text" name="cvc" inputmode="numeric" placeholder="[CVC]" autocomplete="off" data-req></label>' +
+          '<input class="cc-field__input" type="text" name="cvc" inputmode="numeric" placeholder="' + escapeHtml(t('[CVC]')) + '" autocomplete="off" data-req></label>' +
       '</div>' +
       (o.demoOnly ? '' : '<label class="cc-pay__save"><input type="checkbox" name="save-card" checked> ' + STRINGS.saveCard + '</label>') +
       '<p class="cc-pay__err" data-cc-pay-err hidden role="alert"></p>' +
-      '<div class="cc-pay__secure"><span class="cc-pay__lock" aria-hidden="true"></span>' + (o.demoOnly ? 'Simulation only · card details are not sent or saved' : STRINGS.secure) + '</div>' +
+      '<div class="cc-pay__secure"><span class="cc-pay__lock" aria-hidden="true"></span>' + (o.demoOnly ? t('Simulation only · card details are not sent or saved') : STRINGS.secure) + '</div>' +
       footHtml(o, confirmLabel) +
     '</div>' +
   '</form>';
@@ -127,8 +129,8 @@ function savedHtml(o) {
 
 function scaHtml(o) {
   return '<div class="cc-pay" data-cc-pay-sca>' +
-    '<div class="cc-callout cc-callout--info"><span class="cc-callout__icon" aria-hidden="true"></span>' + (o.demoOnly ? 'Preview the extra verification step a bank may request. No bank is connected.' : STRINGS.scaCallout) + '</div>' +
-    '<div class="cc-sca"><div class="cc-sca__bank">' + STRINGS.scaBank + '</div><div class="cc-sca__row">' + (o.demoOnly ? 'Demo verification · no message was sent' : STRINGS.scaRow) + '</div></div>' +
+    '<div class="cc-callout cc-callout--info"><span class="cc-callout__icon" aria-hidden="true"></span>' + (o.demoOnly ? t('Preview the extra verification step a bank may request. No bank is connected.') : STRINGS.scaCallout) + '</div>' +
+    '<div class="cc-sca"><div class="cc-sca__bank">' + STRINGS.scaBank + '</div><div class="cc-sca__row">' + (o.demoOnly ? t('Demo verification · no message was sent') : STRINGS.scaRow) + '</div></div>' +
     '<div class="cc-stepview__foot">' +
       '<button class="btn btn--primary btn--lg" type="button" data-cc-sca-ok>' + STRINGS.scaOk + '</button>' +
       '<button class="btn btn--ghost btn--md" type="button" data-cc-sca-cancel>' + STRINGS.scaCancel + '</button>' +
