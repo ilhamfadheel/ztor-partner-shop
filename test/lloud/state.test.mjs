@@ -145,3 +145,27 @@ test("forgets the snapshot when the fan signs out", async () => {
   clearSession();
   assert.equal(tab.get("lloud_state_v1"), undefined);
 });
+
+const card = (productId, title) => ({ productId, title, coverUrl: null, currency: "HKD", minPrice: 100, maxPrice: 100, availabilityStatus: "AVAILABLE", sellable: true });
+
+test("the shop's pieces carry their collection from each product's tags; a detail that fails leaves the piece without one", async () => {
+  routes.push(["GET", `${API}/products/1`, ok({ productId: "1", tags: ["Rockstar", "Tees"] })]);
+  routes.push(["GET", `${API}/products/2`, () => Response.json({ success: false, code: "X" }, { status: 500 })]);
+  routes.push(["GET", `${API}/products?`, ok({ items: [card("1", "Riot Tee"), card("2", "QA item")] })]);
+  await state.hydrate(["products"]);
+  assert.deepEqual(state.products().map((p) => [p.slug, p.collection]), [["1", "rockstar"], ["2", null]]);
+  assert.equal(state.failed("products"), false);
+});
+
+test("a search asks the Creator API for the phrase and keeps each piece's collection", async () => {
+  routes.push(["GET", `${API}/products/1`, ok({ productId: "1", tags: ["Beach Club"] })]);
+  routes.push(["GET", `${API}/products?pageNum=1&pageSize=50&q=`, ok({ items: [card("1", "Cabana Shirt")] })]);
+  routes.push(["GET", `${API}/products?`, ok({ items: [card("1", "Cabana Shirt"), card("9", "Other")] })]);
+  routes.push(["GET", `${API}/products/9`, ok({ productId: "9", tags: [] })]);
+  await state.hydrate(["products"]);
+  assert.equal(state.found("cabana shirt"), null);
+  await state.search("cabana shirt");
+  assert.ok(calls.some((c) => c.url.endsWith("/products?pageNum=1&pageSize=50&q=cabana%20shirt")));
+  assert.deepEqual(state.found("cabana shirt").map((p) => [p.slug, p.collection]), [["1", "beach"]]);
+  assert.equal(state.found("other"), null);
+});

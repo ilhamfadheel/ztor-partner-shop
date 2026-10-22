@@ -9,7 +9,8 @@
 
 import * as state from './ztor/state.js';
 import { ApiError } from './ztor/api.js';
-import { money } from './ztor/map.js';
+import { money, collectionOf } from './ztor/map.js';
+import { getCollection, setCollection } from './collection.js';
 import { signInHref } from './ztor/session.js';
 import {
   resolveSku, valueAvailable, pickValue, initialPicks, firstMissing, priceOf, qtyCap, isSoldOut, galleryItems, fulfilmentText
@@ -482,6 +483,9 @@ async function mount() {
   }
 
   view.detail = d;
+  // The page wears the piece's collection (its Creator Studio tag) as on lloud.club, never kept for other pages.
+  const world = collectionOf(d.tags);
+  if (world && getCollection() !== world) setCollection(world, { persist: false });
   view.card = state.product(d.productId);
   view.gallery = galleryItems(d.media);
   if (!view.gallery.length && view.card?.image) view.gallery = [{ type: 'IMAGE', url: view.card.image }];

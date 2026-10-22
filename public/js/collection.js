@@ -62,7 +62,8 @@ export function initCollection() {
   const id = document.querySelector('.showroom') ? getCollection() : resolveCollection();
   const attr = root.getAttribute('data-collection');
   if (attr !== id) root.setAttribute('data-collection', id);
-  if (!productCollection() && valid(fromQuery())) writeString(STORAGE_KEY, id);
+  // A product page wears its piece's world (its id, or the ?collection= its shop link carries) without keeping it.
+  if (root.getAttribute('data-page') !== 'product' && valid(fromQuery())) writeString(STORAGE_KEY, id);
   return id;
 }
 

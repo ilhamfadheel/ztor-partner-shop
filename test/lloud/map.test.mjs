@@ -114,6 +114,15 @@ test("a product card is LLOUD's product: id as slug, price, image on the media C
   assert.equal(m.toProduct({ productId: "2", title: "x", coverUrl: null, currency: "TWD", minPrice: 1, maxPrice: 1, availabilityStatus: "SOLD_OUT", sellable: false }).soldOut, true);
 });
 
+test("a product wears its LLOUD collection from its Creator Studio tag, any case; untagged has none", () => {
+  assert.equal(m.collectionOf(["Tees", "Beach Club"]), "beach");
+  assert.equal(m.collectionOf(["ROCKSTAR"]), "rockstar");
+  assert.equal(m.collectionOf([" paddock "]), "paddock");
+  assert.equal(m.collectionOf(["Rockstart", "Tour 2025"]), null);
+  assert.equal(m.collectionOf(undefined), null);
+  assert.equal(m.toProduct({ productId: "3", title: "Grid Tee", coverUrl: null, currency: "HKD", minPrice: 460, maxPrice: 460, sellable: true, tags: ["Paddock", "Tees"] }).collection, "paddock");
+});
+
 test("money speaks LLOUD's format in the item's currency", () => {
   assert.equal(m.money(2880, "HKD"), "HK$ 2,880");
   assert.equal(m.money(1500, "TWD"), "NT$ 1,500");

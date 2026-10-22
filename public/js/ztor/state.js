@@ -6,7 +6,7 @@ import { api, ApiError } from './api.js';
 import { currentSession } from './session.js';
 import * as map from './map.js';
 
-const empty = () => ({ session: null, account: null, standing: null, rules: null, rewards: [], board: [], products: [], details: new Map(), lines: [], orders: [], down: new Set(), failed: new Set() });
+const empty = () => ({ session: null, account: null, standing: null, rules: null, rewards: [], board: [], products: [], found: null, details: new Map(), lines: [], orders: [], down: new Set(), failed: new Set() });
 let s = empty();
 
 /** For tests: forget everything loaded. */
@@ -30,6 +30,13 @@ async function load(part, fn) {
   }
 }
 
+/** `fn` over `items`, at most `size` at a time, results in order. */
+async function inBatches(items, size, fn) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(...(await Promise.all(items.slice(i, i + size).map(fn))));
+  return out;
+}
+
 const LOADERS = {
   async member() {
     s.session = await currentSession();
@@ -46,7 +53,13 @@ const LOADERS = {
   vault: () => load('vault', async () => { s.rewards = map.toRewards(await api.eggs()); }),
   board: () => load('board', async () => { s.board = map.boardRows(await api.board(50)); }),
   rules: () => load('rules', async () => { s.rules = await api.rules(); }),
-  products: () => load('products', async () => { s.products = (await api.products(1, 50)).items.map(map.toProduct); }),
+  products: () => load('products', async () => {
+    const cards = (await api.products(1, 50)).items;
+    // ponytail: the Creator API's cards carry no tags, so each piece's collection is read from its
+    // detail (one request per card, a few at a time). Drop this once the cards carry their tags.
+    const tags = await inBatches(cards, 6, c => api.product(c.productId).then(d => d?.tags ?? [], () => []));
+    s.products = cards.map((c, i) => map.toProduct({ ...c, tags: tags[i] }));
+  }),
   async cart() {
     s.session ??= await currentSession();
     if (!s.session) { s.lines = []; return; }
@@ -127,6 +140,8 @@ export const board = () => s.board;
 export const rules = () => s.rules;
 export const products = () => s.products;
 export const product = id => s.products.find(p => p.slug === id) ?? null;
+/** The pieces matching a search, once search(q) has answered for that phrase; else null. */
+export const found = q => (s.found?.q === q ? s.found.items : null);
 export const detail = id => s.details.get(id) ?? null;
 export const lines = () => s.lines.map(line => ({ ...line }));
 export const orders = () => s.orders;
@@ -142,6 +157,14 @@ export function markClaimed(id) {
 
 // ── changes ──────────────────────────────────────────────────────────────────
 const tell = (type, detail) => document.dispatchEvent(new CustomEvent(type, { detail }));
+
+/** Searches the shop's titles; each piece keeps the collection the shop already knows for it. */
+export async function search(q) {
+  await load('search', async () => {
+    const items = (await api.products(1, 50, q)).items.map(map.toProduct);
+    s.found = { q, items: items.map(p => ({ ...p, collection: product(p.slug)?.collection ?? null })) };
+  });
+}
 
 /** One product's detail (options, SKUs, gallery), cached for the page. */
 export async function loadDetail(id) {
