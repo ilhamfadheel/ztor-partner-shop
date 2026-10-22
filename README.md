@@ -58,6 +58,8 @@ The fan-facing site is **LLOUD's own** (github `codeL1985/lloud-club`, Asana 121
 | `/checkout/done` | fan | Payment return URL: polls the group result, pay again |
 | `/orders`, `/orders/[id]`, `/notifications` | fan | Order detail (pickup QR codes) and order notifications |
 
+Clean URLs only (`/rewards`, `/product?id=…`); an old `.html` address redirects (308) to it. Moving between the club's pages (Fan Club, Rewards, Shop, Leaderboard, Auction, Account, Sign-up) happens in place, like a Next.js app's navigation (`public/js/club-routes.js` + `go()` in `club.js`: history, the nav, the view), and what a page loaded is kept for the tab (`sessionStorage`, per fan) so the next page — or a full load of the runway/product/checkout and back — renders at once and refreshes in the background.
+
 LLOUD's modules read synchronously (`member()`, `rewardCatalog()`, `cart.getItems()`…), so `public/js/ztor/state.js` loads what a page needs from the Creator API before it renders and holds it in memory; changes go to the API and the page is told with the events LLOUD already listens to (`member:change`, `cart:change`). `public/js/ztor/session.js` shares the React pages' sign-in (`localStorage.ztor_session`) and renews it the same way `lib/oidc.ts` does. Public config reaches the static files as `/lloud-config.js`. Tests: `pnpm test` (`test/lloud/*.test.mjs`).
 
 ## Flow

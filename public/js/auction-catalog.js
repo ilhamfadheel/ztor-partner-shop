@@ -29,5 +29,5 @@ export const auctionLot = id => AUCTION_LOTS.find(lot => lot.id === id) || null;
 export function currentAuctionLot() {
   return auctionLot(new URLSearchParams(globalThis.location?.search || '').get('lot')) || AUCTION_LOTS[0];
 }
-export const auctionHref = lot => `auction.html?lot=${encodeURIComponent(lot.id)}`;
+export const auctionHref = lot => `/auction?lot=${encodeURIComponent(lot.id)}`;
 export const auctionPaymentKey = lot => 'lloud_auction_settlement_preview_v1' + (lot.id === 'encore' ? '' : '_' + lot.id);

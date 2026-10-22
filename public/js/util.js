@@ -105,7 +105,7 @@ export function bump(node, cls) {
 export function pageName() {
   // serve.py serves clean URLs: '/' → index.html, '/loyalty' → loyalty.html, '/product?id=…' → product.html
   const last = location.pathname.split('/').pop();
-  if (!last) return 'index.html';
+  if (!last) return '/';
   return last.includes('.') ? last : last + '.html';
 }
 

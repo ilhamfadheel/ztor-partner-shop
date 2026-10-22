@@ -79,3 +79,69 @@ test("tells a page when a part failed to load, so it can say the shop is resting
   await state.hydrate(["products"]);
   assert.deepEqual([state.failed("products"), state.unavailable("products"), state.products()], [true, false, []]);
 });
+
+// ── instant pages: what the last page loaded renders the next one at once ─────
+import { session as tab } from "./browser.mjs";
+const nextPage = () => state.forget(); // a new document: memory gone, the tab's sessionStorage kept
+
+test("renders the next page from what the last page loaded, then refreshes it in the background", async () => {
+  fan();
+  let points = 40;
+  routes.splice(routes.findIndex((r) => r[1] === `${API}/loyalty/me`), 1, ["GET", `${API}/loyalty/me`, () => ok({ boardScope: "shared", points, tier: "fan", rank: 3, boardSize: 9, next: null })()]);
+  await state.hydrate(["member"], { now: 1_000 });
+  nextPage();
+  points = 99;
+  calls.length = 0;
+  let refreshed = null;
+  document.addEventListener("ztor:refresh", (e) => (refreshed = e.detail), { once: true });
+  await state.hydrate(["member"], { now: 1_000 + 60_000 });
+  // Shown at once from the tab's snapshot …
+  assert.equal(state.member().lifetime, 40);
+  // … and brought up to date right after.
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(state.member().lifetime, 99);
+  assert.deepEqual(refreshed, { parts: ["member"] });
+});
+
+test("does not refetch a part loaded moments ago", async () => {
+  fan();
+  await state.hydrate(["member"], { now: 1_000 });
+  nextPage();
+  calls.length = 0;
+  await state.hydrate(["member"], { now: 1_000 + 5_000 });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(state.member().lifetime, 40);
+  assert.deepEqual(calls.filter((c) => c.url.includes("/loyalty/me")), []);
+});
+
+test("never shows one fan's snapshot to another (or to a visitor)", async () => {
+  fan();
+  await state.hydrate(["member"], { now: 1_000 });
+  nextPage();
+  store.delete("ztor_session");
+  await state.hydrate(["member"], { now: 2_000 });
+  assert.equal(state.member().guest, true);
+  assert.equal(state.member().lifetime, 0);
+});
+
+test("keeps the snapshot up to date after a change (the bag)", async () => {
+  fan();
+  let qty = 1;
+  routes.push(["GET", `${API}/cart`, () => ok({ shopGroups: [{ shopId: "s", currency: "HKD", items: [{ cartItemId: "c1", productId: "p", quantity: qty, itemStatus: "AVAILABLE", title: "Tee", coverUrl: null, unitPrice: 280, maxQuantity: 5, skuSelections: [] }] }] })()]);
+  routes.push(["PATCH", `${API}/cart/items/c1`, () => ((qty = 4), ok({})())]);
+  await state.hydrate(["cart"], { now: 1_000 });
+  await state.setQty("c1", 4);
+  nextPage();
+  routes.length = 0; // nothing reachable: the next page must still show the bag as it is now
+  await state.hydrate(["cart"], { now: 1_500 });
+  assert.equal(state.lines()[0].qty, 4);
+});
+
+test("forgets the snapshot when the fan signs out", async () => {
+  fan();
+  await state.hydrate(["member"], { now: 1_000 });
+  assert.ok(tab.get("lloud_state_v1"));
+  const { clearSession } = await import("../../public/js/ztor/session.js");
+  clearSession();
+  assert.equal(tab.get("lloud_state_v1"), undefined);
+});

@@ -33,12 +33,15 @@ async function load(part, fn) {
 const LOADERS = {
   async member() {
     s.session = await currentSession();
-    s.account = s.standing = null;
-    if (!s.session) return;
+    if (!s.session) { s.account = s.standing = null; return; }
+    // Swapped in once read, so a background refresh never blanks what's on screen.
+    let account = null, standing = null;
     await Promise.all([
-      load('account', async () => { s.account = await api.account(); }),
-      load('member', async () => { s.standing = await api.me(); }),
+      load('account', async () => { account = await api.account(); }),
+      load('member', async () => { standing = await api.me(); }),
     ]);
+    s.account = account;
+    s.standing = standing;
   },
   vault: () => load('vault', async () => { s.rewards = map.toRewards(await api.eggs()); }),
   board: () => load('board', async () => { s.board = map.boardRows(await api.board(50)); }),
@@ -56,8 +59,57 @@ const LOADERS = {
   },
 };
 
-/** Loads what a page needs, together. */
-export const hydrate = (parts) => Promise.all(parts.map(part => LOADERS[part]()));
+// ── the tab's snapshot: the next page renders at once ─────────────────────────
+// What a page loaded is kept for the tab (sessionStorage) under the fan it belongs to, so the next
+// page — or the next view of this one — renders immediately from it; a part older than FRESH_MS is
+// refreshed in the background and the page told (ztor:refresh). A different fan, or none, starts
+// from nothing; signing out forgets it (session.js clearSession).
+export const SNAPSHOT_KEY = 'lloud_state_v1';
+const FRESH_MS = 30_000;
+const FIELDS = { member: ['account', 'standing'], vault: ['rewards'], board: ['board'], rules: ['rules'], products: ['products'], cart: ['lines'], orders: ['orders'] };
+const ownerOf = session => session?.user?.sub ?? null;
+function readSnapshot() {
+  try { return JSON.parse(sessionStorage.getItem(SNAPSHOT_KEY) ?? 'null'); } catch { return null; }
+}
+function saveSnapshot(parts, at) {
+  try {
+    const owner = ownerOf(s.session);
+    const prior = readSnapshot();
+    const snap = prior && prior.owner === owner ? prior : { owner, at: {}, data: {} };
+    for (const part of parts) {
+      if (s.failed.has(part)) continue;
+      snap.at[part] = at;
+      for (const field of FIELDS[part]) snap.data[field] = s[field];
+    }
+    sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snap));
+  } catch {
+    // storage full or off: pages just load from the API
+  }
+}
+
+/**
+ * Loads what a page needs: from the tab's snapshot when it has it (at once; refreshed in the
+ * background when older than FRESH_MS), else from the API, together.
+ */
+export async function hydrate(parts, { now = Date.now() } = {}) {
+  s.session = await currentSession();
+  const snap = readSnapshot();
+  const mine = snap && snap.owner === ownerOf(s.session) ? snap : null;
+  const cached = mine ? parts.filter(part => mine.at?.[part] && FIELDS[part].every(field => field in mine.data)) : [];
+  for (const part of cached) for (const field of FIELDS[part]) s[field] = mine.data[field];
+  const missing = parts.filter(part => !cached.includes(part));
+  if (missing.length) {
+    await Promise.all(missing.map(part => LOADERS[part]()));
+    saveSnapshot(missing, now);
+  }
+  const stale = cached.filter(part => now - mine.at[part] >= FRESH_MS);
+  if (stale.length) {
+    void Promise.all(stale.map(part => LOADERS[part]())).then(() => {
+      saveSnapshot(stale, Date.now());
+      tell('ztor:refresh', { parts: stale });
+    });
+  }
+}
 
 // ── synchronous reads ────────────────────────────────────────────────────────
 const claimedKey = () => (s.session ? 'lloud_claimed_v1:' + s.session.user.sub : null);
@@ -99,6 +151,7 @@ export async function loadDetail(id) {
 
 async function reloadCart(detail) {
   s.lines = map.toCartLines(await api.cart());
+  saveSnapshot(['cart'], Date.now());
   tell('cart:change', detail);
 }
 
@@ -120,11 +173,13 @@ export async function removeLine(cartItemId) {
 /** A profile change on Ztor; the member is re-read and the page told. */
 export async function saveProfile(patch) {
   s.account = await api.updateAccount(patch);
+  saveSnapshot(['member'], Date.now());
   tell('member:change', { saved: true });
   return s.account;
 }
 export async function saveAvatar(file) {
   s.account = await api.uploadAvatar(file);
+  saveSnapshot(['member'], Date.now());
   tell('member:change', { saved: true });
   return s.account;
 }

@@ -16,9 +16,9 @@ export function mountProfilePage(root, { embedded = false } = {}) {
   let baseline=profileOf(member()), avatar=baseline.avatar, language=languageOf();
   let busy=false, saving=false, conflicted=false, uploadVersion=0, leaveDialog=null;
   const requested=safeReturn(new URLSearchParams(location.search).get('return'));
-  const returnTo=new URL(requested,location.href).pathname.endsWith('/edit-profile.html') ? 'fan-club.html' : requested;
-  const returnFile=new URL(returnTo,location.href).pathname.split('/').pop();
-  const backLabel=({'auction.html':'Back to auctions','rewards.html':'Back to rewards','account.html':'Back to account','leaderboard.html':'Back to leaderboard','shop.html':'Back to shop'})[returnFile] || 'Back to Fan Club';
+  const returnTo=new URL(requested,location.href).pathname.endsWith('/edit-profile') ? '/fan-club' : requested;
+  const returnFile=new URL(returnTo,location.href).pathname.replace(/\.html$/,'');
+  const backLabel=({'/auction':'Back to auctions','/rewards':'Back to rewards','/account':'Back to account','/leaderboard':'Back to leaderboard','/shop':'Back to shop'})[returnFile] || 'Back to Fan Club';
   const find=selector=>root.querySelector(selector);
   const draft=()=>({name:find('[name="name"]')?.value || '',bio:find('[name="bio"]')?.value || '',avatar,language:find('[name="language"]')?.value || ''});
   const dirty=()=>Boolean(find('[data-profile-form]')) && (busy || ['name','bio','avatar'].some(key=>draft()[key]!==baseline[key]) || draft().language!==language);
@@ -58,7 +58,7 @@ export function mountProfilePage(root, { embedded = false } = {}) {
     uploadVersion++; busy=false; conflicted=false;
     baseline=profileOf(member()); avatar=baseline.avatar; language=languageOf();
     if(!baseline.id) {
-      root.innerHTML=`<section class="profile-page club-empty"><h1>Your profile, your place.</h1><p>Join or sign in to add your photo, name and bio.</p>${action('Join / sign in',signInHref(location.pathname+location.search))}<p><a class="profile-back" href="fan-club.html">Back to Fan Club</a></p></section>`;
+      root.innerHTML=`<section class="profile-page club-empty"><h1>Your profile, your place.</h1><p>Join or sign in to add your photo, name and bio.</p>${action('Join / sign in',signInHref(location.pathname+location.search))}<p><a class="profile-back" href="/fan-club">Back to Fan Club</a></p></section>`;
       return;
     }
     root.innerHTML=`<section class="profile-page">

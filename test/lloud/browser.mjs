@@ -3,6 +3,8 @@
 import { registerHooks } from "node:module";
 
 export const store = new Map();
+/** sessionStorage: what survives a page load within the tab. */
+export const session = new Map();
 export const config = { issuer: "https://sso.example/sso", api: "https://api.example/api", clientId: "shop-1", shopResource: "https://api.example/api/creator", media: "https://cdn.example" };
 
 registerHooks({
@@ -17,7 +19,7 @@ Object.assign(globalThis, {
   window: events,
   document: events,
   localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => void store.set(k, String(v)), removeItem: (k) => void store.delete(k) },
-  sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+  sessionStorage: { getItem: (k) => session.get(k) ?? null, setItem: (k, v) => void session.set(k, String(v)), removeItem: (k) => void session.delete(k) },
   location: { href: "https://shop.example/fan-club", origin: "https://shop.example", pathname: "/fan-club", search: "", hash: "", assign(url) { this.assigned = url; } },
   CustomEvent: class extends Event { constructor(type, init) { super(type); this.detail = init?.detail; } },
 });
@@ -54,6 +56,7 @@ export const signIn = (expiresIn = 10 * 60_000, refreshToken = "rt-1", sub = "u-
   store.set("ztor_session", JSON.stringify({ accessToken: "at-1", idToken: idToken("Fan", sub), ...(refreshToken ? { refreshToken } : {}), expiresAt: Date.now() + expiresIn, user: { sub, name: "Fan" } }));
 export function reset() {
   store.clear();
+  session.clear();
   routes.length = 0;
   calls.length = 0;
 }

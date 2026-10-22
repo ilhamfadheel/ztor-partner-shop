@@ -14,6 +14,9 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: "/cart", destination: "/shop?view=bag", permanent: false },
+      // Clean URLs only: an old ".html" link (or bookmark) lands on the page's real address.
+      { source: "/index.html", destination: "/", permanent: true },
+      ...LLOUD_PAGES.map((page) => ({ source: `/${page}.html`, destination: `/${page}`, permanent: true })),
       { source: "/products/:id", destination: "/product?id=:id", permanent: false },
     ];
   },

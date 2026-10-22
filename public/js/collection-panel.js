@@ -51,7 +51,7 @@ function sizeChipHtml(s) {
 function cardHtml(p, col) {
   const wished = wishlist.has(p.slug);
   // The runway's pieces are LLOUD's showcase, not items in the artist's Ztor shop: cards lead to the shop.
-  return '<a class="shop-card" href="shop.html" data-id="' + escapeHtml(p.slug) + '" data-cat="' + escapeHtml(p.category) + '" data-name="' + escapeHtml(p.name) + '">' +
+  return '<a class="shop-card" href="/shop" data-id="' + escapeHtml(p.slug) + '" data-cat="' + escapeHtml(p.category) + '" data-name="' + escapeHtml(p.name) + '">' +
     '<div class="shop-card__media">' +
       '<img src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.name) + '" width="600" height="600" loading="lazy" decoding="async">' +
       '<span class="rf-flag rf-flag--neutral">MEMBER −10%</span>' +

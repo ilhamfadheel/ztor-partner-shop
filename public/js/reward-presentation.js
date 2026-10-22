@@ -22,8 +22,8 @@ export function conditionLabel(condition) {
   return 'Earn '+num(condition.value)+' lifetime points';
 }
 function taskAction(c, who, rewardId) {
-  if(!who.id) return action('Join to begin','signup.html?return='+encodeURIComponent('rewards.html?reward='+encodeURIComponent(rewardId)));
-  if(c.type==='product') return action('Shop this piece','product.html?id='+encodeURIComponent(c.value));
+  if(!who.id) return action('Join to begin','/signup?return='+encodeURIComponent('/rewards?reward='+encodeURIComponent(rewardId)));
+  if(c.type==='product') return action('Shop this piece','/product?id='+encodeURIComponent(c.value));
   if(c.type==='invite') return '<button type="button" class="club-button" data-invite-link>Invite friends<span aria-hidden="true">↗</span></button>';
   // Backing and following happen on Ztor itself; nothing to do on this site.
   if(c.type==='supported' || c.type==='follow') return '';
