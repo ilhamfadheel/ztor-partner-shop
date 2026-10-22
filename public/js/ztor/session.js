@@ -124,3 +124,28 @@ export async function signOut(returnTo = '/') {
   }
   location.assign(returnTo);
 }
+
+/** Same scope as lib/oidc.ts: offline_access keeps the fan signed in past the 1-hour token. */
+const SCOPE = 'openid email profile offline_access';
+
+/**
+ * Ztor's hosted sign-in buttons (the console's embed, as /login uses): "Continue with Ztor" plus
+ * every provider the platform turned on in the console, read live by the embed.
+ */
+export function signInEmbed(origin = location.origin) {
+  return {
+    base: config.issuer ? `${new URL(config.issuer).origin}/embed/v1` : '',
+    attributes: {
+      'data-client-id': config.clientId,
+      'data-redirect-uri': `${origin}/auth/callback`,
+      'data-scope': SCOPE,
+      ...(config.shopResource ? { 'data-resource': config.shopResource } : {}),
+    },
+  };
+}
+
+/** The embed keeps only verifier + state; /auth/callback reads the way back from here (lib/oidc.ts). */
+export function rememberReturnTo(value) {
+  const safe = typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/';
+  sessionStorage.setItem('ztor_return_to', safe);
+}

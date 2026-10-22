@@ -10,7 +10,7 @@ import { leaderboardRows, nextTierProgress } from './member-progress.js';
 import * as state from './ztor/state.js';
 import { money as priceOf, mediaUrl } from './ztor/map.js';
 import { api, ApiError } from './ztor/api.js';
-import { signInHref, signOut } from './ztor/session.js';
+import { signInHref, signOut, signInEmbed, rememberReturnTo } from './ztor/session.js';
 
 const root = document.getElementById('club-main');
 const view = document.documentElement.dataset.clubView || 'home';
@@ -192,10 +192,32 @@ function account() {
 }
 function signup() {
   const back = safeReturn(new URLSearchParams(location.search).get('return'));
-  const go = signInHref(back);
-  return `<div class="club-auth" data-reveal><a class="club-text-link" href="${esc(back)}">← Back</a><span class="club-kicker" style="margin-top:28px">A little more connected.</span><h1>Welcome to your circle.</h1><p class="club-lead">Join LLOUD. Keep the moments that matter.</p><div class="club-auth-providers"><a class="club-provider" href="${esc(go)}"><img src="assets/providers/ztor.svg" width="20" height="20" alt=""><span>Continue with Ztor</span></a></div><p class="club-quiet" style="margin-top:24px">One Ztor account for every artist you follow: sign in with Apple, Google, Meta, LINE or email on the next screen. New here? You can create your account there.</p></div>`;
+  const { attributes } = signInEmbed();
+  const attrs = Object.entries(attributes).map(([k, v]) => `${k}="${esc(v)}"`).join(' ');
+  // The console's hosted buttons render into .ztor-signin (mountSignIn); the link is the way in until they do.
+  return `<div class="club-auth" data-reveal><a class="club-text-link" href="${esc(back)}">← Back</a><span class="club-kicker" style="margin-top:28px">A little more connected.</span><h1>Welcome to your circle.</h1><p class="club-lead">Join LLOUD. Keep the moments that matter.</p><div class="club-auth-providers"><div class="ztor-signin" ${attrs}></div><a class="club-provider" href="${esc(signInHref(back))}" data-signin-fallback><img src="assets/providers/ztor.svg" width="20" height="20" alt=""><span>Continue with Ztor</span></a></div><p class="club-quiet" style="margin-top:24px">One Ztor account for every artist you follow. New here? You can create your account on the next screen.</p></div>`;
 }
-/** The fan's orders from the artist's store, newest first (every order of every payment group). */
+
+/** Loads Ztor's hosted sign-in buttons (once) and draws them; the fallback link goes once they're there. */
+function mountSignIn() {
+  const rootEl = root.querySelector('.ztor-signin');
+  if (!rootEl) return;
+  rememberReturnTo(safeReturn(new URLSearchParams(location.search).get('return')));
+  const { base } = signInEmbed();
+  if (!base) return;
+  if (!document.querySelector('link[data-ztor-signin-css]')) document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${base}/signin.css" data-ztor-signin-css>`);
+  const draw = () => {
+    window.ZtorSignIn?.render(rootEl);
+    // The embed draws after reading the console's live settings; drop the fallback once a button is there.
+    const done = new MutationObserver(() => { if (rootEl.querySelector('.ztor-signin__btn')) { root.querySelector('[data-signin-fallback]')?.remove(); done.disconnect(); } });
+    done.observe(rootEl, { childList: true });
+  };
+  if (window.ZtorSignIn) return draw();
+  const script = document.createElement('script');
+  script.src = `${base}/signin.js`;
+  script.onload = draw;
+  document.head.append(script);
+}
 function accountOrders() {
   return state.orders().flatMap(group => group.orders ?? []);
 }
@@ -224,6 +246,7 @@ async function render(animate=false) {
   memberMetalCleanup?.();
   root.innerHTML = ({home,rewards,shop,leaderboard,account,signup}[view] || home)();
   memberMetalCleanup = mountMemberMetal(root.querySelector('.member-pass'));
+  if(view==='signup')mountSignIn();
   if(animate)reveal(root);
 }
 root.addEventListener('click',e=>{
