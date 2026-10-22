@@ -6,10 +6,11 @@ import { esc, dialog, action } from './club-ui.js';
 
 // Saves to the fan's Ztor account (name, bio, photo): the same profile every Ztor site shows.
 const dataUrlBlob = dataUrl => fetch(dataUrl).then(r => r.blob());
+import { lang, storeLangCookie } from './i18n.js';
 /** The languages a fan can pick as their Ztor default (lib/account.ts PROFILE_LANGUAGES). */
 export const LANGUAGES = [['en-us','English'],['zh-hk','繁體中文（香港）'],['zh-cn','简体中文']];
 /** The site follows the account's language: the cookie the React pages and the API calls read (lib/i18n.ts). */
-const storeLang = lang => { document.cookie = `ztor_lang=${lang}; path=/; max-age=31536000; samesite=lax`; };
+const storeLang = code => { storeLangCookie(code); if (code !== lang()) location.reload(); };
 
 export function mountProfilePage(root, { embedded = false } = {}) {
   const languageOf = () => ztor.account()?.language || '';

@@ -12,7 +12,9 @@ import { viewOf, TITLES } from './club-routes.js';
 import { money as priceOf, mediaUrl, COLLECTIONS } from './ztor/map.js';
 import { api, ApiError } from './ztor/api.js';
 import { signInHref, signOut, signInEmbed, rememberReturnTo } from './ztor/session.js';
+import { t, translateDocument } from './i18n.js';
 
+translateDocument();
 const root = document.getElementById('club-main');
 let view = document.documentElement.dataset.clubView || 'home';
 // What each view reads from Ztor, loaded before the first render (member + bag on every page).

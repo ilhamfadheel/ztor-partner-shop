@@ -683,7 +683,11 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* What LLOUD's header and footer (public/css/club.css) read from LLOUD's tokens.css / style.css,
    which the React pages don't load (they carry global resets). Same values as there. */
-:root{--ease:cubic-bezier(.23,1,.32,1);--l-font:'Satoshi',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}
+/* Chinese: named CJK faces before system-ui, Traditional (Hong Kong) unless the page is Simplified,
+   so Chinese never rides the system-ui cascade at the site's light weights. */
+:root{--l-cjk:'PingFang HK','PingFang TC','Hiragino Sans CNS','Noto Sans TC','Microsoft JhengHei'}
+:root:lang(zh-CN){--l-cjk:'PingFang SC','Hiragino Sans GB','Noto Sans SC','Microsoft YaHei'}
+:root{--ease:cubic-bezier(.23,1,.32,1);--l-font:'Satoshi',var(--l-cjk),system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}
 /* …and the typography LLOUD's pages set on their body (.club-page in club.css, body in tokens.css),
    scoped to the header and footer so they render exactly as there. */
 .club-header,.club-footer{font-family:var(--l-font);font-weight:300;line-height:1.5;-webkit-font-smoothing:antialiased}

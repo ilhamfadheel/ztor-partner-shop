@@ -5,6 +5,7 @@
 import { api, ApiError } from './api.js';
 import { currentSession } from './session.js';
 import * as map from './map.js';
+import { followAccountLanguage } from '../i18n.js';
 
 const empty = () => ({ session: null, account: null, standing: null, rules: null, rewards: [], board: [], products: [], found: null, details: new Map(), lines: [], orders: [], down: new Set(), failed: new Set() });
 let s = empty();
@@ -49,6 +50,8 @@ const LOADERS = {
     ]);
     s.account = account;
     s.standing = standing;
+    // The fan's Ztor language is the site's: a page in another one is shown again in it.
+    followAccountLanguage(account?.language);
   },
   vault: () => load('vault', async () => { s.rewards = map.toRewards(await api.eggs()); }),
   board: () => load('board', async () => { s.board = map.boardRows(await api.board(50)); }),
