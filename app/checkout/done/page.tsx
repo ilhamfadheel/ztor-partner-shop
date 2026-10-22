@@ -104,7 +104,7 @@ function Result({ session }: { session: Session }) {
             </button>
           ))
         ) : final ? (
-          <Link href="/" className="btn">{t.common.backToShop}</Link>
+          <a href="/shop" className="btn">{t.common.backToShop}</a>
         ) : null
       }
     >

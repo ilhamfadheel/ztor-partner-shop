@@ -1,0 +1,48 @@
+/* Local commerce belongs to the folding showroom. No legacy hero styles. */
+/* Shared depth of field: blur only what is behind the active sheet, never its content. */
+:root :is(.l-panel-scrim,.ztor-cart__overlay,.ds-drawer__scrim),
+:root :is(.auction-workspace,.club-dialog)::backdrop{
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+}
+.m-panel{position:fixed;z-index:200;inset:0}
+.m-panel[hidden]{display:none}
+body.panel-open{overflow:hidden}
+.m-panel .l-panel-scrim{cursor:pointer}
+.m-sheet{top:0;right:0;width:56%;height:100%;padding:0;display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%)}
+.l-panel.is-open .m-sheet{transform:translateX(0)}
+.m-sheet-nav{flex:none;display:flex;align-items:center;gap:24px;padding:12px 40px;border-bottom:1px solid var(--c-line);background:var(--c-bg)}
+.m-sheet-nav .collection-back{flex-shrink:0;white-space:nowrap}
+.m-sheet-nav .shop-filter{margin-left:auto;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,max-content);gap:12px}
+.m-sheet-nav .shop-filter__item{min-width:44px;white-space:nowrap}
+.m-sheet-body{flex:1;min-height:0;padding:24px 40px 40px;overflow-y:auto;overscroll-behavior:contain}
+.m-sheet .shop-grid--3{margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+.m-sheet-foot{margin-top:32px;border-top:1px solid var(--c-line);padding-top:20px;display:flex;justify-content:space-between}
+.m-sheet-note{font-size:11px;letter-spacing:var(--l-track);text-transform:uppercase}
+.m-sheet :focus-visible{outline:2px solid var(--c-fg);outline-offset:3px}
+.m-sheet .shop-card__sizes{z-index:5}
+html[data-page]{--surface:var(--c-bg);--ink:var(--c-fg);background:var(--surface)}
+body.commerce-page{background:var(--c-bg);color:var(--c-fg)}
+.commerce-page .header{background:var(--c-bg)}
+.commerce-page .l-page{padding-top:max(120px,var(--header-height))}
+.commerce-page .header .brand img{filter:brightness(0) invert(1)}
+html:is([data-collection=beach],[data-collection=silence-is-loud]) .commerce-page .header .brand img{filter:none}
+.commerce-page .header :focus-visible{outline-color:var(--c-fg)}
+.commerce-page ::selection{background:var(--c-fg);color:var(--c-bg)}
+@media(max-width:1180px){.m-sheet{width:72%}}
+@media(max-width:767.98px){.m-sheet{width:100%}.m-sheet-nav{padding:12px 20px}.m-sheet-body{padding:20px}.m-sheet-foot{flex-direction:column;gap:16px}.commerce-page .l-page{padding-top:134px}}
+@media(max-width:620px){
+  .m-sheet-nav{gap:8px;padding:12px}
+  .m-sheet-nav .l-close.collection-back{width:44px;height:44px;justify-content:center;padding:0}
+  .m-sheet-nav .collection-back span{display:none}
+  .m-sheet-nav .shop-filter{flex:1;min-width:0;grid-template-columns:44px 44px minmax(0,1fr) minmax(0,1.15fr);gap:0}
+  .m-sheet-nav .shop-filter__item{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.m-sheet,.l-panel-scrim{transition:none}}
+/* Inner-page saved-action feedback; the frozen Runway does not load this sheet. */
+.commerce-page .bag-link{position:relative}
+.commerce-bag-count{position:absolute;right:-7px;top:2px;min-width:14px;border-radius:8px;background:var(--collection-ink,#181818);color:var(--collection-bg,#f3f1ec);font-size:10px;line-height:14px;text-align:center}
+.commerce-bag-count:empty{display:none}
+@keyframes commerce-saved{from{opacity:.45}to{opacity:1}}
+.commerce-page .is-added{animation:commerce-saved .12s ease-out}
+@media(prefers-reduced-motion:reduce){.commerce-page .is-added{animation:none}}

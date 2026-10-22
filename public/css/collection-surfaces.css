@@ -1,0 +1,58 @@
+/* Collection shop and product surfaces only. The shared shell/cart tokens stay untouched. */
+.collection-back,.m-sheet .l-close.collection-back{width:auto;min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--c-line);background:var(--c-bg);color:var(--c-fg);font:300 12px var(--l-font);text-decoration:none;cursor:pointer;}
+.collection-back:focus-visible{outline:2px solid var(--c-fg);outline-offset:3px;}
+:is(.m-sheet,.pdp){
+  --cs-muted:var(--c-fg-2);
+  --bg-primary:var(--c-bg); --bg-secondary:var(--c-bg-2);
+  --bg-tertiary:var(--c-bg-2); --bg-card:var(--c-bg-2);
+  --text-primary:var(--c-fg); --text-secondary:var(--cs-muted); --text-tertiary:var(--cs-muted);
+  --text-disabled:color-mix(in srgb,var(--c-fg) 42%,transparent);
+  --border-subtle:var(--c-line); --border-default:var(--c-line);
+  --border-strong:color-mix(in srgb,var(--c-fg) 48%,transparent);
+  --white-alpha-4:color-mix(in srgb,var(--c-fg) 3%,transparent);
+  --white-alpha-8:color-mix(in srgb,var(--c-fg) 6%,transparent);
+  --white-alpha-16:color-mix(in srgb,var(--c-fg) 10%,transparent);
+  --k-accent:var(--c-fg); --k-accent-fg:var(--c-bg);
+  --k-accent-06:color-mix(in srgb,var(--c-fg) 6%,transparent);
+  --k-accent-08:color-mix(in srgb,var(--c-fg) 8%,transparent);
+  --k-accent-10:color-mix(in srgb,var(--c-fg) 10%,transparent);
+  --k-accent-12:color-mix(in srgb,var(--c-fg) 12%,transparent);
+  --k-accent-18:color-mix(in srgb,var(--c-fg) 18%,transparent);
+  --k-accent-28:color-mix(in srgb,var(--c-fg) 28%,transparent);
+  --k-accent-50:color-mix(in srgb,var(--c-fg) 50%,transparent);
+  --yellow-500:var(--k-accent); --yellow-400:var(--k-accent); --yellow-ink:var(--k-accent-fg);
+  --error-500:var(--c-fg);
+  background:var(--c-bg);color:var(--c-fg);
+  scrollbar-color:var(--c-fg-2) var(--c-bg);
+}
+/* Red needs almost full-white secondary text to retain normal-text contrast. */
+[data-collection="rockstar"] :is(.m-sheet,.pdp){--cs-muted:color-mix(in srgb,var(--c-fg) 96%,var(--c-bg));}
+:is(.m-sheet,.pdp) ::selection{background:var(--c-fg);color:var(--c-bg);}
+
+.m-sheet :is(.shop-card,.shop-card__title,.shop-card__price,.shop-filter__item--active,.shop-chip,.shop-card__qa){color:var(--c-fg);}
+.m-sheet :is(.shop-head__desc,.shop-count,.shop-filter__item,.shop-card__cat,.shop-card__price-sub,.m-sheet-note,.rf-empty__title,.rf-empty__desc,.l-token){color:var(--cs-muted);}
+.m-sheet :is(.shop-toolbar,.shop-chip,.shop-card__qa,.l-close,.shop-card__sizes,.l-swatches i){border-color:var(--c-line);}
+.m-sheet :is(.shop-card__media,.ds-skeleton-card__media,.ds-skeleton-card__line,.rf-empty__icon){background-color:var(--c-bg-2);}
+.m-sheet .shop-card__media,.pdp .pdp-rec-card__media,.pdp .shop-buybar__thumb{background-color:#F1F0EC;}
+.m-sheet :is(.l-close,.rf-wish,.rf-flag--neutral,.rf-flag--sold,.shop-card__sizes){background:var(--c-bg);color:var(--c-fg);border-color:var(--c-line);}
+.m-sheet :is(.shop-filter__item:hover,.shop-filter__item:focus-visible,.shop-chip__x){color:var(--c-fg);}
+.m-sheet .shop-chip__x{background:var(--white-alpha-8);}
+.m-sheet :is(.shop-card__qa:hover,.shop-card__qa.is-added,.rf-wish[aria-pressed="true"]){background:var(--c-fg);color:var(--c-bg);border-color:var(--c-fg);}
+.m-sheet .rf-wish:hover{background:var(--c-bg);}
+.m-sheet .shop-card--soldout .shop-card__title{color:var(--cs-muted);}
+.m-sheet .l-passport,.m-sheet .l-passport [style]{opacity:1;}
+
+/* The PDP canvas and its persistent controls belong to the product, not stored browsing history. */
+html[data-page="product"],.collection-product{background:var(--c-bg);color:var(--c-fg);}
+.collection-product .l-nav[data-tone]{color:var(--c-fg);}
+.collection-product .l-nav .header__cart__badge{background:var(--c-fg);color:var(--c-bg);}
+.pdp .shop-buybar{background:var(--c-bg);border-color:var(--c-line);}
+.pdp .pdp-gallery__arrow{background:var(--c-bg);}
+.pdp .status-tag{background:var(--c-fg);color:var(--c-bg);border-color:var(--c-fg);}
+/* Related-card copy stays on the main world color; lighter media stages contain artwork only. */
+.pdp .pdp-rec-card{background:var(--c-bg);}
+.pdp .pdp-buy__guard{color:var(--c-fg);border-color:var(--c-fg);background:var(--white-alpha-8);}
+/* Mobile expanded navigation is a neutral shell surface, not part of the product canvas. */
+@media (max-width:899.98px){
+  .collection-product .l-nav.is-menu-open .l-navlinks{color:var(--l-ink);}
+}

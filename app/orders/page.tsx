@@ -51,7 +51,7 @@ function Orders({ session }: { session: Session }) {
   if (!groups) return skeleton;
   if (groups.length === 0)
     return (
-      <StateMessage icon="package" title={t.orders.none} actions={<Link href="/" className="btn btn-primary">{t.cart.browse}</Link>}>
+      <StateMessage icon="package" title={t.orders.none} actions={<a href="/shop" className="btn btn-primary">{t.cart.browse}</a>}>
         <p>{t.orders.noneBody}</p>
       </StateMessage>
     );

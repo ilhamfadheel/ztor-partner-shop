@@ -87,6 +87,7 @@ const en = {
   },
   header: {
     shop: "Shop",
+    fanClub: "Fan Club",
     orders: "Orders",
     yourAccount: (who: string) => `Your account (${who})`,
     notifications: "Notifications",
@@ -403,6 +404,7 @@ const zhHK: Messages = {
   },
   header: {
     shop: "商店",
+    fanClub: "粉絲俱樂部",
     orders: "訂單",
     yourAccount: (who: string) => `你的帳號（${who}）`,
     notifications: "通知",
@@ -712,6 +714,7 @@ const zhCN: Messages = {
   },
   header: {
     shop: "商店",
+    fanClub: "粉丝俱乐部",
     orders: "订单",
     yourAccount: (who: string) => `你的账号（${who}）`,
     notifications: "通知",
