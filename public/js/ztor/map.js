@@ -129,6 +129,13 @@ export const symbolOf = currency => SYMBOL[currency] ?? currency ?? 'HK$';
 /** LLOUD's money format ("HK$ 2,880") in the item's own currency. */
 export const money = (n, currency = 'HKD') => symbolOf(currency) + ' ' + Number(n || 0).toLocaleString('en-US');
 
+/** The Creator Studio tag that puts a product in one of LLOUD's collections (its colours, its shop filter). */
+const COLLECTION_TAG = { rockstar: 'rockstar', 'beach club': 'beach', paddock: 'paddock', 'silence is loud': 'silence-is-loud' };
+/** The collections the shop filters by, in lloud.club's order. */
+export const COLLECTIONS = [['rockstar', 'Rockstar'], ['beach', 'Beach Club'], ['paddock', 'Paddock']];
+/** A product's LLOUD collection id from its tags, or null. */
+export const collectionOf = (tags = []) => (tags ?? []).map(t => COLLECTION_TAG[String(t).trim().toLowerCase()]).find(Boolean) ?? null;
+
 /** A Creator API product card or detail as LLOUD's product (its id is LLOUD's slug). */
 export function toProduct(card) {
   return {
@@ -139,7 +146,7 @@ export function toProduct(card) {
     currency: card.currency,
     symbol: symbolOf(card.currency),
     category: card.mainCategoryName || '',
-    collection: null,
+    collection: collectionOf(card.tags),
     flag: card.limited ? 'Limited' : card.newProduct ? 'New' : '',
     image: mediaUrl(card.coverUrl),
     sellable: !!card.sellable,

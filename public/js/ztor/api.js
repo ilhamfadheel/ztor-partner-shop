@@ -59,7 +59,8 @@ const id = value => encodeURIComponent(String(value));
 export const api = {
   // Catalogue (channel key only).
   artist: () => creator('/artist').then(d => d?.artists ?? []),
-  products: (pageNum = 1, pageSize = 50) => creator(`/products?pageNum=${pageNum}&pageSize=${pageSize}`),
+  /** `q` = a phrase found inside product titles (any case, at most 100 characters). */
+  products: (pageNum = 1, pageSize = 50, q = '') => creator(`/products?pageNum=${pageNum}&pageSize=${pageSize}${q ? `&q=${encodeURIComponent(q)}` : ''}`),
   product: productId => creator(`/products/${id(productId)}`),
   // Bag (fan).
   cart: () => creator('/cart', { auth: 'required' }),

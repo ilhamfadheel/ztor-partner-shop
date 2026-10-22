@@ -23,9 +23,13 @@ export function mountHeader() {
   sync();document.addEventListener('cart:change',sync);
   mountNavigation();
   mountDevTools();
-  const key = document.documentElement.dataset.collection;
-  document.querySelectorAll('.collection-index a').forEach(a => {
-    if (a.hash === '#' + key) a.setAttribute('aria-current','true');
-  });
+  // The current world, and again when the page changes it (a product page wears its piece's collection).
+  const mark = () => {
+    const key = document.documentElement.dataset.collection;
+    document.querySelectorAll('.collection-index a').forEach(a => {
+      if (a.hash === '#' + key) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');
+    });
+  };
+  mark(); document.addEventListener('collection:change', mark);
   return document.querySelector('.header');
 }

@@ -9,7 +9,7 @@ import { openEarnPoints } from './earning-ui.js';
 import { leaderboardRows, nextTierProgress } from './member-progress.js';
 import * as state from './ztor/state.js';
 import { viewOf, TITLES } from './club-routes.js';
-import { money as priceOf, mediaUrl } from './ztor/map.js';
+import { money as priceOf, mediaUrl, COLLECTIONS } from './ztor/map.js';
 import { api, ApiError } from './ztor/api.js';
 import { signInHref, signOut, signInEmbed, rememberReturnTo } from './ztor/session.js';
 
@@ -28,6 +28,8 @@ let profileLoading = false;
 const num = value => Number(value || 0).toLocaleString('en-US');
 const mediaName = { note:'Private note', photo:'Exclusive photo', video:'Exclusive film', voice:'Voice message', music:'Unreleased audio' };
 const ORDER_STATUS = { PAID: 'Paid', COMPLETED: 'Completed', CANCEL_PENDING: 'Cancellation in progress', CANCELLED: 'Cancelled' };
+/** The shop's search phrase (?q=), at most 100 characters as the Creator API takes. */
+const shopQuery = () => (new URLSearchParams(location.search).get('q') || '').trim().slice(0, 100);
 const returnHere = () => location.pathname + location.search + location.hash;
 const joinLink = () => '/signup?return=' + encodeURIComponent(returnHere());
 const profileLink = () => '/edit-profile' + (view==='profile' ? location.search : '?return='+encodeURIComponent(returnHere()));
@@ -113,7 +115,8 @@ function pass(who) {
 }
 function productCard(p) {
   const tag = p.soldOut ? 'Sold out' : p.flag;
-  return `<a class="club-product" href="/product?id=${encodeURIComponent(p.slug)}" data-reveal><div class="club-product-image">${tag ? `<span class="club-access-tag">${esc(tag)}</span>` : ''}${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" width="480" height="600">` : ''}</div><div class="club-product-meta"><div><h3>${esc(p.name)}</h3><p>${esc(p.category)}</p></div><span>${priceOf(p.price, p.currency)}${p.maxPrice > p.price ? '+' : ''}</span></div></a>`;
+  // The collection rides along so the product page paints in its world from the first frame.
+  return `<a class="club-product" href="/product?id=${encodeURIComponent(p.slug)}${p.collection ? `&collection=${p.collection}` : ''}" data-reveal><div class="club-product-image">${tag ? `<span class="club-access-tag">${esc(tag)}</span>` : ''}${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" width="480" height="600">` : ''}</div><div class="club-product-meta"><div><h3>${esc(p.name)}</h3><p>${esc(p.category)}</p></div><span>${priceOf(p.price, p.currency)}${p.maxPrice > p.price ? '+' : ''}</span></div></a>`;
 }
 function levelProgress(who) {
   if(!who.id) return '';
@@ -211,10 +214,18 @@ async function openReward(id) {
 }
 function shop() {
   const all = state.products();
-  const categories = [...new Set(all.map(p => p.category).filter(Boolean))];
-  const list = all.filter(p => shopFilter === 'all' || p.category === shopFilter);
-  const empty = state.failed('products') ? 'The shop is taking a short break. Please check back soon.' : 'New pieces are on their way.';
-  return `<div data-reveal><span class="club-kicker">Wear your world.</span><h1>The collection is yours to explore.</h1><p class="club-lead">Everyday favourites, straight from the artist’s store.</p></div>${categories.length > 1 ? `<div class="club-tabs" aria-label="Filter pieces">${[['all','All pieces'],...categories.map(c => [c,c])].map(([id,label]) => `<button data-shop-filter="${esc(id)}" aria-pressed="${shopFilter===id}">${esc(label)}</button>`).join('')}</div>` : ''}${list.length ? `<div class="club-grid club-products-grid">${list.map(productCard).join('')}</div>` : `<div class="club-empty"><h3>${empty}</h3></div>`}`;
+  const q = shopQuery();
+  const pool = q ? state.found(q) ?? [] : all;
+  const list = pool.filter(p => shopFilter === 'all' || p.collection === shopFilter);
+  // lloud.club's filters: every piece, then each collection the artist's store has pieces in.
+  const tabs = [['all', 'All pieces'], ...COLLECTIONS.filter(([id]) => all.some(p => p.collection === id))];
+  const where = shopFilter === 'all' ? '' : ` in ${COLLECTIONS.find(([id]) => id === shopFilter)?.[1] ?? 'this collection'}`;
+  const empty = q
+    ? state.failed('search') ? 'The search could not finish. Please try again.' : `Nothing${where} matches “${esc(q)}”.`
+    : state.failed('products') ? 'The shop is taking a short break. Please check back soon.' : 'New pieces are on their way.';
+  const search = `<form class="club-shop-search" role="search" action="/shop" data-shop-search><label class="club-sr-only" for="shop-q">Search the shop</label><input id="shop-q" type="search" name="q" maxlength="100" value="${esc(q)}" placeholder="Search pieces" autocomplete="off"><button class="club-button is-secondary" type="submit">Search</button></form>`;
+  const result = q && state.found(q) ? `<p class="club-shop-result" role="status">${num(list.length)} ${list.length === 1 ? 'piece matches' : 'pieces match'} “${esc(q)}”${where} · <a class="club-text-link" href="/shop">Clear</a></p>` : '';
+  return `<div data-reveal><span class="club-kicker">Wear your world.</span><h1>The collection is yours to explore.</h1><p class="club-lead">Everyday favourites, straight from the artist’s store.</p></div>${search}${tabs.length > 1 ? `<div class="club-tabs" aria-label="Filter pieces">${tabs.map(([id,label]) => `<button data-shop-filter="${esc(id)}" aria-pressed="${shopFilter===id}">${esc(label)}</button>`).join('')}</div>` : ''}${result}${list.length ? `<div class="club-grid club-products-grid">${list.map(productCard).join('')}</div>` : `<div class="club-empty"><h3>${empty}</h3>${q ? `<button class="club-button is-secondary" data-shop-filter="all" data-shop-clear>Show all pieces</button>` : ''}</div>`}`;
 }
 function leaderboard() {
   const who = member();
@@ -287,6 +298,7 @@ async function render(animate=false) {
     }
     return;
   }
+  if(view==='shop' && shopQuery() && !state.found(shopQuery())) await state.search(shopQuery());
   memberMetalCleanup?.();
   root.innerHTML = ({home,rewards,shop,leaderboard,account,signup}[view] || home)();
   memberMetalCleanup = mountMemberMetal(root.querySelector('.member-pass'));
@@ -297,9 +309,16 @@ root.addEventListener('click',e=>{
   const target=e.target.closest('button'); if(!target)return;
   if(target.hasAttribute('data-earn-points'))openEarnPoints();
   if(target.dataset.rewardFilter){rewardFilter=target.dataset.rewardFilter;render();root.querySelector(`[data-reward-filter="${rewardFilter}"]`)?.focus({preventScroll:true});}
-  if(target.dataset.shopFilter){shopFilter=target.dataset.shopFilter;render();root.querySelector(`[data-shop-filter="${shopFilter}"]`)?.focus({preventScroll:true});}
+  if(target.dataset.shopFilter){shopFilter=target.dataset.shopFilter;if(target.hasAttribute('data-shop-clear'))return void go('/shop');render();root.querySelector(`[data-shop-filter="${shopFilter}"]`)?.focus({preventScroll:true});}
   if(target.dataset.openReward)openReward(target.dataset.openReward);
   if(target.hasAttribute('data-signout'))dialog('Sign out?',`<p>You’ll be signed out of LLOUD on this device. Your Ztor account, points and rewards stay as they are.</p><button class="club-button" data-confirm-signout>Sign out</button>`,node=>node.querySelector('[data-confirm-signout]').addEventListener('click',()=>signOut('/')));
+});
+// The shop's search moves in place like a link; without this script the form is a plain GET to /shop?q=.
+root.addEventListener('submit',e=>{
+  const form=e.target.closest('[data-shop-search]'); if(!form)return;
+  e.preventDefault();
+  const q=String(new FormData(form).get('q')||'').trim().slice(0,100);
+  void go(q?'/shop?q='+encodeURIComponent(q):'/shop');
 });
 mountHeader();
 document.body.insertAdjacentHTML('beforeend','<footer class="club-footer"><span>LLOUD · A little closer, together.</span><span>Powered by Ztor · <a href="/account">Your account</a> · <a href="/">Back to runway</a></span></footer>');
