@@ -64,3 +64,21 @@ test("signs out of this site only: revokes the refresh then the access token, cl
   assert.equal(stored(), null);
   assert.equal(location.assigned, "/fan-club");
 });
+
+test("the hosted sign-in buttons come from the console on the issuer's origin, with this site's client, callback, scope and resource", async () => {
+  const { signInEmbed } = await import("../../public/js/ztor/session.js");
+  assert.deepEqual(signInEmbed("https://shop.example"), {
+    base: "https://sso.example/embed/v1",
+    attributes: { "data-client-id": "shop-1", "data-redirect-uri": "https://shop.example/auth/callback", "data-scope": "openid email profile offline_access", "data-resource": "https://api.example/api/creator" },
+  });
+});
+
+test("remembers where to go after a sign-in the hosted buttons start (they keep only verifier and state)", async () => {
+  const { rememberReturnTo } = await import("../../public/js/ztor/session.js");
+  const saved = new Map();
+  globalThis.sessionStorage = { getItem: (k) => saved.get(k) ?? null, setItem: (k, v) => saved.set(k, v), removeItem: (k) => saved.delete(k) };
+  rememberReturnTo("/rewards?reward=2");
+  assert.equal(saved.get("ztor_return_to"), "/rewards?reward=2");
+  rememberReturnTo("https://evil.example/");
+  assert.equal(saved.get("ztor_return_to"), "/");
+});
