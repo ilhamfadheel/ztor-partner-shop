@@ -35,9 +35,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main id="main" className="container">{children}</main>
           {/* lloud.club's footer, as on the LLOUD pages (public/js/club.js). */}
           <footer className="club-footer">
-            <span>LLOUD · A little closer, together.</span>
+            <span>{t.layout.clubTagline}</span>
             <span>
-              Powered by Ztor · <a href="/account">Your account</a> · <a href="/">Back to runway</a>
+              {t.layout.poweredByZtor} · <a href="/account">{t.layout.footerAccount}</a> · <a href="/">{t.layout.backToRunway}</a>
             </span>
           </footer>
         </LangProvider>

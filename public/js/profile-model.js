@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 // Editable presentation fields only. Membership and account records are not profile inputs.
 // Ztor's account rules (bio up to 150); a new photo is resized here, then uploaded to Ztor.
 export const PROFILE_LIMITS = Object.freeze({name:40, bio:150, photoBytes:5*1024*1024, avatarChars:180000});
@@ -18,10 +19,10 @@ export function validateProfile(draft) {
   const name=typeof draft?.name==='string' ? draft.name.trim() : '';
   const bio=typeof draft?.bio==='string' ? draft.bio.trim() : '';
   const errors={};
-  if(!name) errors.name='Enter a display name.';
-  else if(name.length>PROFILE_LIMITS.name) errors.name='Keep your name to 40 characters.';
-  if(bio.length>PROFILE_LIMITS.bio) errors.bio='Keep your bio to 150 characters.';
+  if(!name) errors.name=t('Enter a display name.');
+  else if(name.length>PROFILE_LIMITS.name) errors.name=t('Keep your name to {max} characters.',{max:PROFILE_LIMITS.name});
+  if(bio.length>PROFILE_LIMITS.bio) errors.bio=t('Keep your bio to {max} characters.',{max:PROFILE_LIMITS.bio});
   const avatar=draft?.avatar || '';
-  if(avatar && profileOf({avatar}).avatar!==avatar) errors.avatar='Choose a new JPG, PNG or WebP photo.';
+  if(avatar && profileOf({avatar}).avatar!==avatar) errors.avatar=t('Choose a new JPG, PNG or WebP photo.');
   return {errors,values:{name,bio,avatar}};
 }

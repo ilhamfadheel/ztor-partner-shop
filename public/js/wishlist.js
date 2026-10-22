@@ -3,6 +3,7 @@
 //   document event 'wishlist:change' { detail: { type: 'add'|'remove'|'clear'|'sync', id } }
 
 import { readJSON, writeJSON, storageFailure } from './util.js';
+import { t } from './i18n.js';
 
 export const KEY = 'lisa_wishlist_v1';
 export const EVENT = 'wishlist:change';
@@ -20,7 +21,7 @@ function hydrate() {
 let entries = hydrate();
 
 function commit(next, detail) {
-  if (!writeJSON(KEY, next)) { storageFailure('Your wishlist could not be saved. Nothing changed. Please free some browser storage and try again.'); return false; }
+  if (!writeJSON(KEY, next)) { storageFailure(t('Your wishlist could not be saved. Nothing changed. Please free some browser storage and try again.')); return false; }
   entries = next;
   document.dispatchEvent(new CustomEvent(EVENT, { detail }));
   return true;

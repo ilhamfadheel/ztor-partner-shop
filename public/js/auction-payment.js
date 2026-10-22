@@ -4,6 +4,7 @@ import {auctionPaymentKey} from './auction-catalog.js';
 import {readJSON,writeJSON,money} from './util.js';
 import {esc} from './club-ui.js';
 import {mockPay} from './mock-pay.js';
+import {t} from './i18n.js';
 
 export function auctionOrder(view,lot) {
   const value=readJSON(auctionPaymentKey(lot),null);
@@ -22,16 +23,16 @@ export function openAuctionPayment({lot,snapshot,overlay,onChange,isActive}) {
   if(!userId||reviewed.stage!=='settled'||reviewed.winner?.userId!==userId)return;
   const key=auctionPaymentKey(lot);
   let order=auctionOrder(reviewed,lot),node,finished=false;
-  const identity=()=>`<div class="auction-payment-item"><img src="${esc(lot.image)}" alt="${esc(lot.alt)}" width="64" height="76"><div><span class="club-kicker">Winning lot · ${esc(lot.collection)}</span><h3>${esc(lot.title)}</h3><span class="club-quiet">${order?esc(order.id):'Your winning bid'}</span></div></div>`;
+  const identity=()=>`<div class="auction-payment-item"><img src="${esc(lot.image)}" alt="${esc(lot.alt)}" width="64" height="76"><div><span class="club-kicker">${t('Winning lot')} · ${esc(lot.collection)}</span><h3>${esc(lot.title)}</h3><span class="club-quiet">${order?esc(order.id):t('Your winning bid')}</span></div></div>`;
   const check=()=>{
     const latest=snapshot();
-    if(!isActive()||member().id!==userId)throw new Error('Your account changed. Close this window and sign in as the winning bidder.');
+    if(!isActive()||member().id!==userId)throw new Error(t('Your account changed. Close this window and sign in as the winning bidder.'));
     if(latest.stage!=='settled'||latest.id!==reviewed.id||latest.round!==reviewed.round
       ||latest.winner?.userId!==userId||latest.winner.amount!==reviewed.winner.amount)
-      throw new Error('The auction result changed. Close this window and review the updated result before paying.');
+      throw new Error(t('The auction result changed. Close this window and review the updated result before paying.'));
     return latest;
   };
-  const eligibility=()=>{if(!canAuction())throw new Error('Your winning result is unchanged, but checkout is paused for an Inner Circle eligibility review. No payment was taken.');};
+  const eligibility=()=>{if(!canAuction())throw new Error(t('Your winning result is unchanged, but checkout is paused for an Inner Circle eligibility review. No payment was taken.'));};
   const error=message=>{
     const output=node.querySelector('[data-payment-error]');output.textContent=message;output.focus({preventScroll:true});
   };
@@ -42,7 +43,7 @@ export function openAuctionPayment({lot,snapshot,overlay,onChange,isActive}) {
   };
   const errorHtml='<p class="club-form-error" data-payment-error role="alert" tabindex="-1"></p>';
   function receipt() {
-    show('Payment preview complete',`${identity()}<span class="auction-payment-status">Paid · demo</span><div class="bid-review-amount">${money(order.amount)}</div><p>Your auction order is confirmed in this browser.</p><p class="club-quiet">No money was charged. This is a payment simulation, not a receipt for a real purchase.</p><button class="club-button" data-payment-done>Back to auctions<span aria-hidden="true">↗</span></button>`,()=>{
+    show(t('Payment preview complete'),`${identity()}<span class="auction-payment-status">${t('Paid · demo')}</span><div class="bid-review-amount">${money(order.amount)}</div><p>${t('Your auction order is confirmed in this browser.')}</p><p class="club-quiet">${t('No money was charged. This is a payment simulation, not a receipt for a real purchase.')}</p><button class="club-button" data-payment-done>${t('Back to auctions')}<span aria-hidden="true">↗</span></button>`,()=>{
       node.querySelector('[data-payment-done]').addEventListener('click',()=>node.close());
       node.querySelector('[data-payment-done]').focus({preventScroll:true});
     });
@@ -52,12 +53,12 @@ export function openAuctionPayment({lot,snapshot,overlay,onChange,isActive}) {
     try {
       const latest=check();
       const current=auctionOrder(latest,lot);
-      if(!current||current.id!==order.id)throw new Error('This order changed in another window. Close this window and review your order again.');
+      if(!current||current.id!==order.id)throw new Error(t('This order changed in another window. Close this window and review your order again.'));
       // Another window may have already completed this exact winning order.
       if(current?.status==='paid'){order=current;finished=true;onChange();receipt();return;}
       eligibility();
       const paid={...current,status:'paid',paidAt:Date.now(),last4:result.last4};
-      if(!writeJSON(key,paid))throw new Error('This browser could not save the payment preview. Your order is still unpaid. Please try again.');
+      if(!writeJSON(key,paid))throw new Error(t('This browser could not save the payment preview. Your order is still unpaid. Please try again.'));
       order=paid;finished=true;onChange();receipt();
     }catch(err){error(err.message);}
   }
@@ -70,19 +71,19 @@ export function openAuctionPayment({lot,snapshot,overlay,onChange,isActive}) {
       order=order||{id:'AU-'+crypto.randomUUID().slice(0,8).toUpperCase(),auctionId:latest.id,
         lotId:lot.id,userId,title:lot.title,amount:latest.winner.amount,currency:'HKD',
         status:'pending',ts:Date.now(),demo:true};
-      if(!writeJSON(key,order))throw new Error('This browser could not save the order. Please try again. No payment was taken.');
+      if(!writeJSON(key,order))throw new Error(t('This browser could not save the order. Please try again. No payment was taken.'));
       onChange();
-      show('Pay for your winning bid',`${identity()}<p class="auction-payment-demo">Payment preview only. Use test details, never a real card.</p><div data-auction-payment-form></div>${errorHtml}<details class="auction-payment-help"><summary tabindex="0">Test payment details</summary><p>Use any name, card 4242 4242 4242 4242, expiry 12/30 and code 123. A card ending 0002 previews a decline; 3220 previews bank verification. Nothing is sent to a bank.</p></details>`,()=>{
+      show(t('Pay for your winning bid'),`${identity()}<p class="auction-payment-demo">${t('Payment preview only. Use test details, never a real card.')}</p><div data-auction-payment-form></div>${errorHtml}<details class="auction-payment-help"><summary tabindex="0">${t('Test payment details')}</summary><p>${t('Use any name, card 4242 4242 4242 4242, expiry 12/30 and code 123. A card ending 0002 previews a decline; 3220 previews bank verification. Nothing is sent to a bank.')}</p></details>`,()=>{
         mockPay.open({mount:node.querySelector('[data-auction-payment-form]'),amount:order.amount,currency:'HK$',
-          title:'Winning bid · sample all-in total',forceForm:true,demoOnly:true,
-          confirmLabel:`Pay ${money(order.amount)} · demo`,backLabel:'Back to order',
+          title:t('Winning bid · sample all-in total'),forceForm:true,demoOnly:true,
+          confirmLabel:t('Pay {amount} · demo',{amount:money(order.amount)}),backLabel:t('Back to order'),
           onSuccess:complete,onBack:summary});
       });
     }catch(err){error(err.message);}
   }
   function summary() {
     if(order?.status==='paid'){receipt();return;}
-    show('Your auction order',`${identity()}<span class="auction-payment-status is-pending">Awaiting payment</span><div class="bid-review-amount">${money(reviewed.winner.amount)}</div><p>Your winning bid is ready for checkout.</p><p class="club-quiet">Sample all-in total. No extra fees are added in this preview. Live shipping and payment terms must be confirmed before bidding opens.</p>${errorHtml}<button class="club-button" data-go-payment>Go to payment<span aria-hidden="true">↗</span></button><p class="club-quiet auction-payment-note">Demo only · no real money will be charged.</p>`,()=>{
+    show(t('Your auction order'),`${identity()}<span class="auction-payment-status is-pending">${t('Awaiting payment')}</span><div class="bid-review-amount">${money(reviewed.winner.amount)}</div><p>${t('Your winning bid is ready for checkout.')}</p><p class="club-quiet">${t('Sample all-in total. No extra fees are added in this preview. Live shipping and payment terms must be confirmed before bidding opens.')}</p>${errorHtml}<button class="club-button" data-go-payment>${t('Go to payment')}<span aria-hidden="true">↗</span></button><p class="club-quiet auction-payment-note">${t('Demo only · no real money will be charged.')}</p>`,()=>{
       node.querySelector('[data-go-payment]').addEventListener('click',payment);
       node.querySelector('[data-go-payment]').focus({preventScroll:true});
     });

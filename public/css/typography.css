@@ -4,7 +4,7 @@
 :root{
   --type-scroll-cue:16px;
   --weight-scroll-cue:300;
-  --font-ui-variable:'Satoshi Header',Satoshi,system-ui,sans-serif;
+  --font-ui-variable:'Satoshi Header',Satoshi,var(--l-cjk),system-ui,sans-serif;
   --weight-light:360;
   --weight-support:var(--weight-light);
   --weight-nav:435.6;

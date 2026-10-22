@@ -4,6 +4,7 @@
 // app/checkout, lib/availability.ts, lib/media.ts). No fetch, no DOM; storage only where named.
 import config from '/lloud-config.js';
 import { mediaUrl, money } from './map.js';
+import { t } from '../i18n.js';
 
 /** The bag's ceiling for one line, whatever the product allows. */
 export const MAX_QTY = 99;
@@ -81,13 +82,13 @@ export function galleryItems(media = []) {
 
 /** How the product reaches the fan: shipped, or collected at the pickup session still open (else the first). */
 export function fulfilmentText(detail) {
-  if (detail?.fulfillmentType === 'SHIPPING') return 'Ships to you';
+  if (detail?.fulfillmentType === 'SHIPPING') return t('Ships to you');
   if (detail?.fulfillmentType !== 'QR_PICKUP') return '';
   const sessions = detail.pickup?.sessions ?? [];
   const shown = sessions.find(s => s.statusCode !== 'ENDED') ?? sessions[0];
-  if (!shown) return 'Pickup with a QR code';
-  const more = sessions.length > 1 ? ` (+${sessions.length - 1} more)` : '';
-  return 'Pickup at ' + [shown.name, shown.location].filter(Boolean).join(', ') + more;
+  if (!shown) return t('Pickup with a QR code');
+  const more = sessions.length > 1 ? t(' (+{n} more)', { n: sessions.length - 1 }) : '';
+  return t('Pickup at {place}', { place: [shown.name, shown.location].filter(Boolean).join(', ') }) + more;
 }
 
 // ── the bag ──────────────────────────────────────────────────────────────────
@@ -108,13 +109,20 @@ export function bagTotals(lines) {
     tax: 0,
     discount: 0,
     total: subtotal,
-    note: 'Delivery and any discounts are calculated at checkout',
+    note: t('Delivery and any discounts are calculated at checkout'),
   };
 }
 
 /** A line's status for the fan ("Sold out"); nothing for a buyable line. */
+const STATUS_TEXT = {
+  SOLD_OUT: () => t('Sold out'),
+  PRODUCT_UNAVAILABLE: () => t('Product unavailable'),
+  SKU_UNAVAILABLE: () => t('Sku unavailable'),
+  CONFIGURATION_CHANGED: () => t('Configuration changed'),
+};
 export function lineStatusText(status) {
   if (!status || status === 'AVAILABLE') return '';
+  if (STATUS_TEXT[status]) return STATUS_TEXT[status]();
   const words = String(status).replaceAll('_', ' ').toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
@@ -127,8 +135,8 @@ export const NEW_CONTACT = 'new';
 /** What's missing from a new pickup contact, by field. */
 export function contactErrors({ name = '', phone = '' } = {}) {
   const errors = {};
-  if (!String(name).trim()) errors.name = 'Enter the name of whoever collects the order.';
-  if (!String(phone).trim()) errors.phone = 'Enter a phone number we can reach them on.';
+  if (!String(name).trim()) errors.name = t('Enter the name of whoever collects the order.');
+  if (!String(phone).trim()) errors.phone = t('Enter a phone number we can reach them on.');
   return errors;
 }
 

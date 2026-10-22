@@ -16,37 +16,38 @@ import {
 import { cart, onCartChange } from './cart.js';
 import { openDrawer, closeDrawer } from './drawer.js';
 import { escapeHtml, qs, qsa, prefersReducedMotion, ICONS } from './util.js';
+import { t } from './i18n.js';
 
+// Read at use time, so the page's language applies.
 export const STRINGS = {
-  title: 'Checkout',
-  backBag: 'Back to bag',
-  contact: 'Pickup contact',
-  newContact: 'New contact',
-  whoCollects: 'Who collects the order',
-  name: 'Name',
-  phone: 'Phone',
-  payment: 'Payment',
-  noMethods: 'No payment method is available for this order right now.',
-  summary: 'Order summary',
-  subtotal: 'Subtotal',
-  discount: 'Discount',
-  total: 'Total',
-  calculating: 'Calculating…',
-  place: 'Pay now',
-  processing: 'Taking you to payment…',
-  payNote: 'You finish paying on the payment page; your order is confirmed once it has gone through.',
-  cantPlace: 'This order can’t be placed as it is. Review your bag and try again.',
-  quoteFailed: 'Your order could not be priced.',
-  loadFailed: 'Checkout could not load.',
-  didntStart: 'Checkout didn’t start: ',
-  leftOut: 'Unavailable items stay in your bag and aren’t included.',
-  retry: 'Try again',
-  reviewBag: 'Review your bag',
-  emptyTitle: 'Your bag is empty',
-  emptyDesc: 'Add the pieces you want and they will wait for you here.',
-  nothingTitle: 'Nothing to pay for',
-  nothingDesc: 'None of the items in your bag can be bought right now.',
-  emptyCta: 'Explore the shop'
+  get title() { return t('Checkout'); },
+  get backBag() { return t('Back to bag'); },
+  get contact() { return t('Pickup contact'); },
+  get newContact() { return t('New contact'); },
+  get whoCollects() { return t('Who collects the order'); },
+  get name() { return t('Name'); },
+  get phone() { return t('Phone'); },
+  get payment() { return t('Payment'); },
+  get noMethods() { return t('No payment method is available for this order right now.'); },
+  get summary() { return t('Order summary'); },
+  get subtotal() { return t('Subtotal'); },
+  get discount() { return t('Discount'); },
+  get total() { return t('Total'); },
+  get calculating() { return t('Calculating…'); },
+  get place() { return t('Pay now'); },
+  get processing() { return t('Taking you to payment…'); },
+  get payNote() { return t('You finish paying on the payment page; your order is confirmed once it has gone through.'); },
+  get cantPlace() { return t('This order can’t be placed as it is. Review your bag and try again.'); },
+  get quoteFailed() { return t('Your order could not be priced.'); },
+  get loadFailed() { return t('Checkout could not load.'); },
+  get leftOut() { return t('Unavailable items stay in your bag and aren’t included.'); },
+  get retry() { return t('Try again'); },
+  get reviewBag() { return t('Review your bag'); },
+  get emptyTitle() { return t('Your bag is empty'); },
+  get emptyDesc() { return t('Add the pieces you want and they will wait for you here.'); },
+  get nothingTitle() { return t('Nothing to pay for'); },
+  get nothingDesc() { return t('None of the items in your bag can be bought right now.'); },
+  get emptyCta() { return t('Explore the shop'); }
 };
 
 const co = {
@@ -214,7 +215,7 @@ function footHtml() {
       ? '<p class="cc-callout cc-callout--error" role="alert" data-co-cant>' + STRINGS.cantPlace +
           ' <button class="checkout-hub__edit" type="button" data-co-return-bag>' + STRINGS.reviewBag + '</button></p>'
       : '') +
-    (co.submitError ? '<p class="cc-callout cc-callout--error" role="alert" data-co-error>' + escapeHtml(STRINGS.didntStart + co.submitError) + '</p>' : '') +
+    (co.submitError ? '<p class="cc-callout cc-callout--error" role="alert" data-co-error>' + escapeHtml(t('Checkout didn’t start: {reason}', { reason: co.submitError })) + '</p>' : '') +
     '<button class="btn btn--primary btn--lg checkout-cta" type="button" data-place' + (canPay() ? '' : ' disabled') + (co.busy ? ' aria-busy="true"' : '') + '>' +
       (co.busy ? STRINGS.processing : STRINGS.place + escapeHtml(total)) +
     '</button>' +
@@ -327,7 +328,7 @@ async function placeOrder() {
   } catch (error) {
     co.busy = false;
     if (lost(error)) return;
-    co.submitError = (error && error.message) || 'Try again.';
+    co.submitError = (error && error.message) || t('Try again.');
     renderAside();
     qs('[data-co-error]', aside)?.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }

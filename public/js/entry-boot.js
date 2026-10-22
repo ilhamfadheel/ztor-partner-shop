@@ -44,6 +44,8 @@
       if (!state.onRequest && !state.released) {
         button.hidden = false;
         button.textContent = 'Continue to site';
+        // A classic script: the page's language comes from the i18n module, loaded on demand.
+        import('./i18n.js').then(({ t }) => { button.textContent = t('Continue to site'); }).catch(() => {});
       }
     }, 3000);
     // Slow transfers never masquerade as complete; the explicit button remains available.

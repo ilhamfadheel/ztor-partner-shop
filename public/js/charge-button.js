@@ -1,4 +1,6 @@
-const ENTER = 'Enter the collection';
+import { t } from './i18n.js';
+
+const ENTER = () => t('Enter the collection');
 
 // Scroll drives the fill; only the 90% label change has a short CSS transition.
 export class ChargeButton {
@@ -10,11 +12,11 @@ export class ChargeButton {
     this.target = null;
     this.progress = 0;
     link.classList.add('charge-button');
-    link.innerHTML = '<span class="charge-fill" aria-hidden="true"></span><span class="charge-window" aria-hidden="true"><span class="charge-word charge-enter">Enter the collection</span><span class="charge-word charge-destination"></span></span><span class="charge-icon" aria-hidden="true">↗</span>';
+    link.innerHTML = '<span class="charge-fill" aria-hidden="true"></span><span class="charge-window" aria-hidden="true"><span class="charge-word charge-enter">' + ENTER() + '</span><span class="charge-word charge-destination"></span></span><span class="charge-icon" aria-hidden="true">↗</span>';
     this.destination = link.querySelector('.charge-destination');
     this.fill = link.querySelector('.charge-fill');
     this.icon = link.querySelector('.charge-icon');
-    link.setAttribute('aria-label', ENTER);
+    link.setAttribute('aria-label', ENTER());
     link.addEventListener('click', event => {
       // Capture before the collection-sheet handler: visible navigation copy
       // must navigate, while ordinary Enter retains its existing shop behavior.
@@ -34,12 +36,12 @@ export class ChargeButton {
     if (identity !== this.identity) {
       this.identity = identity;
       this.state = state;
-      const text = navigate ? label : ENTER;
+      const text = navigate ? label : ENTER();
       this.link.dataset.chargeState = state;
       this.link.dataset.chargeReady = String(navigate);
       this.link.setAttribute('aria-label', text);
       this.link.setAttribute('href', navigate ? `#${target}` : this.originalHref);
-      this.icon.textContent = !navigate ? '↗' : label.startsWith('Previous') ? '↑' : '↓';
+      this.icon.textContent = !navigate ? '↗' : label.startsWith('Previous') || label === t('Previous collection') ? '↑' : '↓';
       this.destination.textContent = label;
     }
     this.fill.style.transform = `scaleX(${this.progress})`;

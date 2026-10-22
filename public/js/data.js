@@ -1,6 +1,8 @@
 // js/data.js — the catalogue and the size-guide data, one module.
 // Prices are SAMPLE values in HK$. Bracketed strings are placeholders and stay bracketed.
 // Source of truth: the four artboards (Main / Shop / Product / Bag .dc.html) + LANDING-SPEC.md.
+// The copy shown to fans is wrapped in t() (js/locales/commerce.js); ids, codes and collection names stay as they are.
+import { t } from './i18n.js';
 
 export const CATEGORIES = ['Tees', 'Outerwear', 'Accessories'];
 export const CURRENCY = 'HK$';
@@ -9,7 +11,7 @@ const APPAREL = ['XS', 'S', 'M', 'L', 'XL'];
 function sizeList(labels, outOfStock = []) {
   return labels.map(label => ({
     id: label.toLowerCase().replace(/\s+/g, '-'),
-    label,
+    label: label === 'One size' ? t('One size') : label,
     inStock: !outOfStock.includes(label)
   }));
 }
@@ -19,48 +21,48 @@ const APP = (oos = []) => sizeList(APPAREL, oos);
 export const COLLECTIONS = [
   {
     id: 'rockstar', code: 'S26 · 01', token: '[S26·01]', name: 'ROCKSTAR',
-    manifesto: 'Loud on purpose. Twelve pieces cut for the encore.',
-    pieces: 12, window: 'until 31 Mar', badge: 'UNTIL 31 MAR',
+    manifesto: t('Loud on purpose. Twelve pieces cut for the encore.'),
+    pieces: 12, window: t('until 31 Mar'), badge: t('UNTIL 31 MAR'),
     hero: 1, heroImage: 'assets/products/hero-rockstar.webp',
     // passport swatch values (the shell's --c-bg / --c-accent / --c-fg for this world)
     bg: '#E0091D', accent: '#FFFFFF', fg: '#FFFFFF',
     colours: [
-      { id: 'black', label: 'Black', hex: '#1A1A1A' },
-      { id: 'oxblood', label: 'Oxblood', hex: '#7A2B2B' },
-      { id: 'bone', label: 'Bone', hex: '#EDE7D9' }
+      { id: 'black', label: t('Black'), hex: '#1A1A1A' },
+      { id: 'oxblood', label: t('Oxblood'), hex: '#7A2B2B' },
+      { id: 'bone', label: t('Bone'), hex: '#EDE7D9' }
     ]
   },
   {
     id: 'beach', code: 'S26 · 02', token: '[S26·02]', name: 'BEACH CLUB',
-    manifesto: 'Salt, sun, slow hours. Fourteen pieces for the long afternoon.',
-    pieces: 14, window: 'until 30 Jun', badge: 'UNTIL 30 JUN',
+    manifesto: t('Salt, sun, slow hours. Fourteen pieces for the long afternoon.'),
+    pieces: 14, window: t('until 30 Jun'), badge: t('UNTIL 30 JUN'),
     hero: 0, heroImage: 'assets/products/hero-beach.webp',
     bg: '#EADCC2', accent: '#FF6A45', fg: '#14343F',
     colours: [
-      { id: 'bone', label: 'Bone', hex: '#EDE7D9' },
-      { id: 'navy', label: 'Navy', hex: '#243A5E' },
-      { id: 'olive', label: 'Olive', hex: '#2F4A37' }
+      { id: 'bone', label: t('Bone'), hex: '#EDE7D9' },
+      { id: 'navy', label: t('Navy'), hex: '#243A5E' },
+      { id: 'olive', label: t('Olive'), hex: '#2F4A37' }
     ]
   },
   {
     id: 'paddock', code: 'S26 · 03', token: '[S26·03]', name: 'PADDOCK',
-    manifesto: 'Built for the grid. Ten pieces, race weekend only.',
-    pieces: 10, window: 'until 30 Sep', badge: 'UNTIL 30 SEP',
+    manifesto: t('Built for the grid. Ten pieces, race weekend only.'),
+    pieces: 10, window: t('until 30 Sep'), badge: t('UNTIL 30 SEP'),
     hero: 0, heroImage: 'assets/products/hero-paddock.webp',
     bg: '#080808', accent: '#FFFFFF', fg: '#FFFFFF',
     colours: [
-      { id: 'black', label: 'Black', hex: '#1A1A1A' },
-      { id: 'grey', label: 'Grey', hex: '#9A9A9A' },
-      { id: 'navy', label: 'Navy', hex: '#243A5E' }
+      { id: 'black', label: t('Black'), hex: '#1A1A1A' },
+      { id: 'grey', label: t('Grey'), hex: '#9A9A9A' },
+      { id: 'navy', label: t('Navy'), hex: '#243A5E' }
     ]
   },
   {
     id: 'silence-is-loud', code: 'S26 · 04', token: '[S26·04]', name: 'SILENCE IS LOUD',
-    manifesto: 'the loudest thing in the room sometimes is absolute control',
-    preview: true, pieces: 0, window: 'Coming soon', badge: 'COLLECTION PREVIEW',
+    manifesto: t('the loudest thing in the room sometimes is absolute control'),
+    preview: true, pieces: 0, window: t('Coming soon'), badge: t('COLLECTION PREVIEW'),
     hero: 0, heroImage: 'assets/fashion/silence-is-loud/slim-face-20260909/near-poster.webp',
     bg: '#B9B7B2', accent: '#171717', fg: '#171717',
-    colours: [{ id: 'black', label: 'Black', hex: '#171717' }]
+    colours: [{ id: 'black', label: t('Black'), hex: '#171717' }]
   }
 ];
 
@@ -154,37 +156,37 @@ export const SIZE_GUIDE = {
       ],
       measure: {
         steps: [
-          ['A Chest', 'Measure around the fullest part of the chest, tape level and snug but not tight.'],
-          ['B Waist', 'Measure around the narrowest part of the waist, just above the navel.'],
-          ['C Hip', 'Feet together, measure around the fullest part of the hips.']
+          [t('A Chest'), t('Measure around the fullest part of the chest, tape level and snug but not tight.')],
+          [t('B Waist'), t('Measure around the narrowest part of the waist, just above the navel.')],
+          [t('C Hip'), t('Feet together, measure around the fullest part of the hips.')]
         ]
       }
     }
   },
   guides: {
     tee: {
-      title: 'T-shirt', group: 'upper', cols: ['Chest', 'Length', 'Shoulder'],
+      title: t('T-shirt'), group: 'upper', cols: [t('Chest'), t('Length'), t('Shoulder')],
       rows: [['XS', 46, 63, 40], ['S', 49, 66, 42], ['M', 52, 69, 44], ['L', 55, 72, 46], ['XL', 58, 75, 48]],
-      fit: 'Relaxed regular fit. Model 178 cm / 66 kg, wearing M.',
-      between: 'Between two sizes — size down.'
+      fit: t('Relaxed regular fit. Model 178 cm / 66 kg, wearing M.'),
+      between: t('Between two sizes — size down.')
     },
     hoodie: {
-      title: 'Hoodie', group: 'upper', cols: ['Chest', 'Length', 'Shoulder'],
+      title: t('Hoodie'), group: 'upper', cols: [t('Chest'), t('Length'), t('Shoulder')],
       rows: [['XS', 51, 63, 44], ['S', 54, 66, 46], ['M', 57, 69, 48], ['L', 60, 72, 50], ['XL', 63, 75, 52]],
-      fit: 'Oversized, dropped shoulder. Model 178 cm / 66 kg, wearing M.',
-      between: 'For a looser look — size up.'
+      fit: t('Oversized, dropped shoulder. Model 178 cm / 66 kg, wearing M.'),
+      between: t('For a looser look — size up.')
     },
     jacket: {
-      title: 'Jacket', group: 'upper', cols: ['Chest', 'Length', 'Sleeve'],
+      title: t('Jacket'), group: 'upper', cols: [t('Chest'), t('Length'), t('Sleeve')],
       rows: [['XS', 52, 64, 58], ['S', 55, 66, 60], ['M', 58, 68, 62], ['L', 61, 70, 64], ['XL', 64, 72, 66]],
-      fit: 'Standard fit; size up if you layer a hoodie underneath. Model 180 cm / 72 kg, wearing L.',
-      between: 'Between two sizes — size up.'
+      fit: t('Standard fit; size up if you layer a hoodie underneath. Model 180 cm / 72 kg, wearing L.'),
+      between: t('Between two sizes — size up.')
     },
     longsleeve: {
-      title: 'Long sleeve', group: 'upper', cols: ['Chest', 'Length', 'Sleeve'],
+      title: t('Long sleeve'), group: 'upper', cols: [t('Chest'), t('Length'), t('Sleeve')],
       rows: [['XS', 47, 65, 56], ['S', 50, 68, 58], ['M', 53, 71, 60], ['L', 56, 74, 62], ['XL', 59, 77, 64]],
-      fit: 'Standard fit. Model 178 cm / 66 kg, wearing M.',
-      between: 'Between two sizes — size down.'
+      fit: t('Standard fit. Model 178 cm / 66 kg, wearing M.'),
+      between: t('Between two sizes — size down.')
     }
   },
   // first substring hit on the lowercased product name wins; longsleeve before tee on purpose
@@ -197,8 +199,8 @@ export const SIZE_GUIDE = {
   standards: [['intl', 'INTL'], ['us', 'US'], ['eu', 'EU'], ['jp', 'JP']],
   units: [['cm', 'CM'], ['in', 'IN']],
   notes: {
-    body: '※ Fit guidance is based on a regular build; when in doubt the flat-lay table above is the more accurate reference.',
-    flat: '※ Garment measurements are taken flat, in centimetres; different materials may vary by 1–2 cm.'
+    body: t('※ Fit guidance is based on a regular build; when in doubt the flat-lay table above is the more accurate reference.'),
+    flat: t('※ Garment measurements are taken flat, in centimetres; different materials may vary by 1–2 cm.')
   }
 };
 

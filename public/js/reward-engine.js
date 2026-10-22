@@ -1,8 +1,9 @@
 // Creator-configurable rules: a leaf {type:'tier'|'product'|'lifetime'|'invite', value},
 // or nested {all:[rules]} / {any:[rules]}. Empty or invalid branches fail closed.
 // Entitlements are permanent earned records; current conditions remain explainable.
+import { t, locale } from './i18n.js';
 const tiers = ['fan', 'ranked', 'super', 'inner'];
-const names = ['Fan', 'Ranked Fan', 'Super Fan', 'Inner Circle'];
+const names = () => [t('Fan'), t('Ranked Fan'), t('Super Fan'), t('Inner Circle')];
 const number = value => Number.isSafeInteger(value) && value >= 0;
 const text = value => typeof value === 'string' && value.trim().length > 0;
 const invalid = () => ({valid:false,met:false,progress:0,conditions:[]});
@@ -24,23 +25,23 @@ function evaluate(rule, who, depth = 0) {
     target = tiers.indexOf(rule.value); current = tiers.indexOf(who.tier);
     if (target < 0) return invalid();
     met = current >= target; progress = current < 0 ? 0 : target === 0 ? 1 : Math.min(1,current/target);
-    label = `Reach ${names[target]}`;
+    label = t('Reach {tier}', { tier: names()[target] });
     current = current < 0 ? null : tiers[current]; target = rule.value;
   } else if (rule.type === 'product') {
     if (!text(rule.value)) return invalid();
     met = Array.isArray(who.purchasedProducts) && who.purchasedProducts.includes(rule.value);
     current = met ? 1 : 0; target = 1; progress = current;
-    label = `Purchase ${text(rule.productName) ? rule.productName : rule.value}`;
+    label = t('Purchase {product}', { product: text(rule.productName) ? rule.productName : rule.value });
   } else if (rule.type === 'lifetime') {
     if (!number(rule.value) || rule.value === 0) return invalid();
     target = rule.value; current = number(who.lifetime) ? who.lifetime : 0;
     met = current >= target; progress = Math.min(1,current/target);
-    label = `Earn ${target.toLocaleString('en-US')} lifetime points`;
+    label = t('Earn {points} lifetime points', { points: target.toLocaleString(locale()) });
   } else if (rule.type === 'invite') {
     if (!number(rule.value) || rule.value === 0) return invalid();
     target = rule.value; current = number(who.invites) ? who.invites : 0;
     met = current >= target; progress = Math.min(1,current/target);
-    label = `Invite ${target} friends`;
+    label = t('Invite {count} friends', { count: target.toLocaleString(locale()) });
   } else return invalid();
   return {valid:true,met,progress,conditions:[{label,met,current,target,progress}]};
 }

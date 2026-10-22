@@ -81,7 +81,11 @@ img{max-width:100%;height:auto;}
 /* END LISA BASE SHELL v2 */
 
 /* App typography adjustment; keep the upstream base-shell block verbatim. */
-:root{--l-font:'Satoshi',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;}
+/* Chinese: named CJK faces before system-ui, Traditional (Hong Kong) unless the page is Simplified,
+   so Chinese never rides the system-ui cascade at the site's light weights. */
+:root{--l-cjk:'PingFang HK','PingFang TC','Hiragino Sans CNS','Noto Sans TC','Microsoft JhengHei'}
+:root:lang(zh-CN){--l-cjk:'PingFang SC','Hiragino Sans GB','Noto Sans SC','Microsoft YaHei'}
+:root{--l-font:'Satoshi',var(--l-cjk),system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;}
 .l-navlinks,.l-passport,.l-skip,.l-chip,.l-token{font-weight:300;}
 .l-member,.l-cta,.l-cta-ghost,.l-eyebrow,.l-card-name,.l-tag{font-weight:300;}
 .l-display{font-weight:calc(var(--c-display-weight) * .8);}

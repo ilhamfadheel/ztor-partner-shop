@@ -1,4 +1,5 @@
 import { escapeHtml } from './util.js';
+import { t } from './i18n.js';
 export const esc = escapeHtml;
 export const motionOK = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
 let pointerInput=false;
@@ -30,7 +31,7 @@ export function dialog(title, content, mount) {
   const node = document.createElement('dialog');
   node.className = 'club-dialog';
   node.setAttribute('aria-labelledby','club-dialog-title-' + Date.now());
-  node.innerHTML = `<div class="club-dialog-head"><h2 id="${node.getAttribute('aria-labelledby')}">${esc(title)}</h2><button type="button" class="club-close" aria-label="Close dialog">×</button></div><div class="club-dialog-body">${content}</div>`;
+  node.innerHTML = `<div class="club-dialog-head"><h2 id="${node.getAttribute('aria-labelledby')}">${esc(title)}</h2><button type="button" class="club-close" aria-label="${t('Close dialog')}">×</button></div><div class="club-dialog-body">${content}</div>`;
   document.body.append(node);
   let entering,closing;
   const close=()=>{
