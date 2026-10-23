@@ -18,6 +18,10 @@ const config: NextConfig = {
       { source: "/index.html", destination: "/", permanent: true },
       ...LLOUD_PAGES.map((page) => ({ source: `/${page}.html`, destination: `/${page}`, permanent: true })),
       { source: "/products/:id", destination: "/product?id=:id", permanent: false },
+      // The runway's films go to the LLOUD site itself, not through a rewrite: Vercel's edge caches a
+      // proxied 206 (one byte range) and serves it for every Range asked, so the browser got the
+      // middle of a film for its first bytes and the runway fell back to stills.
+      { source: "/assets/fashion/:path(.*\\.mp4)", destination: `${LLOUD_MEDIA_ORIGIN}/assets/fashion/:path`, permanent: false },
     ];
   },
   async rewrites() {
