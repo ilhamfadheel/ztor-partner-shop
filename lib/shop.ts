@@ -54,14 +54,16 @@ export const isAuthError = (error: unknown): boolean => error instanceof ShopErr
 // ---- shapes (the subset this site renders; everything else passes through untouched)
 
 export type Artist = { name: string; avatarUrl: string | null };
-/** What happened to an order the fan placed on this site (Creator API Notifications). */
-export type NotificationEvent = "order-paid" | "order-cancel-requested" | "order-cancelled" | "order-picked-up" | "order-completed" | "payment-failed";
+/** What happened to an order the fan placed on this site, or a message the platform sent its fans (Creator API Notifications). */
+export type NotificationEvent = "order-paid" | "order-cancel-requested" | "order-cancelled" | "order-picked-up" | "order-completed" | "payment-failed" | "broadcast";
 export type ShopNotification = {
   notificationId: string;
   event: NotificationEvent;
   checkoutGroupId: string;
   /** The orders it is about, as they were then; `items` are the ones the change is about. Empty for payment-failed. */
   orders: { orderId?: string; orderNo?: string; shopName?: string | null; items: { orderItemId?: string; title?: string; quantity?: number }[] }[];
+  /** For a `broadcast`: the platform's message, already filled in for this fan; null for order events. */
+  message?: { broadcastId: string | null; subject: string; body: string } | null;
   createdAt: number;
   readAt: number | null;
 };
