@@ -36,3 +36,17 @@ test("the fan's language carries into the notification, order number and all", (
   assert.deepEqual(notificationText(n("order-paid"), dict("zh-hk")), { title: "已收到付款", detail: "訂單 O-1001 · Tour Tee ×2, Cap", href: "/orders/1001" });
   assert.equal(notificationText(n("payment-failed"), dict("zh-cn")).title, "支付未完成");
 });
+
+test("a message from the platform reads as its subject and body, and stays on the notifications", () => {
+  const msg: ShopNotification = {
+    notificationId: "9",
+    event: "broadcast",
+    checkoutGroupId: "broadcast:4",
+    orders: [],
+    message: { broadcastId: "4", subject: "Early access for Inner Circle", body: "Hi Ana,\nthe drop opens Friday." },
+    createdAt: 0,
+    readAt: null,
+  };
+  assert.deepEqual(notificationText(msg, en), { title: "Early access for Inner Circle", detail: "Hi Ana,\nthe drop opens Friday.", href: "/notifications" });
+  assert.equal(notificationText({ ...msg, message: null }, en).title, "Message");
+});

@@ -441,6 +441,8 @@ a.line-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .note[data-unread] .note-icon { color: var(--color-foreground); }
 .note:not([data-unread]) .line-title { font-weight: var(--weight-regular); }
 .note-detail { overflow-wrap: anywhere; }
+/* A platform message keeps its line breaks. */
+.note-detail[data-message] { white-space: pre-line; }
 .note-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
 .notes-more { display: flex; justify-content: center; margin-top: var(--space-lg); }
 .line-link:hover { border-color: var(--color-border-control); }

@@ -19,6 +19,7 @@ const ICON: Record<string, IconName> = {
   "order-picked-up": "package",
   "order-completed": "check",
   "payment-failed": "alert",
+  broadcast: "bell",
 };
 
 export default function NotificationsPage() {
@@ -101,7 +102,7 @@ function Notifications({ session }: { session: Session }) {
                     {title}
                     {n.readAt ? null : <span className="sr-only">{t.notifications.unreadSr}</span>}
                   </span>
-                  <span className="note-detail">{detail}</span>
+                  <span className="note-detail" data-message={n.event === "broadcast" ? "" : undefined}>{detail}</span>
                   <span className="meta">{new Date(n.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
                 </span>
                 <span className="line-end">
