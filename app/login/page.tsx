@@ -7,6 +7,7 @@ import { useT } from "@/components/LangProvider";
 import { StateMessage } from "@/components/StateMessage";
 import { config, embedBase } from "@/lib/config";
 import { rememberReturnTo, safePath, SCOPE, signIn } from "@/lib/oidc";
+import { captureRef } from "@/lib/referral";
 
 export default function LoginPage() {
   return (
@@ -34,6 +35,8 @@ function Login() {
 
   useEffect(() => {
     rememberReturnTo(returnTo);
+    // An invitation link may land here too (/login?ref=…): keep it for the callback's claim.
+    captureRef(location.search);
     setOrigin(location.origin);
   }, [returnTo]);
   useEffect(() => {

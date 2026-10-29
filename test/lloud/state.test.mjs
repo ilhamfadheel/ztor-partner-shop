@@ -169,3 +169,69 @@ test("a search asks the Creator API for the phrase and keeps each piece's collec
   assert.deepEqual(state.found("cabana shirt").map((p) => [p.slug, p.collection]), [["1", "beach"]]);
   assert.equal(state.found("other"), null);
 });
+
+// ── missions and invitations (CONTRACT §7.3) ─────────────────────────────────────
+const missionView = (id, state, over = {}) => ({ id, kind: "proof", action: null, target: null, targetCount: 1, points: 450, pointsPer: "mission", title: "M" + id, description: null, category: null, coverUrl: null, mediaUrl: null, instructions: [], rules: null, prizes: [], prizeNote: null, benefit: null, availabilityNote: null, actionUrl: null, actionLabel: null, proof: { link: "required", note: "off", notePrompt: null, allowedHosts: [] }, campaign: null, startsAt: null, endsAt: null, availability: "open", me: state ? { state, progress: { current: 0, target: 1 }, proofUrl: null, note: null, reason: null, attempts: 0, submittedAt: null, completedAt: null, pointsEarned: 0 } : null, ...over });
+
+test("a visitor sees the missions, without asking for an invitation", async () => {
+  routes.push(["GET", `${API}/missions`, ok({ missions: [missionView("41", null)] })]);
+  await state.hydrate(["member", "missions", "invite"]);
+  assert.deepEqual(state.missionCatalog().map((m) => [m.id, m.state, m.me]), [["41", "todo", null]]);
+  assert.deepEqual(calls.map((c) => c.url), [`${API}/missions`]);
+  assert.equal(state.inviteLink(), null);
+});
+
+test("a fan's invitation and completed missions reach the member; the link carries the server's code", async () => {
+  fan();
+  routes.push(["GET", `${API}/missions`, ok({ missions: [missionView("41", "done"), missionView("42", "pending"), missionView("43", "todo")] })]);
+  routes.push(["GET", `${API}/invites/me`, ok({ code: "7KQ2M9XA", counted: 2 })]);
+  await state.hydrate(["member", "missions", "invite"]);
+  const who = state.member();
+  assert.equal(who.invites, 2);
+  assert.deepEqual(who.completedMissions, ["41"]);
+  assert.equal(state.inviteLink(), "https://shop.example/signup?ref=7KQ2M9XA");
+  assert.equal(calls.find((c) => c.url === `${API}/missions`).headers.authorization, "Bearer at-1");
+});
+
+test("submitting proof reloads the missions, the member and the vault, then tells the page", async () => {
+  fan();
+  let mstate = "todo";
+  routes.push(["GET", `${API}/missions`, () => ok({ missions: [missionView("41", mstate)] })()]);
+  routes.push(["GET", `${API}/vault/eggs`, ok({ eggs: [] })]);
+  routes.push(["POST", `${API}/missions/41/submissions`, () => ((mstate = "pending"), ok({ mission: missionView("41", "pending") })())]);
+  await state.hydrate(["member", "missions"]);
+  calls.length = 0;
+  let told = null;
+  document.addEventListener("member:change", (e) => (told = e.detail), { once: true });
+  const mission = await state.submitProof("41", { proofUrl: "https://instagram.com/p/x" });
+  assert.equal(mission.state, "pending");
+  assert.equal(state.missionCatalog()[0].state, "pending");
+  const urls = calls.map((c) => c.url);
+  for (const u of [`${API}/missions`, `${API}/loyalty/me`, `${API}/vault/eggs`]) assert.ok(urls.includes(u), u);
+  assert.deepEqual(told, { saved: true });
+});
+
+test("redeeming a code reloads the same parts and returns what the code gave", async () => {
+  fan();
+  routes.push(["GET", `${API}/missions`, ok({ missions: [] })]);
+  routes.push(["GET", `${API}/vault/eggs`, ok({ eggs: [] })]);
+  routes.push(["POST", `${API}/campaigns/redeem`, ok({ points: 80, alreadyRedeemed: false })]);
+  await state.hydrate(["member"]);
+  calls.length = 0;
+  assert.deepEqual(await state.redeemCode("ABCDE12345"), { points: 80, alreadyRedeemed: false });
+  const urls = calls.map((c) => c.url);
+  for (const u of [`${API}/missions`, `${API}/loyalty/me`, `${API}/vault/eggs`]) assert.ok(urls.includes(u), u);
+});
+
+test("reading the missions again after a refusal tells the page, so the card behind the dialog follows", async () => {
+  fan();
+  let mstate = "todo";
+  routes.push(["GET", `${API}/missions`, () => ok({ missions: [missionView("41", mstate)] })()]);
+  await state.hydrate(["member", "missions"]);
+  mstate = "pending";
+  let told = null;
+  document.addEventListener("ztor:refresh", (e) => (told = e.detail), { once: true });
+  await state.reloadMissions();
+  assert.equal(state.missionCatalog()[0].state, "pending");
+  assert.deepEqual(told, { parts: ["missions"] });
+});

@@ -87,6 +87,12 @@ export const api = {
   rules: () => creator('/loyalty/rules'),
   eggs: () => creator('/vault/eggs', { auth: 'optional' }).then(d => d?.eggs ?? []),
   openReward: rewardId => creator(`/vault/rewards/${id(rewardId)}/open`, { method: 'POST', auth: 'required' }),
+  // Missions (set by the platform in the SSO Partners console), invitations and reward codes.
+  missions: () => creator('/missions', { auth: 'optional' }).then(d => d?.missions ?? []),
+  submitProof: (missionId, { proofUrl, note } = {}) => creator(`/missions/${id(missionId)}/submissions`, { method: 'POST', auth: 'required', body: { ...(proofUrl ? { proof_url: proofUrl } : {}), ...(note ? { note } : {}) } }).then(d => d.mission),
+  invite: () => creator('/invites/me', { auth: 'required' }),
+  claimInvite: code => creator('/invites/claim', { method: 'POST', auth: 'required', body: { code } }),
+  redeemCode: code => creator('/campaigns/redeem', { method: 'POST', auth: 'required', body: { code } }),
   // The fan's Ztor account (profile only; everything else is managed on Ztor).
   account: () => account(''),
   updateAccount: patch => account('', { method: 'PATCH', body: patch }),

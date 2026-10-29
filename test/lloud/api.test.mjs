@@ -58,3 +58,40 @@ test("is unavailable, not broken, when an endpoint is not deployed yet", async (
   routes.push(["GET", "https://api.example/api/creator/v1/loyalty/rules", () => new Response("<html>404</html>", { status: 404 })]);
   await assert.rejects(api.rules(), (e) => e instanceof ApiError && e.status === 404 && e.code === "UNAVAILABLE");
 });
+
+// ── missions, invites and reward codes (CONTRACT §7.1) ─────────────────────────
+test("missions: a visitor's list carries no token, a fan's does; the missions come out of the envelope", async () => {
+  routes.push(["GET", "https://api.example/api/creator/v1/missions", ok({ missions: [{ id: "41" }] })]);
+  assert.deepEqual(await api.missions(), [{ id: "41" }]);
+  assert.equal(calls.at(-1).headers.authorization, undefined);
+  signIn();
+  await api.missions();
+  assert.equal(calls.at(-1).headers.authorization, "Bearer at-1");
+});
+
+test("submitProof sends proof_url and note only when set, as the fan, and returns the mission", async () => {
+  signIn();
+  routes.push(["POST", "https://api.example/api/creator/v1/missions/41/submissions", ok({ mission: { id: "41", me: { state: "pending" } } })]);
+  assert.deepEqual(await api.submitProof("41", { proofUrl: "https://instagram.com/p/x", note: "" }), { id: "41", me: { state: "pending" } });
+  assert.deepEqual(JSON.parse(calls.at(-1).body), { proof_url: "https://instagram.com/p/x" });
+  await api.submitProof("41", { note: "The bridge." });
+  assert.deepEqual(JSON.parse(calls.at(-1).body), { note: "The bridge." });
+  assert.equal(calls.at(-1).method, "POST");
+  assert.equal(calls.at(-1).headers.authorization, "Bearer at-1");
+});
+
+test("the fan's invitation, a claim and a reward code all need the fan, and send the code as code", async () => {
+  await assert.rejects(api.invite(), (e) => e.code === "SIGNED_OUT");
+  await assert.rejects(api.claimInvite("7KQ2M9XA"), (e) => e.code === "SIGNED_OUT");
+  await assert.rejects(api.redeemCode("ABCDE12345"), (e) => e.code === "SIGNED_OUT");
+  assert.equal(calls.length, 0);
+  signIn();
+  routes.push(["GET", "https://api.example/api/creator/v1/invites/me", ok({ code: "7KQ2M9XA", counted: 2 })]);
+  routes.push(["POST", "https://api.example/api/creator/v1/invites/claim", ok({ counted: true, alreadyCounted: false })]);
+  routes.push(["POST", "https://api.example/api/creator/v1/campaigns/redeem", ok({ points: 80, alreadyRedeemed: false })]);
+  assert.deepEqual(await api.invite(), { code: "7KQ2M9XA", counted: 2 });
+  assert.deepEqual(await api.claimInvite("7kq2-m9xa"), { counted: true, alreadyCounted: false });
+  assert.deepEqual(JSON.parse(calls.at(-1).body), { code: "7kq2-m9xa" });
+  assert.deepEqual(await api.redeemCode("ABCDE12345"), { points: 80, alreadyRedeemed: false });
+  assert.deepEqual(JSON.parse(calls.at(-1).body), { code: "ABCDE12345" });
+});

@@ -7,7 +7,7 @@ import { currentSession } from './session.js';
 import * as map from './map.js';
 import { followAccountLanguage } from '../i18n.js';
 
-const empty = () => ({ session: null, account: null, standing: null, rules: null, rewards: [], board: [], products: [], found: null, details: new Map(), lines: [], orders: [], down: new Set(), failed: new Set() });
+const empty = () => ({ session: null, account: null, standing: null, rules: null, rewards: [], missions: [], invite: null, board: [], products: [], found: null, details: new Map(), lines: [], orders: [], down: new Set(), failed: new Set() });
 let s = empty();
 
 /** For tests: forget everything loaded. */
@@ -54,6 +54,13 @@ const LOADERS = {
     followAccountLanguage(account?.language);
   },
   vault: () => load('vault', async () => { s.rewards = map.toRewards(await api.eggs()); }),
+  // The platform's missions, with the fan's progress when signed in (auto missions settle on this read).
+  missions: () => load('missions', async () => { s.missions = map.toMissions(await api.missions()); }),
+  async invite() {
+    s.session ??= await currentSession();
+    if (!s.session) { s.invite = null; return; }
+    await load('invite', async () => { s.invite = await api.invite(); });
+  },
   board: () => load('board', async () => { s.board = map.boardRows(await api.board(50)); }),
   rules: () => load('rules', async () => { s.rules = await api.rules(); }),
   products: () => load('products', async () => {
@@ -82,7 +89,7 @@ const LOADERS = {
 // from nothing; signing out forgets it (session.js clearSession).
 export const SNAPSHOT_KEY = 'lloud_state_v1';
 const FRESH_MS = 30_000;
-const FIELDS = { member: ['account', 'standing'], vault: ['rewards'], board: ['board'], rules: ['rules'], products: ['products'], cart: ['lines'], orders: ['orders'] };
+const FIELDS = { member: ['account', 'standing'], vault: ['rewards'], missions: ['missions'], invite: ['invite'], board: ['board'], rules: ['rules'], products: ['products'], cart: ['lines'], orders: ['orders'] };
 const ownerOf = session => session?.user?.sub ?? null;
 function readSnapshot() {
   try { return JSON.parse(sessionStorage.getItem(SNAPSHOT_KEY) ?? 'null'); } catch { return null; }
@@ -137,8 +144,16 @@ const claimedList = () => {
 
 export const session = () => s.session;
 export const account = () => s.account;
-export const member = () => map.toMember({ session: s.session, account: s.account, standing: s.standing, claimed: claimedList(), unlocked: s.session ? s.rewards.filter(r => r.unlocked).map(r => r.id) : [] });
+export const member = () => map.toMember({
+  session: s.session, account: s.account, standing: s.standing, claimed: claimedList(),
+  unlocked: s.session ? s.rewards.filter(r => r.unlocked).map(r => r.id) : [],
+  invites: s.session ? s.invite?.counted ?? 0 : 0,
+  completedMissions: s.session ? s.missions.filter(m => m.state === 'done').map(m => m.id) : [],
+});
 export const rewards = () => s.rewards;
+export const missionCatalog = () => s.missions;
+/** The fan's invitation link (their code on this platform), or null until it has loaded. */
+export const inviteLink = () => (s.session && s.invite?.code ? location.origin + '/signup?ref=' + encodeURIComponent(s.invite.code) : null);
 export const board = () => s.board;
 export const rules = () => s.rules;
 export const products = () => s.products;
@@ -194,6 +209,35 @@ export async function setQty(cartItemId, qty) {
 export async function removeLine(cartItemId) {
   await api.removeLine(cartItemId);
   await reloadCart({ type: 'remove', id: cartItemId });
+}
+
+/** After points may have moved: the missions, the standing and the vault are read again, and the page told. */
+async function reloadEarned() {
+  await Promise.all([LOADERS.member(), LOADERS.missions(), LOADERS.vault()]);
+  saveSnapshot(['member', 'missions', 'vault'], Date.now());
+  tell('member:change', { saved: true });
+}
+
+/** Reads the missions again (after a refusal that means the page is behind), and tells the page. */
+export async function reloadMissions() {
+  await LOADERS.missions();
+  saveSnapshot(['missions'], Date.now());
+  tell('ztor:refresh', { parts: ['missions'] });
+}
+
+/** Sends a proof mission's link and/or note for the platform to review; returns the mission as it is now. */
+export async function submitProof(missionId, input) {
+  const [mission] = map.toMissions([await api.submitProof(missionId, input)]);
+  s.missions = s.missions.map(m => (m.id === mission.id ? mission : m));
+  await reloadEarned();
+  return s.missions.find(m => m.id === mission.id) ?? mission;
+}
+
+/** Redeems a fan-campaign code (Scan & earn); returns `{ points, alreadyRedeemed }`. */
+export async function redeemCode(code) {
+  const result = await api.redeemCode(code);
+  await reloadEarned();
+  return result;
 }
 
 /** A profile change on Ztor; the member is re-read and the page told. */

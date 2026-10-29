@@ -237,6 +237,8 @@ export const shop = {
     api<Page<ShopNotification> & { unread: number }>(`/notifications?pageNum=${pageNum}&pageSize=${pageSize}`, { token }),
   readNotifications: (token: string, notification_ids: string[]) => api<{ unread: number }>("/notifications/read", { method: "POST", token, body: { notification_ids } }),
   readAllNotifications: (token: string) => api<{ unread: number }>("/notifications/read-all", { method: "POST", token }),
+  /** The newly joined friend names the invitation that brought them (lib/referral.ts). */
+  claimInvite: (token: string, code: string) => api<{ counted: true; alreadyCounted: boolean }>("/invites/claim", { method: "POST", token, body: { code } }),
 
   quote: (token: string, cart_item_ids: string[]) => api<Quote>("/checkout/quote", { method: "POST", token, body: { cart_item_ids } }),
   checkout: (

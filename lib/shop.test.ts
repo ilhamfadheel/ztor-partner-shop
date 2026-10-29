@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { shop } from "./shop.ts";
+import { shop, ShopError } from "./shop.ts";
 
 test("the product list sends a search as q, encoded, and leaves q off without one", async () => {
   const urls: string[] = [];
@@ -47,4 +47,19 @@ test("browser calls carry the fan's saved language; an explicit lang still wins"
   }
   await shop.artist(); // no document (the server side): no header unless passed
   assert.deepEqual(langs, ["zh-hk", "en-us", null]);
+});
+
+test("claimInvite names the invitation as the friend, with the code as code", async () => {
+  const calls: Array<{ url: string; method: string; body: unknown; auth: string | null }> = [];
+  globalThis.fetch = (async (url: string, init: RequestInit = {}) => {
+    calls.push({ url, method: init.method ?? "GET", body: init.body ? JSON.parse(String(init.body)) : undefined, auth: new Headers(init.headers).get("authorization") });
+    return new Response(JSON.stringify({ traceId: "t", success: true, code: "0", msg: "", data: { counted: true, alreadyCounted: false } }));
+  }) as typeof fetch;
+  assert.deepEqual(await shop.claimInvite("tok", "7KQ2-M9XA"), { counted: true, alreadyCounted: false });
+  assert.deepEqual(calls.map((c) => [c.method, c.url.replace(/^.*\/creator\/v1/, ""), c.body, c.auth]), [["POST", "/invites/claim", { code: "7KQ2-M9XA" }, "Bearer tok"]]);
+});
+
+test("a refused claim is a ShopError with its status, so the callback can tell a refusal from an outage", async () => {
+  globalThis.fetch = (async () => new Response(JSON.stringify({ traceId: "t", success: false, code: "CREATOR_INVITE_NOT_NEW", msg: "Invitations count for new members only.", data: null }), { status: 409 })) as typeof fetch;
+  await assert.rejects(shop.claimInvite("tok", "7KQ2M9XA"), (e: unknown) => e instanceof ShopError && e.status === 409 && e.code === "CREATOR_INVITE_NOT_NEW");
 });
