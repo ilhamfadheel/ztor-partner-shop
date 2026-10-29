@@ -4,8 +4,10 @@ import { rewardCatalog } from './reward-config.js';
 import { esc, action, dialog, notify, reveal, motionOK, trackMotion } from './club-ui.js';
 import { mountDrawer, openDrawer } from './drawer.js';
 import { mountMemberMetal } from './member-metal.js';
-import { rewardPreview, rewardTasks, rewardIsReady, rewardCover } from './reward-presentation.js';
+import { rewardPreview, rewardTasks, rewardIsReady, rewardCover, conditionLabel } from './reward-presentation.js';
 import { openEarnPoints } from './earning-ui.js';
+import { rewardsPage, mountMissions, openMission } from './missions-ui.js';
+import { layoutMissionGrid } from './mission-grid.js';
 import { leaderboardRows, nextTierProgress } from './member-progress.js';
 import * as state from './ztor/state.js';
 import { viewOf, TITLES } from './club-routes.js';
@@ -18,9 +20,11 @@ translateDocument();
 const root = document.getElementById('club-main');
 let view = document.documentElement.dataset.clubView || 'home';
 // What each view reads from Ztor, loaded before the first render (member + bag on every page).
-const PARTS = { home: ['vault', 'products'], rewards: ['vault', 'products'], leaderboard: ['board'], shop: ['products'], account: ['vault', 'orders'], profile: ['orders'] };
+const PARTS = { home: ['vault', 'products', 'missions'], rewards: ['vault', 'products', 'missions', 'invite'], leaderboard: ['board'], shop: ['products'], account: ['vault', 'orders'], profile: ['orders'] };
 await state.hydrate(['member', 'cart', ...(PARTS[view] ?? [])]);
 let rewardFilter = 'all';
+// The /rewards category tab (lloud.club's live page); #vault-missions opens on Missions.
+let missionCategory = location.hash === '#vault-missions' ? 'earn' : 'all';
 let shopFilter = 'all';
 let auctionCleanup = null;
 let auctionLoading = false;
@@ -59,6 +63,7 @@ async function go(href, { push = true } = {}) {
   auctionCleanup?.(); auctionCleanup = null;
   memberMetalCleanup?.(); memberMetalCleanup = null;
   view = next;
+  if (next === 'rewards' && new URL(href, location.href).hash === '#vault-missions') { missionCategory = 'earn'; rewardFilter = 'all'; }
   document.documentElement.dataset.clubView = next;
   document.title = TITLES[next];
   if (push) history.pushState({ club: true }, '', href);
@@ -69,6 +74,7 @@ async function go(href, { push = true } = {}) {
   if (url.hash) document.getElementById(url.hash.slice(1))?.scrollIntoView();
   else scrollTo({ top: 0 });
   if (view === 'rewards' && url.searchParams.get('reward')) openReward(url.searchParams.get('reward'));
+  else if (view === 'rewards' && url.searchParams.get('fanMission')) openMission(url.searchParams.get('fanMission'));
 }
 
 function mountHeader() {
@@ -150,29 +156,8 @@ function nextMission(who) {
     : `<button class="club-text-link" data-earn-points>${t('How to earn points')} ↗</button>`;
   return `<aside class="club-next-mission" aria-label="${t('Your next mission')}"><img src="${esc(rewardCover(reward))}" alt="${t('Reward cover')}" width="84" height="108"><div><span class="club-kicker">${status.unlocked?t('Ready to open'):t('Your next unlock')}</span><h3>${esc(reward.title)}</h3><p>${status.unlocked?t('Earned by you. Ready whenever you are.'):(condition?(missing.length===1?t('1 step left · {condition}', { condition: esc(conditionLabel(condition)) }):t('{n} steps left · {condition}', { n: missing.length, condition: esc(conditionLabel(condition)) })):t('Free for every member. Join to open it.'))}</p>${cta}</div></aside>`;
 }
-function conditionLabel(condition) {
-  if (condition.type === 'tier') return t('Reach {tier}', { tier: t(tierOf(condition.value).name) });
-  if (condition.type === 'product') return t('Own the {piece}', { piece: state.product(condition.value)?.name || t('selected piece') });
-  if (condition.type === 'supported') return t('Back the co-creation');
-  if (condition.type === 'follow') return t('Follow the artist on Ztor');
-  return t('Earn {n} lifetime points', { n: num(condition.value) });
-}
-function rewardCard(reward,index) {
-  const who = member(), status = rewardStatus(reward.id);
-  const percentage = Math.round(status.progress * 100);
-  const opened = who.claimed.includes(reward.id);
-  return `<article class="reward-card ${status.unlocked ? 'is-unlocked' : ''}" data-reveal data-reward-id="${esc(reward.id)}">${rewardPreview(reward,status,index)}<div class="reward-info">${rewardTasks(reward,status,who,{compact:true})}<button class="club-button ${status.unlocked ? 'is-red' : 'is-secondary'}" type="button" data-open-reward="${esc(reward.id)}">${status.unlocked ? !rewardIsReady(reward) ? t('Content coming soon') : opened ? t('Open reward') : t('Reveal your reward') : t('See how to unlock')}<span aria-hidden="true">↗</span></button></div></article>`;
-}
 function rewards() {
-  const all = rewardCatalog().filter(r => r.published);
-  const list = all.filter(r => rewardFilter === 'all' || (rewardFilter === 'unlocked') === rewardStatus(r.id).unlocked);
-  return `<div data-reveal><span class="club-kicker">${t('Earned. Not ordinary.')}</span><h1>${t('Your secret rewards.')}</h1><p class="club-lead">${t('Small missions. Moments you won’t find anywhere else. Every unlocked reward becomes part of your collection.')}</p></div><div class="club-tabs" aria-label="${t('Filter rewards')}">${[['all',t('All rewards')],['unlocked',t('Unlocked')],['locked',t('To discover')]].map(([id,label]) => `<button type="button" data-reward-filter="${id}" aria-pressed="${rewardFilter===id}">${label}</button>`).join('')}</div>${list.length ? `<div class="club-grid">${list.map((r,i) => rewardCard(r,all.indexOf(r))).join('')}</div>` : `<div class="club-empty"><h2>${t('More to discover.')}</h2><p>${t('No rewards in this view yet. Complete a mission or explore all rewards.')}</p><button class="club-button" data-reward-filter="all">${t('See all rewards')}</button></div>`}`;
-}
-function shareInvite() {
-  // ponytail: preview only. The ref parameter is not counted anywhere yet; wire to the real invite service later.
-  const link=new URL('/signup?ref='+encodeURIComponent(member().id||'friend'),location.href).href;
-  if(!navigator.clipboard) return notify(link);
-  navigator.clipboard.writeText(link).then(()=>notify(t('Invite link copied. Send it to a friend.')),()=>notify(link));
+  return rewardsPage({ category: missionCategory, filter: rewardFilter });
 }
 async function openReward(id) {
   let reward = rewardCatalog().find(r => r.id === id && r.published);
@@ -181,7 +166,8 @@ async function openReward(id) {
   if (!status.unlocked) {
     dialog(t('Make it yours.'), `<div class="reward-detail">${rewardPreview(reward,status,rewardCatalog().findIndex(r=>r.id===id))}${rewardTasks(reward,status,who)}</div>`,node=>{
       node.classList.add('reward-dialog');
-      node.addEventListener('click',e=>{if(e.target.closest('[data-earn-points]'))openEarnPoints(node);if(e.target.closest('[data-invite-link]'))shareInvite();});
+      // Invite friends and View mission are wired page-wide (missions-ui.js mountMissions).
+      node.addEventListener('click',e=>{if(e.target.closest('[data-earn-points]'))openEarnPoints(node);});
     });
     return;
   }
@@ -307,6 +293,8 @@ async function render(animate=false) {
   if(view==='shop' && shopQuery() && !state.found(shopQuery())) await state.search(shopQuery());
   memberMetalCleanup?.();
   root.innerHTML = ({home,rewards,shop,leaderboard,account,signup}[view] || home)();
+  // lloud.club's masonry: equal columns in source order, each card as tall as it is.
+  if(view==='rewards')layoutMissionGrid(root.querySelector('#vault-missions > .club-grid'));
   memberMetalCleanup = mountMemberMetal(root.querySelector('.member-pass'));
   if(view==='signup')mountSignIn();
   if(animate)reveal(root);
@@ -314,6 +302,7 @@ async function render(animate=false) {
 root.addEventListener('click',e=>{
   const target=e.target.closest('button'); if(!target)return;
   if(target.hasAttribute('data-earn-points'))openEarnPoints();
+  if(target.dataset.missionCategory){missionCategory=target.dataset.missionCategory;render();root.querySelector(`[data-mission-category="${missionCategory}"]`)?.focus({preventScroll:true});}
   if(target.dataset.rewardFilter){rewardFilter=target.dataset.rewardFilter;render();root.querySelector(`[data-reward-filter="${rewardFilter}"]`)?.focus({preventScroll:true});}
   if(target.dataset.shopFilter){shopFilter=target.dataset.shopFilter;if(target.hasAttribute('data-shop-clear'))return void go('/shop');render();root.querySelector(`[data-shop-filter="${shopFilter}"]`)?.focus({preventScroll:true});}
   if(target.dataset.openReward)openReward(target.dataset.openReward);
@@ -327,6 +316,7 @@ root.addEventListener('submit',e=>{
   void go(q?'/shop?q='+encodeURIComponent(q):'/shop');
 });
 mountHeader();
+mountMissions();
 document.body.insertAdjacentHTML('beforeend',`<footer class="club-footer"><span>${t('LLOUD · A little closer, together.')}</span><span>${t('Powered by Ztor')} · <a href="/account">${t('Your account')}</a> · <a href="/">${t('Back to runway')}</a></span></footer>`);
 document.documentElement.classList.add('is-site-ready');
 let shownMember=member();
@@ -352,11 +342,12 @@ document.addEventListener('member:change',async event=>{
     if(bar && newProgress>oldProgress)trackMotion(gsap.fromTo(bar,{scaleX:oldProgress/newProgress,transformOrigin:'left'},{scaleX:1,duration:.24,ease:'power2.out',clearProps:'transform'}));
   }
 });
-document.addEventListener('earnings:config',()=>{if(view==='home')render();});
 document.addEventListener('rewards:config',()=>{if(view==='rewards'||view==='home')render();});
 await render(true);
 const resume=new URLSearchParams(location.search);
 if(view==='rewards' && resume.get('reward'))openReward(resume.get('reward'));
+else if(view==='rewards' && resume.get('fanMission'))openMission(resume.get('fanMission'));
+addEventListener('hashchange',()=>{if(view==='rewards'&&location.hash==='#vault-missions'){missionCategory='earn';rewardFilter='all';render();}});
 if(location.hash && view!=='auction')requestAnimationFrame(()=>document.getElementById(location.hash.slice(1))?.scrollIntoView());
 // In-place navigation between the club's pages. On window, so a page's own link handling (the
 // profile's "discard changes?") runs first and can keep the fan where they are.

@@ -3,6 +3,11 @@
 // same way lib/oidc.ts does — keep the two in step: Ztor rotates the refresh token on every use and
 // treats a second use of an old one as theft, so one renewal at a time, across tabs (Web Locks).
 import config from '/lloud-config.js';
+import { captureRef } from './referral.js';
+
+// Every LLOUD page signs in through here, so an invitation link (/signup?ref=…) is kept on arrival;
+// /auth/callback claims it after the token exchange (lib/referral.ts).
+captureRef(location.search);
 
 const SESSION_KEY = 'ztor_session';
 /** Renew this long before the access token runs out, so no request leaves with a dying token. */

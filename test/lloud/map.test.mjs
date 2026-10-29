@@ -133,3 +133,101 @@ test("the bag's lines are LLOUD's lines, keyed by the shop's cart item", () => {
   const lines = m.toCartLines({ shopGroups: [{ shopId: "s", currency: "HKD", items: [{ cartItemId: "c1", productId: "1262", quantity: 2, itemStatus: "AVAILABLE", title: "Tour Tee", coverUrl: "image/tee.png", unitPrice: 280, lineSubtotal: 560, maxQuantity: 5, skuSelections: [{ skuId: "k1", skuLabel: "M / Black" }] }] }] });
   assert.deepEqual(lines, [{ id: "c1", slug: "1262", skuId: "k1", size: "M / Black", colour: "", title: "Tour Tee", price: 280, currency: "HKD", image: "https://cdn.example/image/tee.png", qty: 2, max: 5, status: "AVAILABLE" }]);
 });
+
+// ── missions (CONTRACT §4, §7.2) ───────────────────────────────────────────────
+const me = (state, extra = {}) => ({ state, progress: { current: state === "done" ? 1 : 0, target: 1 }, proofUrl: null, note: null, reason: null, attempts: 0, submittedAt: null, completedAt: null, pointsEarned: 0, ...extra });
+const mission = (over = {}) => ({
+  id: "41", kind: "proof", action: null, target: null, targetCount: 1, points: 450, pointsPer: "mission",
+  title: "Share your outfit", description: "Post your LLOUD look.", category: "Community", coverUrl: "https://cdn/c.webp", mediaUrl: null,
+  instructions: ["Post your outfit", "Submit the public post link"], rules: "One post can earn only once.", prizes: [], prizeNote: null,
+  benefit: null, availabilityNote: null, actionUrl: "https://www.instagram.com/", actionLabel: "Open Instagram",
+  proof: { link: "required", note: "off", notePrompt: null, allowedHosts: ["instagram.com"] }, campaign: null,
+  startsAt: null, endsAt: null, availability: "open", me: null, ...over,
+});
+
+test("a mission's kind follows how it completes: a link, a note, an invitation, a purchase, a code, or anything else Ztor tracks", () => {
+  const kinds = m.toMissions([
+    mission(),
+    mission({ id: "2", proof: { link: "off", note: "required", notePrompt: "Why?", allowedHosts: [] } }),
+    mission({ id: "3", kind: "invite", proof: null, pointsPer: "friend", targetCount: 10 }),
+    mission({ id: "4", kind: "auto", action: "purchased", proof: null }),
+    mission({ id: "5", kind: "auto", action: "redeemed", target: "7", proof: null }),
+    mission({ id: "6", kind: "auto", action: "follow", proof: null }),
+    mission({ id: "7", kind: "auto", action: "tier", target: "super_fan", proof: null }),
+  ]).map((x) => [x.id, x.kind, x.scan]);
+  assert.deepEqual(kinds, [["41", "social", false], ["2", "response", false], ["3", "referral", false], ["4", "purchase", false], ["5", "partner", true], ["6", "auto", false], ["7", "auto", false]]);
+});
+
+test("a mission carries LLOUD's fields: cover, rule, checklist, prompt, and the platform's action", () => {
+  const [x] = m.toMissions([mission({ proof: { link: "optional", note: "optional", notePrompt: "Tell us more", allowedHosts: [] }, prizes: ["Signed print"], prizeNote: "For three winners", mediaUrl: "https://cdn/f.mp4" })]);
+  assert.deepEqual(
+    { id: x.id, title: x.title, description: x.description, points: x.points, pointsPer: x.pointsPer, category: x.category, cover: x.cover, media: x.media, rule: x.rule, prizes: x.prizes, prizeEligibility: x.prizeEligibility, prompt: x.prompt, checklist: x.checklist, actionUrl: x.actionUrl, actionLabel: x.actionLabel, me: x.me },
+    { id: "41", title: "Share your outfit", description: "Post your LLOUD look.", points: 450, pointsPer: "mission", category: "Community", cover: "https://cdn/c.webp", media: "https://cdn/f.mp4", rule: "One post can earn only once.", prizes: ["Signed print"], prizeEligibility: "For three winners", prompt: "Tell us more", checklist: ["Post your outfit", "Submit the public post link"], actionUrl: "https://www.instagram.com/", actionLabel: "Open Instagram", me: null },
+  );
+});
+
+test("the card's +N is the mission's points, else the code's points; per friend for an invitation, else the benefit", () => {
+  const [proof, invite, code, milestone] = m.toMissions([
+    mission(),
+    mission({ id: "42", kind: "invite", points: 400, pointsPer: "friend", proof: null, targetCount: 10 }),
+    mission({ id: "50", kind: "auto", action: "redeemed", target: "7", points: 0, proof: null, campaign: { id: "7", name: "Cafés", brand: null, pointsPerCode: 80 } }),
+    mission({ id: "51", kind: "auto", action: "purchased", points: 0, proof: null, benefit: "First purchase milestone" }),
+  ]);
+  assert.deepEqual([proof.amount, invite.amount, code.amount, milestone.amount], [450, 400, 80, 0]);
+  assert.deepEqual([m.missionBenefit(proof), m.missionBenefit(invite), m.missionBenefit(code), m.missionBenefit(milestone)], ["+450 points", "+400 points per friend", "+80 points", "First purchase milestone"]);
+});
+
+test("the seal follows the fan's state; a visitor's mission is still to discover", () => {
+  const seals = m.toMissions(["todo", "pending", "rejected", "done", "revoked"].map((s, i) => mission({ id: String(i), me: me(s) })).concat(mission({ id: "v" }))).map((x) => [x.state, x.seal]);
+  assert.deepEqual(seals, [["todo", "To discover"], ["pending", "In review"], ["rejected", "Needs an update"], ["done", "Complete"], ["revoked", "Not credited"], ["todo", "To discover"]]);
+});
+
+test("a mission without a category gets one from what it is; scan missions are Scan & earn", () => {
+  const cats = m.toMissions([mission({ category: null }), mission({ id: "5", kind: "auto", action: "redeemed", target: "7", proof: null, category: null }), mission({ id: "3", kind: "invite", proof: null, category: null })]).map((x) => x.category);
+  assert.deepEqual(cats, ["Mission", "Scan & earn", "Community"]);
+});
+
+test("a mission's availability text: the platform's note first, else when it opens or closes", () => {
+  const [note, upcoming, closed, open] = m.toMissions([
+    mission({ availabilityNote: "Invitations open soon." }),
+    mission({ id: "2", availability: "upcoming", startsAt: "2099-01-02T00:00:00.000Z" }),
+    mission({ id: "3", availability: "closed", endsAt: "2020-01-02T00:00:00.000Z" }),
+    mission({ id: "4" }),
+  ]);
+  assert.equal(note.availability, "Invitations open soon.");
+  assert.match(upcoming.availability, /^Opens /);
+  assert.equal(closed.availability, "This mission has ended.");
+  assert.equal(open.availability, null);
+  assert.deepEqual([note.window, upcoming.window, closed.window], ["open", "upcoming", "closed"]);
+});
+
+test("unknown reward conditions are kept as a requirement, never dropped; a mission is named, an invitation counts friends", () => {
+  const [reward] = m.toRewards([{ id: "1", title: "Egg", coverUrl: null, rewards: [{ id: "9", title: "Encore", subtitle: null, mediaKind: "video", previewUrl: null, conditions: [
+    { type: "mission", target: "41", met: true, title: "Share your outfit" },
+    { type: "mission", target: "99", met: false, title: null },
+    { type: "invite", target: "5", met: false, current: 2 },
+    { type: "streak", target: "3", met: false },
+  ], unlocked: false }] }]);
+  assert.deepEqual(reward.conditions, [
+    { type: "achievement", value: "41", label: "Share your outfit" },
+    { type: "achievement", value: "99", label: null },
+    { type: "invite", value: 5, current: 2 },
+    { type: "other", value: "3" },
+  ]);
+  assert.deepEqual(reward.met, [true, false, false, false]);
+  const status = m.rewardStatus(reward, m.toMember({ session, standing }));
+  assert.deepEqual(status.conditions.map((c) => [c.label, c.met, c.current, c.target, Math.round(c.progress * 100)]), [
+    ["Complete: Share your outfit", true, 1, 1, 100],
+    ["Complete a mission", false, 0, 1, 0],
+    ["Invite 5 friends who join", false, 2, 5, 40],
+    ["Complete a requirement", false, 0, 1, 0],
+  ]);
+});
+
+test("a reward gated on one friend asks for a friend, not '1 friends'", () => {
+  const [reward] = m.toRewards([{ id: "1", title: "Egg", coverUrl: null, rewards: [{ id: "9", title: "Encore", subtitle: null, mediaKind: "video", previewUrl: null, conditions: [
+    { type: "invite", target: "1", met: false, current: 0 },
+  ], unlocked: false }] }]);
+  const [c] = m.rewardStatus(reward, m.toMember({ session, standing })).conditions;
+  assert.equal(c.label, "Invite a friend who joins");
+});

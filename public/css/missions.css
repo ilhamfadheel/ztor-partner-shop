@@ -1,0 +1,44 @@
+/* lloud.club's live /rewards ("Your missions."): the mission cards, their checklist and benefit,
+   the category/status tabs and the masonry grid. Copied from lloud.club css/fan-v2.css (only the
+   rules these pages use), plus the Scan & earn redeem box and the mission progress line. */
+#vault-missions,#vault-rewards{scroll-margin-top:150px}
+.fan-category-tabs{margin-bottom:12px}.fan-status-tabs{margin-top:0;margin-bottom:30px}.fan-status-tabs button{border:0;padding:8px 12px;color:var(--club-muted)}.fan-status-tabs button[aria-pressed=true]{background:transparent;color:var(--club-ink);box-shadow:inset 0 -1px currentColor}.fan-earning-card .reward-info>.club-button{width:100%}
+.mission-film{display:block;width:100%;max-height:240px;object-fit:contain;margin-bottom:24px;background:var(--club-ink)}
+.mission-benefit{--mission-reward-surface:color-mix(in srgb,var(--club-line) 44%,var(--club-paper));display:grid;gap:8px;padding:24px;margin:24px 0;background:var(--mission-reward-surface);border-left:2px solid var(--club-ink);color:var(--club-ink)}
+.mission-benefit-label,.mission-benefit-note{font-size:var(--type-support);font-weight:var(--weight-support)}
+.mission-benefit-value{font-size:var(--type-section-lg);font-weight:var(--weight-light);line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.mission-benefit-value small{font-size:var(--type-title-sm);letter-spacing:0}
+.mission-benefit-value.is-milestone{font-size:var(--type-title);line-height:1.3}
+.mission-benefit-note{color:var(--club-muted)}
+:root{--mission-complete-ink:#277044}
+.mission-checklist{counter-reset:mission-task;list-style:none;padding:0;margin:20px 0;display:grid;gap:12px;font-size:var(--type-body)}
+.mission-checklist li{counter-increment:mission-task;display:flex;align-items:flex-start;gap:12px;line-height:1.6}
+.mission-step-box{display:inline-grid;place-items:center;flex:0 0 24px;height:20px;margin-top:2px;border:0;color:var(--club-muted);font-size:var(--type-support);font-variant-numeric:tabular-nums;line-height:1;cursor:default}
+.mission-step-box:not(.is-complete)::before{content:counter(mission-task,decimal-leading-zero)}
+.mission-step-box>svg{display:block;width:18px;height:18px}
+.mission-step-box.is-complete{color:var(--mission-complete-ink)}
+.mission-details{border-top:1px solid var(--club-line);margin-top:24px;font-size:var(--type-body)}
+.mission-details summary{display:flex;align-items:center;min-height:44px;cursor:pointer}
+.mission-details summary::after{content:'+';margin-left:auto}
+.mission-details[open] summary::after{content:'−'}
+.mission-details ul{padding-left:20px;margin:8px 0 0;display:grid;gap:8px;line-height:1.6}
+.fan-earning-card{align-self:start}.fan-earning-card .reward-info{flex:none}.fan-earning-card .reward-info>h3,.fan-earning-card .reward-info>p{min-height:0}
+.mission-masonry{grid-auto-rows:1px;row-gap:0;align-items:start}.mission-masonry>.reward-card{align-self:start}
+.mission-benefit.has-multiple .mission-benefit-value{font-size:var(--type-title);line-height:1.3}
+.mission-benefit.has-multiple .mission-benefit-value small{font-size:var(--type-body)}
+.mission-benefit-prizes{border-top:1px solid var(--club-line);padding-top:16px;margin-top:8px}
+.mission-benefit-prizes ul{margin:10px 0 0;padding-left:18px;font-size:var(--type-body);line-height:1.6}
+.mission-benefit-prizes li+li{margin-top:6px}
+.mission-card-benefits{padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid var(--club-line)}
+.mission-card-benefits h4,.mission-card-tasks-heading{margin:0;font-size:var(--type-body);font-weight:inherit}
+.mission-card-points{display:flex;flex-direction:column;gap:4px;margin:16px 0 0;font-size:22px;line-height:1.3;font-variant-numeric:tabular-nums}
+.mission-card-points small{font-size:var(--type-support);color:var(--club-muted)}
+.fan-earning-card .mission-benefit-prizes{margin-top:20px;padding-top:0;border-top:0}
+.fan-earning-card .mission-benefit-prizes .mission-benefit-note{display:block;color:var(--club-ink);font-size:var(--type-support)}
+.fan-earning-card .mission-benefit-prizes ul{font-size:var(--type-support);line-height:1.6;margin-top:10px}
+.fan-earning-card .reward-info>.mission-benefit-prizes{margin:0 0 24px}
+.fan-success{display:flex;align-items:center;gap:10px}
+/* Ztor additions: the Scan & earn code box and a mission's counted progress. */
+.mission-redeem{display:grid;gap:8px;max-width:520px;margin:0 0 30px}.mission-redeem form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}.mission-redeem .club-field{margin:0}.mission-redeem .club-form-error{grid-column:1/-1;margin:0}.mission-redeem .club-form-error:empty{display:none}.club-dialog .mission-redeem{margin:24px 0}
+.mission-progress{margin:20px 0}.mission-progress .reward-mission-hint,.fan-earning-card .reward-progress+.reward-mission-hint{margin-top:8px}
+@media (max-width:600px){.mission-redeem form{grid-template-columns:1fr}}

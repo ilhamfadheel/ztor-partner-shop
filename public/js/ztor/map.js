@@ -18,7 +18,7 @@ const GUEST = { id: null, get name() { return t('Guest'); }, bio: '', avatar: ''
  * LLOUD's member: the signed-in fan's Ztor profile and their standing on the platform's creator's
  * board. P0 has lifetime points only, so LLOUD's "recent" points are the lifetime ones.
  */
-export function toMember({ session, account, standing, claimed = [], unlocked = [] } = {}) {
+export function toMember({ session, account, standing, claimed = [], unlocked = [], invites = 0, completedMissions = [] } = {}) {
   if (!session) return { ...GUEST, population: standing?.boardSize ?? 0 };
   const name = (account?.name || session.user?.name || t('Fan')).trim().slice(0, 40);
   const points = Number(standing?.points) || 0;
@@ -36,6 +36,8 @@ export function toMember({ session, account, standing, claimed = [], unlocked = 
     joined: account?.createdAt ? String(account.createdAt).slice(0, 10) : null,
     claimed: [...claimed],
     unlockedRewards: [...unlocked],
+    invites,
+    completedMissions: [...completedMissions],
     next: standing?.next ?? null,
     guest: false,
   };
@@ -69,13 +71,17 @@ const CONDITION = {
   purchased: c => ({ type: 'product', value: c.target }),
   supported: c => ({ type: 'supported', value: c.target }),
   follow: () => ({ type: 'follow', value: null }),
+  // A completed mission (its title; null when it is no longer listed) and friends counted.
+  mission: c => ({ type: 'achievement', value: c.target, label: c.title ?? null }),
+  invite: c => ({ type: 'invite', value: Number(c.target) || 0, current: c.current ?? 0 }),
 };
+// A condition this site doesn't know yet still counts: shown as a step, decided by the API.
+const other = c => ({ type: 'other', value: c.target ?? null });
 
 /** The Media Vault's eggs as LLOUD's flat reward catalog; the media itself is fetched on open. */
 export function toRewards(eggs) {
   return eggs.flatMap(egg =>
     egg.rewards.map(r => {
-      const known = r.conditions.filter(c => CONDITION[c.type]);
       return {
         id: r.id,
         eggId: egg.id,
@@ -89,8 +95,8 @@ export function toRewards(eggs) {
         coverUrl: r.previewUrl || egg.coverUrl || null,
         allowDownload: !!r.allowDownload,
         match: 'all',
-        conditions: known.map(c => CONDITION[c.type](c)),
-        met: known.map(c => !!c.met),
+        conditions: r.conditions.map(c => (CONDITION[c.type] ?? other)(c)),
+        met: r.conditions.map(c => !!c.met),
         unlocked: !!r.unlocked,
       };
     }),
@@ -107,13 +113,76 @@ export function rewardStatus(reward, who) {
       const have = ORDER.indexOf(who.tier), need = ORDER.indexOf(c.value);
       return { label: t('Reach {tier}', { tier: LABEL[c.value] }), met, current: who.tier, target: c.value, progress: met ? 1 : need > 0 ? Math.max(0, have) / need : 0 };
     }
-    const label = c.type === 'product' ? t('Purchase the selected piece') : c.type === 'supported' ? t('Back the co-creation') : t('Follow the artist on Ztor');
+    if (c.type === 'invite') {
+      const current = Number(c.current ?? who.invites) || 0;
+      return { label: c.value === 1 ? t('Invite a friend who joins') : t('Invite {count} friends who join', { count: c.value.toLocaleString(locale()) }), met, current, target: c.value, progress: met ? 1 : Math.min(1, c.value ? current / c.value : 0) };
+    }
+    const label = c.type === 'product' ? t('Purchase the selected piece') : c.type === 'supported' ? t('Back the co-creation') : c.type === 'follow' ? t('Follow the artist on Ztor')
+      : c.type === 'achievement' ? (c.label ? t('Complete: {title}', { title: c.label }) : t('Complete a mission')) : t('Complete a requirement');
     return { label, met, current: met ? 1 : 0, target: 1, progress: met ? 1 : 0 };
   });
   const unlocked = !!who?.id && reward.unlocked;
   const progress = unlocked ? 1 : conditions.length ? conditions.reduce((s, c) => s + c.progress, 0) / conditions.length : 0;
   return { unlocked, progress, conditions };
 }
+
+// ── missions ─────────────────────────────────────────────────────────────────
+/** How LLOUD shows a mission, by how it completes on Ztor. */
+const missionKind = m => m.kind === 'proof' ? (m.proof?.link && m.proof.link !== 'off' ? 'social' : 'response')
+  : m.kind === 'invite' ? 'referral' : m.action === 'purchased' ? 'purchase' : m.action === 'redeemed' ? 'partner' : 'auto';
+// Getters: each word is read in the page's language when it is shown.
+const SEAL = { get todo() { return t('To discover'); }, get pending() { return t('In review'); }, get rejected() { return t('Needs an update'); }, get done() { return t('Complete'); }, get revoked() { return t('Not credited'); } };
+const defaultCategory = m => m.action === 'redeemed' ? t('Scan & earn') : m.kind === 'invite' ? t('Community') : t('Mission');
+const day = iso => new Date(iso).toLocaleDateString(locale(), { month: 'short', day: 'numeric', year: 'numeric' });
+function availabilityText(m) {
+  if (m.availability === 'upcoming') return m.startsAt ? t('Opens {date}', { date: day(m.startsAt) }) : t('Opens soon');
+  if (m.availability === 'closed') return t('This mission has ended.');
+  return m.endsAt ? t('Open until {date}', { date: day(m.endsAt) }) : null;
+}
+
+/** The Creator API's missions as LLOUD's mission cards; `me` (the fan's progress) is null for a visitor. */
+export function toMissions(list) {
+  return (list ?? []).map(m => {
+    const state = m.me?.state ?? 'todo';
+    return {
+      id: m.id,
+      kind: missionKind(m),
+      action: m.action,
+      target: m.target,
+      targetCount: m.targetCount ?? 1,
+      title: m.title,
+      description: m.description ?? '',
+      points: m.points,
+      pointsPer: m.pointsPer,
+      // The card's "+N": a code's own points when the mission adds none (the campaign credits them).
+      amount: m.points > 0 ? m.points : m.campaign?.pointsPerCode ?? 0,
+      category: m.category ?? defaultCategory(m),
+      cover: m.coverUrl,
+      media: m.mediaUrl,
+      rule: m.rules,
+      prizes: m.prizes ?? [],
+      prizeEligibility: m.prizeNote,
+      prompt: m.proof?.notePrompt ?? null,
+      window: m.availability,
+      availability: m.availabilityNote ?? availabilityText(m),
+      checklist: m.instructions ?? [],
+      benefit: m.benefit,
+      actionUrl: m.actionUrl,
+      actionLabel: m.actionLabel,
+      proof: m.proof,
+      scan: m.action === 'redeemed',
+      campaign: m.campaign,
+      state,
+      seal: SEAL[state] ?? SEAL.todo,
+      me: m.me,
+    };
+  });
+}
+
+/** What a mission gives, as its card says it: "+N points" (per friend), else its milestone. */
+export const missionBenefit = m => m.amount > 0
+  ? (m.pointsPer === 'friend' ? t('+{points} points per friend', { points: m.amount.toLocaleString(locale()) }) : t('+{points} points', { points: m.amount.toLocaleString(locale()) }))
+  : m.benefit ?? '';
 
 /** A product path from Shopping → an absolute URL on its media CDN (absolute URLs pass through). */
 export function mediaUrl(src) {

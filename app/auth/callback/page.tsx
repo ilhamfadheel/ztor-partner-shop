@@ -7,6 +7,8 @@ import { StateMessage } from "@/components/StateMessage";
 import { account } from "@/lib/account";
 import { asLang, readLangCookie, storeLangCookie } from "@/lib/i18n";
 import { completeSignIn, getSession, signIn } from "@/lib/oidc";
+import { claimPendingRef } from "@/lib/referral";
+import { shop } from "@/lib/shop";
 
 /** The registered sign-in return URL: exchanges the code, then goes back to where the fan was. */
 export default function Callback() {
@@ -19,6 +21,9 @@ export default function Callback() {
         // The fan's saved language follows them to this device: read it once, best-effort — the
         // sign-in still lands even when the account service doesn't answer.
         const token = getSession()?.accessToken;
+        // A friend who came through an invitation link: name it now, once, right after the token
+        // exchange (lib/referral.ts). Bounded and never fatal: the sign-in lands either way.
+        if (token) await claimPendingRef((code) => shop.claimInvite(token, code));
         const saved = token ? asLang(await account.get(token).then((me) => me.language).catch(() => null)) : null;
         if (saved && saved !== readLangCookie()) {
           storeLangCookie(saved);
