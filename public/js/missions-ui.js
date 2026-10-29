@@ -141,9 +141,11 @@ export function openMission(id) {
   const m = state.missionCatalog().find(x => x.id === String(id));
   if (!m) return notify(t('This mission is no longer available.'));
   if (!member().id) return location.assign(signInHref('/rewards?fanMission=' + encodeURIComponent(m.id)));
-  document.querySelectorAll('dialog[open]').forEach(d => { if (d.dataset.fanMission) d.close(); });
+  document.querySelectorAll('dialog[open]').forEach(d => { if (d.dataset.missionDialog) d.close(); });
   const node = dialog(m.title, missionBody(m));
-  node.dataset.fanMission = m.id;
+  // Not data-fan-mission: that opens a mission, and every click inside the dialog (the link field,
+  // the ×) would match it on the dialog itself and open the mission again.
+  node.dataset.missionDialog = m.id;
   return node;
 }
 
