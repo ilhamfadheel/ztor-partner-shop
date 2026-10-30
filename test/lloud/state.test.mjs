@@ -211,18 +211,6 @@ test("submitting proof reloads the missions, the member and the vault, then tell
   assert.deepEqual(told, { saved: true });
 });
 
-test("redeeming a code reloads the same parts and returns what the code gave", async () => {
-  fan();
-  routes.push(["GET", `${API}/missions`, ok({ missions: [] })]);
-  routes.push(["GET", `${API}/vault/eggs`, ok({ eggs: [] })]);
-  routes.push(["POST", `${API}/campaigns/redeem`, ok({ points: 80, alreadyRedeemed: false })]);
-  await state.hydrate(["member"]);
-  calls.length = 0;
-  assert.deepEqual(await state.redeemCode("ABCDE12345"), { points: 80, alreadyRedeemed: false });
-  const urls = calls.map((c) => c.url);
-  for (const u of [`${API}/missions`, `${API}/loyalty/me`, `${API}/vault/eggs`]) assert.ok(urls.includes(u), u);
-});
-
 test("reading the missions again after a refusal tells the page, so the card behind the dialog follows", async () => {
   fan();
   let mstate = "todo";

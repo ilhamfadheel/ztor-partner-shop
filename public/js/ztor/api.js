@@ -92,7 +92,6 @@ export const api = {
   submitProof: (missionId, { proofUrl, note } = {}) => creator(`/missions/${id(missionId)}/submissions`, { method: 'POST', auth: 'required', body: { ...(proofUrl ? { proof_url: proofUrl } : {}), ...(note ? { note } : {}) } }).then(d => d.mission),
   invite: () => creator('/invites/me', { auth: 'required' }),
   claimInvite: code => creator('/invites/claim', { method: 'POST', auth: 'required', body: { code } }),
-  redeemCode: code => creator('/campaigns/redeem', { method: 'POST', auth: 'required', body: { code } }),
   // The fan's Ztor account (profile only; everything else is managed on Ztor).
   account: () => account(''),
   updateAccount: patch => account('', { method: 'PATCH', body: patch }),

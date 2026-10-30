@@ -233,13 +233,6 @@ export async function submitProof(missionId, input) {
   return s.missions.find(m => m.id === mission.id) ?? mission;
 }
 
-/** Redeems a fan-campaign code (Scan & earn); returns `{ points, alreadyRedeemed }`. */
-export async function redeemCode(code) {
-  const result = await api.redeemCode(code);
-  await reloadEarned();
-  return result;
-}
-
 /** A profile change on Ztor; the member is re-read and the page told. */
 export async function saveProfile(patch) {
   s.account = await api.updateAccount(patch);

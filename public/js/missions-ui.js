@@ -1,8 +1,8 @@
 // LLOUD's live /rewards ("Your missions."): mission cards first, then the Media Vault's rewards, in
-// one masonry grid (mission-grid.js), with the mission dialog and the Scan & earn redeem box. Ported
+// one masonry grid (mission-grid.js), with the mission dialog. Ported
 // from lloud.club's fan-experience.js (renderEarningCards / openMission) without its browser-local
 // demo: missions are the platform's (SSO Partners console › Fans › Missions), progress, review and
-// points are Ztor's (Creator API /missions, /invites, /campaigns/redeem).
+// points are Ztor's (Creator API /missions, /invites).
 import * as state from './ztor/state.js';
 import { missionBenefit, tierLabel, TIER_ID } from './ztor/map.js';
 import { signInHref } from './ztor/session.js';
@@ -21,7 +21,7 @@ const cardBenefits = (m, benefit) => `<div class="mission-card-benefits"><h4>${t
 const missionDetails = rule => rule ? `<details class="mission-details"><summary>${t('Details')}</summary><ul>${rule.split(/(?<=[.!?])\s+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></details>` : '';
 const button = (label, attrs = '', secondary = true) => `<button type="button" class="club-button${secondary ? ' is-secondary' : ''}" ${attrs}>${label}</button>`;
 const external = (label, href) => `<a class="club-button is-secondary" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}<span aria-hidden="true">↗</span></a>`;
-const fallbackCover = m => m.scan ? 'assets/optimized/editorial-summer-lossless.webp' : 'assets/optimized/editorial-smile-lossless.webp';
+const fallbackCover = () => 'assets/optimized/editorial-smile-lossless.webp';
 const hostsText = hosts => hosts.join(', ');
 
 /** The steps a mission shows: the platform's checklist, else one from how it completes. Ticked from the fan's state. */
@@ -31,7 +31,6 @@ export function missionTasks(m) {
     : m.kind === 'response' ? t('Submit your response')
     : m.kind === 'referral' ? (m.targetCount === 1 ? t('Invite a friend who joins') : t('Invite {count} friends who join', { count: num(m.targetCount) }))
     : m.kind === 'purchase' ? (m.target ? t('Buy the selected piece') : t('Complete a purchase from the shop'))
-    : m.kind === 'partner' ? t('Redeem a code from a participating partner')
     : m.action === 'follow' ? t('Follow the artist on Ztor')
     : m.action === 'supported' ? t('Back the co-creation')
     : m.action === 'tier' ? t('Reach {tier}', { tier: tierLabel(TIER_ID[m.target] ?? m.target) })
@@ -69,22 +68,16 @@ export function missionCard(m) {
   return `<article class="reward-card fan-earning-card ${done ? 'is-unlocked' : ''}" data-reveal data-earning-id="${esc(m.id)}"><div class="reward-preview is-editorial"><img class="reward-cover" src="${esc(m.cover || fallbackCover(m))}" alt="${m.cover ? esc(m.title) : t('LLOUD editorial')}" loading="lazy"><div class="reward-preview-top"><span>${esc(m.category)}</span><span class="reward-seal">${esc(m.seal)}</span></div><div class="reward-preview-copy"><h3>${esc(m.title)}</h3><p>${esc(m.description)}</p></div></div><div class="reward-info">${body}${cta}</div></article>`;
 }
 
-/** Scan & earn: a partner's code (a fan campaign's) for points. */
-export function redeemBox() {
-  if (!member().id) return `<section class="mission-redeem" aria-label="${t('Redeem a code')}"><p>${t('Sign in to redeem a code from a participating partner.')}</p>${action(t('Join to begin'), signInHref('/rewards'))}</section>`;
-  return `<section class="mission-redeem" aria-label="${t('Redeem a code')}"><form data-redeem-form><label class="club-field">${t('Your code')}<input name="code" required maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${t('e.g. 7KQ2M9XA4B')}"></label><p class="club-form-error" data-redeem-error role="alert"></p><button class="club-button" type="submit">${t('Redeem')}</button></form><p class="club-quiet">${t('Ask for your code after a qualifying purchase or visit. Each code counts once.')}</p></section>`;
-}
-
-const CATEGORIES = () => [['all', t('All')], ['earn', t('Missions')], ['everyday', t('Scan & earn')], ['films', t('Films')], ['audio', t('Voice & music')]];
+const CATEGORIES = () => [['all', t('All')], ['earn', t('Missions')], ['films', t('Films')], ['audio', t('Voice & music')]];
 const REWARD_TYPES = { films: ['video'], audio: ['voice', 'music'] };
 
 /** The /rewards page body: heading, tabs, then the missions and the rewards for the chosen category and status. */
 export function rewardsPage({ category = 'all', filter = 'all' } = {}) {
-  const missions = state.missionCatalog().filter(m => (category === 'all' || (category === 'earn' && !m.scan) || (category === 'everyday' && m.scan)) && (filter === 'all' || (filter === 'unlocked') === (m.state === 'done')));
+  const missions = state.missionCatalog().filter(m => (category === 'all' || category === 'earn') && (filter === 'all' || (filter === 'unlocked') === (m.state === 'done')));
   const all = rewardCatalog().filter(r => r.published);
   const rewards = all.filter(r => (category === 'all' || REWARD_TYPES[category]?.includes(r.type)) && (filter === 'all' || (filter === 'unlocked') === rewardStatus(r.id).unlocked));
   const cards = missions.map(missionCard).join('') + rewards.map(r => rewardCard(r, all.indexOf(r))).join('');
-  return `<div data-reveal><span class="club-kicker">${t('Earned. Not ordinary.')}</span><h1>${t('Your missions.')}</h1><p class="club-lead">${t('Take part in missions, earn points from qualifying activities and unlock exclusive content from Lisa.')}</p></div><div id="vault-rewards" class="club-tabs fan-category-tabs" aria-label="${t('Mission categories')}">${CATEGORIES().map(([id, label]) => `<button type="button" data-mission-category="${id}" aria-pressed="${category === id}">${esc(label)}</button>`).join('')}</div><div class="club-tabs fan-status-tabs" aria-label="${t('Filter by unlock status')}">${[['all', t('All statuses')], ['unlocked', t('Unlocked')], ['locked', t('To discover')]].map(([id, label]) => `<button type="button" data-reward-filter="${id}" aria-pressed="${filter === id}">${esc(label)}</button>`).join('')}</div>${category === 'everyday' ? redeemBox() : ''}<section id="vault-missions" tabindex="-1" aria-label="${t('Missions and rewards')}">${cards ? `<div class="club-grid">${cards}</div>` : `<div class="club-empty"><h2>${t('Nothing here yet.')}</h2><p>${t('Try another category or show all statuses.')}</p><button class="club-button" data-reward-filter="all">${t('Show all statuses')}</button></div>`}</section>`;
+  return `<div data-reveal><span class="club-kicker">${t('Earned. Not ordinary.')}</span><h1>${t('Your missions.')}</h1><p class="club-lead">${t('Take part in missions, earn points from qualifying activities and unlock exclusive content from Lisa.')}</p></div><div id="vault-rewards" class="club-tabs fan-category-tabs" aria-label="${t('Mission categories')}">${CATEGORIES().map(([id, label]) => `<button type="button" data-mission-category="${id}" aria-pressed="${category === id}">${esc(label)}</button>`).join('')}</div><div class="club-tabs fan-status-tabs" aria-label="${t('Filter by unlock status')}">${[['all', t('All statuses')], ['unlocked', t('Unlocked')], ['locked', t('To discover')]].map(([id, label]) => `<button type="button" data-reward-filter="${id}" aria-pressed="${filter === id}">${esc(label)}</button>`).join('')}</div><section id="vault-missions" tabindex="-1" aria-label="${t('Missions and rewards')}">${cards ? `<div class="club-grid">${cards}</div>` : `<div class="club-empty"><h2>${t('Nothing here yet.')}</h2><p>${t('Try another category or show all statuses.')}</p><button class="club-button" data-reward-filter="all">${t('Show all statuses')}</button></div>`}</section>`;
 }
 
 /** Where an auto mission sends the fan to do it: the platform's link, else the shop for a purchase. */
@@ -107,7 +100,7 @@ function proofForm(m) {
 /** What the mission dialog shows, from the mission and the fan's state (LLOUD's openMission). */
 export function missionBody(m) {
   const done = m.state === 'done';
-  const note = done ? t('Earned') : !m.amount ? t('Recorded on completion') : m.kind === 'referral' ? t('Added for each friend who joins') : m.kind === 'social' || m.kind === 'response' ? t('Added after confirmation') : m.scan ? t('Added when you redeem a code') : t('Added when the mission completes');
+  const note = done ? t('Earned') : !m.amount ? t('Recorded on completion') : m.kind === 'referral' ? t('Added for each friend who joins') : m.kind === 'social' || m.kind === 'response' ? t('Added after confirmation') : t('Added when the mission completes');
   const benefit = `<section class="mission-benefit${m.prizes.length ? ' has-multiple' : ''}" aria-label="${t('Mission reward')}"><span class="mission-benefit-label">${m.prizes.length ? t('Mission rewards') : m.amount ? t('Mission reward') : t('What you unlock')}</span><strong class="mission-benefit-value${m.amount ? '' : ' is-milestone'}">${m.amount ? `+${num(m.amount)} <small>${m.pointsPer === 'friend' ? t('points per friend') : t('points')}</small>` : esc(m.benefit || t('A milestone on your profile'))}</strong><span class="mission-benefit-note">${esc(note)}</span>${missionPrizes(m.prizes, m.prizeEligibility)}</section>`;
   const counted = progressText(m);
   const progress = counted ? `<div class="mission-progress">${progressBar(m, counted)}<p class="reward-mission-hint">${esc(counted)}</p></div>` : '';
@@ -119,7 +112,7 @@ export function missionBody(m) {
   else if (m.window !== 'open') content = `<p role="status">${esc(m.availability || t('This mission isn’t open right now.'))}</p>`;
   else if (m.kind === 'social' || m.kind === 'response') content = `${m.state === 'rejected' ? `<p class="club-form-error" role="status">${t('Your submission needs an update.')}</p>${m.me?.reason ? `<p>${esc(m.me.reason)}</p>` : ''}` : ''}${m.actionUrl ? external(m.actionLabel || t('Open'), m.actionUrl) : ''}${proofForm(m)}`;
   else if (m.kind === 'referral') content = `${progress}${button(t('Copy invitation link'), 'data-invite-link', false)}<p class="club-quiet">${t('A friend counts when they join the club with your link. Existing members and your own account don’t count.')}</p>${m.availability ? `<p role="status">${esc(m.availability)}</p>` : ''}`;
-  else content = `${progress}${m.scan ? redeemBox() : autoAction(m)}<p class="club-quiet">${t('This mission completes on its own once you’ve done it. There’s nothing to claim.')}</p>${m.availability ? `<p role="status">${esc(m.availability)}</p>` : ''}`;
+  else content = `${progress}${autoAction(m)}<p class="club-quiet">${t('This mission completes on its own once you’ve done it. There’s nothing to claim.')}</p>${m.availability ? `<p role="status">${esc(m.availability)}</p>` : ''}`;
   return `${m.description ? `<p>${esc(m.description)}</p>` : ''}${film}${benefit}${checklist(missionTasks(m))}${content}${missionDetails(m.rule)}`;
 }
 
@@ -127,10 +120,6 @@ const REFUSAL = {
   CREATOR_PROOF_REUSED: () => t('This link was already used for a mission.'),
   CREATOR_MISSION_CLOSED: () => t('This mission isn’t open right now.'),
   CREATOR_MISSION_NOT_PROOF: () => t('This mission completes on its own; there’s nothing to submit.'),
-  CREATOR_CODE_USED: () => t('This code has already been used.'),
-  CREATOR_CAMPAIGN_NOT_LIVE: () => t('This code’s campaign isn’t running right now.'),
-  CREATOR_CAMPAIGN_FULL: () => t('This campaign has reached its limit.'),
-  CREATOR_NOT_FOUND: () => t('We don’t recognise this code.'),
 };
 /** A Creator API refusal in the fan's words; the server's own message for a bad argument. */
 export const refusalText = error => REFUSAL[error?.code]?.() ?? error?.message ?? t('Something went wrong. Please try again.');
@@ -187,22 +176,6 @@ async function submitProof(form) {
   } finally { delete form.dataset.saving; submit.disabled = false; }
 }
 
-async function redeem(form) {
-  if (form.dataset.saving) return;
-  const error = form.querySelector('[data-redeem-error]'), submit = form.querySelector('[type=submit]');
-  const code = String(form.elements.code.value || '').trim();
-  error.textContent = '';
-  if (!code) return;
-  form.dataset.saving = 'true'; submit.disabled = true;
-  try {
-    const out = await state.redeemCode(code);
-    form.reset();
-    notify(out.alreadyRedeemed ? t('You’ve already redeemed this code.') : t('+{points} points', { points: num(out.points) }));
-    form.closest('dialog')?.close();
-  } catch (err) { error.textContent = refusalText(err); }
-  finally { delete form.dataset.saving; submit.disabled = false; }
-}
-
 let mounted = false;
 /** Wires the mission buttons and forms anywhere on the page (cards, reward steps, dialogs), once. */
 export function mountMissions() {
@@ -216,9 +189,9 @@ export function mountMissions() {
     else openMissions();
   });
   document.addEventListener('submit', e => {
-    const form = e.target.closest?.('[data-mission-form],[data-redeem-form]');
+    const form = e.target.closest?.('[data-mission-form]');
     if (!form) return;
     e.preventDefault();
-    void (form.hasAttribute('data-redeem-form') ? redeem(form) : submitProof(form));
+    void submitProof(form);
   });
 }

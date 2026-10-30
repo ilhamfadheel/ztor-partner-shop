@@ -141,21 +141,20 @@ const mission = (over = {}) => ({
   title: "Share your outfit", description: "Post your LLOUD look.", category: "Community", coverUrl: "https://cdn/c.webp", mediaUrl: null,
   instructions: ["Post your outfit", "Submit the public post link"], rules: "One post can earn only once.", prizes: [], prizeNote: null,
   benefit: null, availabilityNote: null, actionUrl: "https://www.instagram.com/", actionLabel: "Open Instagram",
-  proof: { link: "required", note: "off", notePrompt: null, allowedHosts: ["instagram.com"] }, campaign: null,
+  proof: { link: "required", note: "off", notePrompt: null, allowedHosts: ["instagram.com"] },
   startsAt: null, endsAt: null, availability: "open", me: null, ...over,
 });
 
-test("a mission's kind follows how it completes: a link, a note, an invitation, a purchase, a code, or anything else Ztor tracks", () => {
+test("a mission's kind follows how it completes: a link, a note, an invitation, a purchase, or anything else Ztor tracks", () => {
   const kinds = m.toMissions([
     mission(),
     mission({ id: "2", proof: { link: "off", note: "required", notePrompt: "Why?", allowedHosts: [] } }),
     mission({ id: "3", kind: "invite", proof: null, pointsPer: "friend", targetCount: 10 }),
     mission({ id: "4", kind: "auto", action: "purchased", proof: null }),
-    mission({ id: "5", kind: "auto", action: "redeemed", target: "7", proof: null }),
     mission({ id: "6", kind: "auto", action: "follow", proof: null }),
     mission({ id: "7", kind: "auto", action: "tier", target: "super_fan", proof: null }),
-  ]).map((x) => [x.id, x.kind, x.scan]);
-  assert.deepEqual(kinds, [["41", "social", false], ["2", "response", false], ["3", "referral", false], ["4", "purchase", false], ["5", "partner", true], ["6", "auto", false], ["7", "auto", false]]);
+  ]).map((x) => [x.id, x.kind]);
+  assert.deepEqual(kinds, [["41", "social"], ["2", "response"], ["3", "referral"], ["4", "purchase"], ["6", "auto"], ["7", "auto"]]);
 });
 
 test("a mission carries LLOUD's fields: cover, rule, checklist, prompt, and the platform's action", () => {
@@ -166,15 +165,14 @@ test("a mission carries LLOUD's fields: cover, rule, checklist, prompt, and the 
   );
 });
 
-test("the card's +N is the mission's points, else the code's points; per friend for an invitation, else the benefit", () => {
-  const [proof, invite, code, milestone] = m.toMissions([
+test("the card's +N is the mission's points; per friend for an invitation, else the benefit", () => {
+  const [proof, invite, milestone] = m.toMissions([
     mission(),
     mission({ id: "42", kind: "invite", points: 400, pointsPer: "friend", proof: null, targetCount: 10 }),
-    mission({ id: "50", kind: "auto", action: "redeemed", target: "7", points: 0, proof: null, campaign: { id: "7", name: "Cafés", brand: null, pointsPerCode: 80 } }),
     mission({ id: "51", kind: "auto", action: "purchased", points: 0, proof: null, benefit: "First purchase milestone" }),
   ]);
-  assert.deepEqual([proof.amount, invite.amount, code.amount, milestone.amount], [450, 400, 80, 0]);
-  assert.deepEqual([m.missionBenefit(proof), m.missionBenefit(invite), m.missionBenefit(code), m.missionBenefit(milestone)], ["+450 points", "+400 points per friend", "+80 points", "First purchase milestone"]);
+  assert.deepEqual([proof.amount, invite.amount, milestone.amount], [450, 400, 0]);
+  assert.deepEqual([m.missionBenefit(proof), m.missionBenefit(invite), m.missionBenefit(milestone)], ["+450 points", "+400 points per friend", "First purchase milestone"]);
 });
 
 test("the seal follows the fan's state; a visitor's mission is still to discover", () => {
@@ -182,9 +180,9 @@ test("the seal follows the fan's state; a visitor's mission is still to discover
   assert.deepEqual(seals, [["todo", "To discover"], ["pending", "In review"], ["rejected", "Needs an update"], ["done", "Complete"], ["revoked", "Not credited"], ["todo", "To discover"]]);
 });
 
-test("a mission without a category gets one from what it is; scan missions are Scan & earn", () => {
-  const cats = m.toMissions([mission({ category: null }), mission({ id: "5", kind: "auto", action: "redeemed", target: "7", proof: null, category: null }), mission({ id: "3", kind: "invite", proof: null, category: null })]).map((x) => x.category);
-  assert.deepEqual(cats, ["Mission", "Scan & earn", "Community"]);
+test("a mission without a category gets one from what it is", () => {
+  const cats = m.toMissions([mission({ category: null }), mission({ id: "3", kind: "invite", proof: null, category: null })]).map((x) => x.category);
+  assert.deepEqual(cats, ["Mission", "Community"]);
 });
 
 test("a mission's availability text: the platform's note first, else when it opens or closes", () => {
