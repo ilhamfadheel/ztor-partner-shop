@@ -16,13 +16,13 @@ const mission = (over = {}) => ({
   title: "Share your outfit", description: "Post your LLOUD look and submit the public link.", category: "Community", coverUrl: null, mediaUrl: null,
   instructions: ["Post your outfit on Instagram", "Submit the public post link"], rules: "One post can earn only once. We review the outfit.", prizes: [], prizeNote: null,
   benefit: null, availabilityNote: null, actionUrl: "https://www.instagram.com/", actionLabel: "Open Instagram",
-  proof: { link: "required", note: "off", notePrompt: null, allowedHosts: ["instagram.com"] }, campaign: null,
+  proof: { link: "required", note: "off", notePrompt: null, allowedHosts: ["instagram.com"] },
   startsAt: null, endsAt: null, availability: "open", me: null, ...over,
 });
 const MISSIONS = [
   mission(),
   mission({ id: "42", kind: "invite", points: 400, pointsPer: "friend", targetCount: 10, title: "Bring a friend", proof: null, actionUrl: null, actionLabel: null }),
-  mission({ id: "50", kind: "auto", action: "redeemed", target: "7", points: 0, title: "Buy from a participating café", category: "Scan & earn", proof: null, campaign: { id: "7", name: "Cafés", brand: null, pointsPerCode: 80 } }),
+  mission({ id: "50", kind: "auto", action: "purchased", target: null, points: 300, title: "Make your first purchase", category: "Shop", proof: null }),
 ];
 const EGGS = [{ id: "1", title: "Vault", coverUrl: null, rewards: [
   { id: "10", title: "A closer look", subtitle: "A private film.", mediaKind: "video", previewUrl: null, conditions: [{ type: "mission", target: "41", met: false, title: "Share your outfit" }, { type: "invite", target: "5", met: false, current: 2 }], unlocked: false },
@@ -54,20 +54,16 @@ test("/rewards is LLOUD's live page: Your missions., its category and status tab
   assert.match(html, /Earned\. Not ordinary\./);
   assert.match(html, /Take part in missions, earn points from qualifying activities and unlock exclusive content from Lisa\./);
   const categories = [...html.matchAll(/data-mission-category="(\w+)"[^>]*>([^<]+)</g)].map((m) => [m[1], m[2]]);
-  assert.deepEqual(categories, [["all", "All"], ["earn", "Missions"], ["everyday", "Scan &amp; earn"], ["films", "Films"], ["audio", "Voice &amp; music"]]);
+  assert.deepEqual(categories, [["all", "All"], ["earn", "Missions"], ["films", "Films"], ["audio", "Voice &amp; music"]]);
   const statuses = [...html.matchAll(/data-reward-filter="(\w+)"[^>]*>([^<]+)</g)].map((m) => [m[1], m[2]]);
   assert.deepEqual(statuses, [["all", "All statuses"], ["unlocked", "Unlocked"], ["locked", "To discover"]]);
   assert.deepEqual(order(html), ["earning:41", "earning:42", "earning:50", "reward:10", "reward:11"]);
   assert.match(html, /id="vault-missions"/);
 });
 
-test("the category tabs: Missions without Scan & earn, Scan & earn with its redeem box, Films and Voice & music by reward type", async () => {
+test("the category tabs: Missions, then Films and Voice & music by reward type", async () => {
   await page({ fan: true });
-  assert.deepEqual(order(ui.rewardsPage({ category: "earn", filter: "all" })), ["earning:41", "earning:42"]);
-  const scan = ui.rewardsPage({ category: "everyday", filter: "all" });
-  assert.deepEqual(order(scan), ["earning:50"]);
-  assert.match(scan, /data-redeem-form/);
-  assert.doesNotMatch(ui.rewardsPage({ category: "all", filter: "all" }), /data-redeem-form/);
+  assert.deepEqual(order(ui.rewardsPage({ category: "earn", filter: "all" })), ["earning:41", "earning:42", "earning:50"]);
   assert.deepEqual(order(ui.rewardsPage({ category: "films", filter: "all" })), ["reward:10"]);
   assert.deepEqual(order(ui.rewardsPage({ category: "audio", filter: "all" })), ["reward:11"]);
 });
@@ -86,16 +82,16 @@ test("nothing in a view says so, in the live page's words", async () => {
   assert.match(html, /data-reward-filter="all"[^>]*>Show all statuses/);
 });
 
-test("a mission card shows its label, seal, what it earns and its tasks; per friend for an invitation, the code's points for Scan & earn", async () => {
+test("a mission card shows its label, seal, what it earns and its tasks; per friend for an invitation", async () => {
   await page({ fan: true, missions: [mission({ me: me("pending") }), { ...MISSIONS[1], me: me("todo", { progress: { current: 2, target: 10 } }) }, MISSIONS[2]] });
-  const [proof, invite, scan] = MISSIONS.map((m) => ui.missionCard(state.missionCatalog().find((x) => x.id === m.id)));
+  const [proof, invite, purchase] = MISSIONS.map((m) => ui.missionCard(state.missionCatalog().find((x) => x.id === m.id)));
   assert.match(proof, /<span>Community<\/span><span class="reward-seal">In review<\/span>/);
   assert.match(proof, /What you earn<\/h4><span>\+450 points<\/span>/);
   assert.match(proof, /Post your outfit on Instagram/);
   assert.match(proof, /data-fan-mission="41"[^>]*>View mission/);
   assert.match(invite, /\+400 points per friend/);
   assert.match(invite, /2 of 10 friends/);
-  assert.match(scan, /\+80 points/);
+  assert.match(purchase, /\+300 points/);
 });
 
 test("a completed mission's card says it's yours to keep and offers the completion", async () => {
@@ -176,20 +172,11 @@ test("an invitation mission shows the friends counted and the copy-link button; 
   assert.doesNotMatch(closed, /data-mission-form/);
 });
 
-test("a Scan & earn mission's dialog carries the redeem box", async () => {
-  await page({ fan: true });
-  assert.match(ui.missionBody(state.missionCatalog().find((m) => m.scan)), /data-redeem-form/);
-});
-
 test("a refusal reads as the fan's next step", () => {
   const e = (code, message = "msg") => Object.assign(new Error(message), { code });
   assert.equal(ui.refusalText(e("CREATOR_PROOF_REUSED")), "This link was already used for a mission.");
   assert.equal(ui.refusalText(e("CREATOR_MISSION_CLOSED")), "This mission isn’t open right now.");
   assert.equal(ui.refusalText(e("CREATOR_INVALID_ARGUMENT", "proofUrl must be an https link")), "proofUrl must be an https link");
-  assert.equal(ui.refusalText(e("CREATOR_CODE_USED")), "This code has already been used.");
-  assert.equal(ui.refusalText(e("CREATOR_CAMPAIGN_NOT_LIVE")), "This code’s campaign isn’t running right now.");
-  assert.equal(ui.refusalText(e("CREATOR_CAMPAIGN_FULL")), "This campaign has reached its limit.");
-  assert.equal(ui.refusalText(e("CREATOR_NOT_FOUND")), "We don’t recognise this code.");
 });
 
 test("earning-store's catalog is the API's missions; review and reset are gone (the platform reviews in the console)", async () => {

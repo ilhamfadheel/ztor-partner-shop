@@ -1,6 +1,6 @@
 /* lloud.club's live /rewards ("Your missions."): the mission cards, their checklist and benefit,
    the category/status tabs and the masonry grid. Copied from lloud.club css/fan-v2.css (only the
-   rules these pages use), plus the Scan & earn redeem box and the mission progress line. */
+   rules these pages use), plus the mission progress line. */
 #vault-missions,#vault-rewards{scroll-margin-top:150px}
 .fan-category-tabs{margin-bottom:12px}.fan-status-tabs{margin-top:0;margin-bottom:30px}.fan-status-tabs button{border:0;padding:8px 12px;color:var(--club-muted)}.fan-status-tabs button[aria-pressed=true]{background:transparent;color:var(--club-ink);box-shadow:inset 0 -1px currentColor}.fan-earning-card .reward-info>.club-button{width:100%}
 .mission-film{display:block;width:100%;max-height:240px;object-fit:contain;margin-bottom:24px;background:var(--club-ink)}
@@ -38,7 +38,5 @@
 .fan-earning-card .mission-benefit-prizes ul{font-size:var(--type-support);line-height:1.6;margin-top:10px}
 .fan-earning-card .reward-info>.mission-benefit-prizes{margin:0 0 24px}
 .fan-success{display:flex;align-items:center;gap:10px}
-/* Ztor additions: the Scan & earn code box and a mission's counted progress. */
-.mission-redeem{display:grid;gap:8px;max-width:520px;margin:0 0 30px}.mission-redeem form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}.mission-redeem .club-field{margin:0}.mission-redeem .club-form-error{grid-column:1/-1;margin:0}.mission-redeem .club-form-error:empty{display:none}.club-dialog .mission-redeem{margin:24px 0}
+/* Ztor addition: a mission's counted progress. */
 .mission-progress{margin:20px 0}.mission-progress .reward-mission-hint,.fan-earning-card .reward-progress+.reward-mission-hint{margin-top:8px}
-@media (max-width:600px){.mission-redeem form{grid-template-columns:1fr}}

@@ -129,10 +129,10 @@ export function rewardStatus(reward, who) {
 // ── missions ─────────────────────────────────────────────────────────────────
 /** How LLOUD shows a mission, by how it completes on Ztor. */
 const missionKind = m => m.kind === 'proof' ? (m.proof?.link && m.proof.link !== 'off' ? 'social' : 'response')
-  : m.kind === 'invite' ? 'referral' : m.action === 'purchased' ? 'purchase' : m.action === 'redeemed' ? 'partner' : 'auto';
+  : m.kind === 'invite' ? 'referral' : m.action === 'purchased' ? 'purchase' : 'auto';
 // Getters: each word is read in the page's language when it is shown.
 const SEAL = { get todo() { return t('To discover'); }, get pending() { return t('In review'); }, get rejected() { return t('Needs an update'); }, get done() { return t('Complete'); }, get revoked() { return t('Not credited'); } };
-const defaultCategory = m => m.action === 'redeemed' ? t('Scan & earn') : m.kind === 'invite' ? t('Community') : t('Mission');
+const defaultCategory = m => m.kind === 'invite' ? t('Community') : t('Mission');
 const day = iso => new Date(iso).toLocaleDateString(locale(), { month: 'short', day: 'numeric', year: 'numeric' });
 function availabilityText(m) {
   if (m.availability === 'upcoming') return m.startsAt ? t('Opens {date}', { date: day(m.startsAt) }) : t('Opens soon');
@@ -154,8 +154,7 @@ export function toMissions(list) {
       description: m.description ?? '',
       points: m.points,
       pointsPer: m.pointsPer,
-      // The card's "+N": a code's own points when the mission adds none (the campaign credits them).
-      amount: m.points > 0 ? m.points : m.campaign?.pointsPerCode ?? 0,
+      amount: m.points,
       category: m.category ?? defaultCategory(m),
       cover: m.coverUrl,
       media: m.mediaUrl,
@@ -170,8 +169,6 @@ export function toMissions(list) {
       actionUrl: m.actionUrl,
       actionLabel: m.actionLabel,
       proof: m.proof,
-      scan: m.action === 'redeemed',
-      campaign: m.campaign,
       state,
       seal: SEAL[state] ?? SEAL.todo,
       me: m.me,
